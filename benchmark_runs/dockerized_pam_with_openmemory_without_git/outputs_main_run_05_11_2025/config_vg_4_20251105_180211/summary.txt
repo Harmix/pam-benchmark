@@ -1,0 +1,46 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_4
+Timestamp: 20251105_180211
+Run Date: Wed Nov  5 18:06:25 UTC 2025
+Total Questions: 3
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+Customer satisfaction dropped 15% after database optimizations that showed perfect internal metrics. What was the hidden technical root cause and why did monitoring systems miss it?. Answer in one sentence, its fine to have something dense and phrase or keyword riddled as long as its true and understandable.
+
+Expected Answer:
+Database connection pool optimization used aggressive timeouts that worked for internal APIs but broke external webhook deliveries, monitoring systems missed it because they only tracked internal service health not external integration status
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+During the post-mortem analysis, what three specific systemic issues did the team identify that allowed this problem to go undetected for weeks? Be concise and answer in one or two continuous sentences then write a report with points kind of thing.
+
+Expected Answer:
+Monitoring blind spot for external integrations, aggressive internal timeout optimization breaking external webhook requirements, and inadequate integration testing scope during performance changes
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Which team member first discovered the connection between the database optimization and external integration failures, and what specific customer workflow evidence led to this discovery?
+
+Expected Answer:
+bob discovered the connection by investigating customer workflows and finding webhook delivery failures to third-party services like Stripe and email providers
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_4_20251105_180211/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

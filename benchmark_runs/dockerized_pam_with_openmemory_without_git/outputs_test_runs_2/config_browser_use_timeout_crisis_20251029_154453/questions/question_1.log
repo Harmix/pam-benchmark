@@ -1,0 +1,18 @@
+Based on my investigation of the codebase and git history, I can see that there were issues with the **`evaluate`** method around last Tuesday (October 21, 2025). Looking at the commit history:
+
+1. **October 26** - Commit `1271c340`: "fix: disable evaluate tool" - The `evaluate` action was disabled by default
+2. **October 27** - Commit `1e20610b`: "fix: revert evaluate disabled" - The disable was reverted
+
+The `evaluate` method is a JavaScript execution function in `browser_use/tools/service.py:993` that uses the CDP (Chrome DevTools Protocol) method **`Runtime.evaluate`**.
+
+However, I don't see clear evidence in the git history of a specific DOM method name that "caused automation failures starting last Tuesday." The commits show:
+- Focus-related fixes in `get_or_create_cdp_session` (changing `focus=True` to `focus=False`)
+- Timeout increases for interaction failures
+- The `evaluate` tool being temporarily disabled then re-enabled
+
+Could you provide more context about:
+1. What specific failures occurred?
+2. Are you referring to a CDP method name, a browser DOM API, or something else?
+3. Is there an issue tracker or error logs I should examine?
+
+The closest match I found is the **`Runtime.evaluate`** CDP method that was having issues around that timeframe, but I'd need more details to confirm this is what you're asking about.

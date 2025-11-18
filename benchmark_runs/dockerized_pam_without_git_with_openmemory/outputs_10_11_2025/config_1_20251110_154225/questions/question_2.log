@@ -1,0 +1,7 @@
+Based on the ticket details, I can see that **TICK-0005 (Security audit preparation)** was created by "grace" but is currently led by "alice". This indicates it was reassigned. Looking at the dates:
+
+- Created: 2024-12-01 10:00:00 by grace
+- Updated: 2024-12-10 09:00:00
+- Current lead: alice
+
+The lead of the oldest reassigned ticket (TICK-0005) is **alice**.

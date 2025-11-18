@@ -1,0 +1,9 @@
+Perfect! I found the answer in the log file. According to the post-mortem discussion:
+
+**Over-engineering decision that created compliance violations:**
+- Storing full request payloads in logs created PII (Personally Identifiable Information) violations
+
+**Basic approach that should have been used instead:**
+- Simple action metadata logging was sufficient
+
+The issue was that by over-engineering the logging system to capture complete request payloads, they inadvertently stored sensitive personal information, violating compliance requirements. A simpler approach of just logging action metadata would have avoided this problem entirely.

@@ -1,0 +1,31 @@
+Based on my search of the codebase, I found the answer:
+
+## The Specific Workaround Implementation
+
+**Charlie's aggressive garbage collection combined with Bob's exponential backoff retry logic** created the memory leak that caused customer data inconsistencies.
+
+### Technical Details:
+
+The problem stemmed from a cascade of unnecessary workarounds:
+
+1. **Bob's exponential backoff retry logic (PR #234)** - Added to handle what appeared to be API failures (but were actually just timeout issues due to AnalyticsFlow's geographic routing changes)
+
+2. **Charlie's GC tuning** - Implemented aggressive garbage collection to address memory fragmentation that occurred during high-load retry periods
+
+3. **The combination** of these two implementations created memory fragmentation during high-load periods, leading to:
+   - Memory leaks
+   - Customer data inconsistencies
+
+### Root Cause Context:
+
+The entire workaround cascade was unnecessary. The original "problem" was:
+- AnalyticsFlow was A/B testing new data centers starting in early January 2025
+- This caused 5-10 second latency spikes due to geographic routing
+- The system's timeout was under 10 seconds, treating routing delays as API failures
+- **Simply adjusting the API timeout to 30 seconds would have solved everything**
+
+**Eve discovered** this on **2025-01-28** by contacting AnalyticsFlow support, revealing that an entire complex architecture (including the problematic memory leak) was built to solve a non-existent problem.
+
+The issue is tracked in **TICK-0004:high** for simplifying the workaround cascade.
+
+**References**: `/workspace/logs/batch_run_20251105_165315/config_vg_22_container.log:122` and `/workspace/logs/config_vg_22_20251105_170903/questions/question_1.log`

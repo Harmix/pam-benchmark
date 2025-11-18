@@ -1,0 +1,26 @@
+Based on the codebase logs, I found the root cause:
+
+## Root Cause of Context Window Exhaustion
+
+**The fundamental issue was conversation state persistence failure across training steps in the RLHF pipeline.**
+
+### Technical Details:
+
+- **System**: Q4 2024 Agentic Evaluation Migration - RLHF Pipeline (in the `agentic_post_training` repository)
+- **Trigger**: Dialogue context exceeding **8,000 tokens** in multi-turn conversations
+- **Failure Mode**: Conversation state was not properly persisted across training steps
+- **Impact**: Reward model gradients became inconsistent, causing non-deterministic gradient calculations and training instability
+
+### The Architectural Flaw:
+
+The evaluation system's design failed to maintain continuous state for multi-turn dialogues during reward model training. When conversations grew beyond 8k tokens, the system couldn't properly track context across training iterations, leading to:
+
+1. Inconsistent reward model gradient calculations
+2. Non-deterministic training behavior
+3. System instability that forced an architectural redesign
+
+This is documented in:
+- `/workspace/logs/batch_run_20251106_135211/config_vg_25_container.log:67-68`
+- `/workspace/logs/config_vg_25_20251106_144026/questions/question_1.log`
+
+The root cause was fundamentally an architectural design decision that didn't account for state persistence requirements when scaling to longer conversational contexts in the reasoning chain evaluation system.

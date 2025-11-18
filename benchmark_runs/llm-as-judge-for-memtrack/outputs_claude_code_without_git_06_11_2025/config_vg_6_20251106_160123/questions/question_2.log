@@ -1,0 +1,12 @@
+Perfect! I found the answer. Based on the logs, during the post-mortem discussion after the MegaCorp integration failure (which involved distributed system integration issues), Alice proposed a specific prevention method to catch similar issues in future integrations.
+
+## Answer
+
+During the post-mortem discussion, Alice proposed and implemented a **"Technical Environment Compatibility Assessment"** (also referred to as "mandatory technical environment compatibility assessment") as the specific prevention method to catch similar distributed system issues in future integrations.
+
+This assessment includes:
+- Firewall rules verification
+- Authentication protocols analysis
+- API access verification
+
+This mandatory assessment must be completed **before any prototype development** for future enterprise evaluation customers. Alice explicitly stated "No more prototyping without understanding the customer's actual deployment constraints" to prevent repeats of the MegaCorp integration failure, which was caused by locked-down authentication systems, undocumented API rate limits, and firewall restrictions.

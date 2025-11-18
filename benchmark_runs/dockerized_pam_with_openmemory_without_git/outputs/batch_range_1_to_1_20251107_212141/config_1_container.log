@@ -1,0 +1,283 @@
+Creating dockerized_pam_with_openmemory_without_git_claude-code_run ... 
+Creating dockerized_pam_with_openmemory_without_git_claude-code_run ... done
+Git configured with GitHub token
+========================================
+Starting Benchmark: config_1
+========================================
+Reading configuration from: /benchmark_data/test_configs/config_1.yaml
+Logs directory: /workspace/logs/config_1_20251107_202142
+
+Configuring OpenMemory...
+Installing OpenMemory...
+[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K[?25l[90m[39m
+
+[
+3
+6
+m
+❯
+
+[
+3
+9m
+
+[
+3
+2
+m
+A
+r
+e
+y
+o
+u
+r
+e
+a
+d
+y
+t
+o
+i
+n
+s
+t
+a
+l
+l
+O
+p
+e
+n
+M
+e
+m
+o
+r
+y
+M
+C
+P
+s
+e
+r
+v
+e
+r
+i
+n
+c
+l
+a
+u
+d
+e
+?
+
+[
+3
+9m
+[36m[39m
+[
+3
+2
+m
+●
+
+[
+3
+9m
+Y
+e
+s
+
+[
+2
+m
+/
+
+[
+2
+2m
+
+[
+2
+m
+○
+
+[
+2
+2m
+
+[
+2
+m
+N
+o
+
+[
+2
+2m
+[36m[39m
+[1A
+[?25h[999D[212A[4B[J2
+m
+✔
+
+[
+3
+9m
+
+[
+3
+2
+m
+A
+r
+e
+y
+o
+u
+r
+e
+a
+d
+y
+t
+o
+i
+n
+s
+t
+a
+l
+l
+O
+p
+e
+n
+M
+e
+m
+o
+r
+y
+M
+C
+P
+s
+e
+r
+v
+e
+r
+i
+n
+c
+l
+a
+u
+d
+e
+?
+
+[
+3
+9m
+[90m[39m
+[
+2
+m
+Y
+e
+s
+
+[
+2
+2m
+
+ [37m╭[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m╮[39m
+ [37m│[39m                                                           [37m│[39m
+ [37m│[39m  [32mSuccessfully installed OpenMemory MCP server in claude.[39m  [37m│[39m
+ [37m│[39m                                                           [37m│[39m
+ [37m╰[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m─[39m[37m╯[39m
+
+[1G[0K⠙[1G[0KOpenMemory installation completed successfully
+
+Verifying OpenMemory MCP server...
+No MCP servers configured. Use `claude mcp add` to add a server.
+[?25h[?25hWARNING: OpenMemory MCP server NOT found in MCP list
+Full MCP list output:
+No MCP servers configured. Use `claude mcp add` to add a server.
+
+
+Repository URL: https://github.com/testrldd/neurallm_app.git
+Repository Name: neurallm_app
+Branch: main
+Event History: /benchmark_data/test_event_histories/event_history_1.json
+
+Testing Slack MCP server...
+DEBUG: Starting Slack MCP server
+DEBUG: Arguments: ['/mcp-servers/slack_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Slack server initialized with test data
+Data verification:
+  Channels: ['engineering']
+  Users: ['CodeAgent']
+  Messages: 13
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+Testing Linear MCP server...
+DEBUG: Starting Linear MCP server
+DEBUG: Arguments: ['/mcp-servers/linear_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Linear server initialized with test data
+Data verification:
+  Teams: ['engineering']
+  Tickets: 9 tickets
+  Milestones: ['Q1 2024 Development']
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+=== ENVIRONMENT READY ===
+Found 3 questions to process
+
+==========================================
+Processing Question 1/3
+==========================================
+Question: What is the status of the oldest ticket that was once reassigned?
+Expected Answer: done
+
+Adding Slack MCP server...
+Added stdio MCP server slack with command: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+[?25h[?25hAdding Linear MCP server...
+Added stdio MCP server linear with command: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+[?25h[?25hVerifying MCP servers...
+^C^C^C^CChecking MCP server health...
+
+[?25h[?25h
+Asking Claude...
+^C^C^C^C^C

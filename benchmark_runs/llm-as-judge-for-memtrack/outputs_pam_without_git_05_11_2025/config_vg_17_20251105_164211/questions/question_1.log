@@ -1,0 +1,11 @@
+Perfect! I have found the information. Based on the data from the tickets and Slack messages:
+
+**Version: v2.4.2**
+**CVE: CVE-2024-8847**
+
+Charlie's security team released **v2.4.2** as a security patch to address **CVE-2024-8847** (a CVSS 9.1 remote code execution vulnerability in the auth middleware). This version conflicted with Bob's rollback strategy because:
+
+1. Bob was managing the v2.4.1 release for Goldman Sachs trading platform
+2. Charlie's v2.4.2 security patch introduced database connection pooling changes that auto-applied to ALL environments, including Goldman's v2.4.1 instances
+3. This caused trading API latency to increase from 50ms to 200ms, resulting in $2M+ losses for Goldman
+4. The deployment system cross-contaminated versions, making Bob's rollback attempts problematic

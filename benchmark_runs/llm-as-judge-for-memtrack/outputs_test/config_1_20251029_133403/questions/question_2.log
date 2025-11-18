@@ -1,0 +1,6 @@
+Based on the ticket details I retrieved, I can see creation and update information, but the system doesn't show reassignment history in the detailed view. However, I can infer potential reassignments by comparing who created the ticket versus who is the current lead.
+
+Looking at the tickets:
+- **TICK-0005**: Created by grace but lead is alice - this indicates a reassignment, created on 2024-12-01
+
+This appears to be the only ticket with a clear reassignment (different creator and lead). The lead of this ticket is **alice**.

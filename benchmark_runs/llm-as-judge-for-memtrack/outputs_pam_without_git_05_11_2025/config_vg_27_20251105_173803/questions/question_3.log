@@ -1,0 +1,10 @@
+Perfect! I found the information. Based on the log file at /workspace/logs/batch_run_20251105_165315/config_vg_27_container.log:148, here's the answer:
+
+**The exact branching factor explosion was 8^50, caused by the tree search depth parameter increasing from 5 to 50+ steps, which resulted in 45-second latency per generation request.**
+
+To summarize the key details:
+- **Branching factor**: 8^50 (exponential explosion)
+- **Search depth parameter**: Increased from 5 to 50+ steps
+- **Result**: 45-second latency per generation request
+
+This is a classic exponential growth problem where each level of the search tree has 8 branches, and when the depth increased from 5 to over 50 steps, the computational complexity exploded from 8^5 (32,768) to 8^50 (an astronomically large number with approximately 45 digits).

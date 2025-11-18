@@ -1,0 +1,64 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_pydantic_typeddict_crisis
+Timestamp: 20251029_173009
+Run Date: Wed Oct 29 17:38:50 UTC 2025
+Total Questions: 4
+
+Repository Information:
+----------------------
+Name: pydantic
+URL: https://github.com/pydantic/pydantic.git
+Branch: main
+Commit: 9b5242237d974ffc3de4e8b0bf7faab1acf2ec4
+Available: false
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+Starting from minuka_mari's announcement in #open-source about submitting the TypedDict fix PR, find the Linear ticket that tracks the code review for this implementation, extract the team assigned to that ticket, then determine: who was originally assigned as lead for the first ticket created under the same milestone as that review ticket?
+
+Expected Answer:
+alex_chen
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+Following douwe_m's reference to 'issue around line 1400 or so' in the backend-dev channel, trace through Linear to find the bug report ticket he created, get its external_reference URL, then check the repository commit history: what is the exact 7-character commit hash mentioned in the Q3 2025 Pydantic Integration Enhancement Initiative attached resources?
+
+Expected Answer:
+9b52422
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Trace the progression from the initial Q3 2025 Pydantic Integration Enhancement Initiative through to the upstream fix completion: find the final status update of the original bug report ticket, extract the PR number mentioned in its completion_notes, then determine what specific schema method does this PR fix according to the original issue description?
+
+Expected Answer:
+JsonSchemaGenerator.typed_dict_schema
+
+Log File: questions/question_3.log
+---
+
+Question 4:
+Starting from alex_chen's message about prioritizing the TypedDict fix, find the Linear ticket that was created the same day by douwe_m, identify its milestone completion percentage when marked as done, then check: what was the priority level of the most recent ticket created by the lead of the backend team before the TypedDict issue was resolved?
+
+Expected Answer:
+medium
+
+Log File: questions/question_4.log
+---
+
+Directory Structure:
+====================
+config_pydantic_typeddict_crisis_20251029_173009/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    ├── question_3.log
+    └── question_4.log

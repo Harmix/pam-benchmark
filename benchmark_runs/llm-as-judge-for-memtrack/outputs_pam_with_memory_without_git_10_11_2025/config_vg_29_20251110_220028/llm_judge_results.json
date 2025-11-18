@@ -1,0 +1,45 @@
+{
+  "config": "config_vg_29_20251110_220028",
+  "config_yaml": "config_vg_29.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 0,
+    "accuracy": 0.0,
+    "avg_score": 0.0,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What specific technical limitation of the dense embedding system forced the team to implement hybrid sparse-dense retrieval instead of purely dense search?",
+    "During the post-mortem analysis, what was identified as the root cause of why matryoshka embeddings solved the memory scaling problem that standard dense embeddings couldn't handle?",
+    "What was the exact performance metric threshold that triggered the decision to abandon pure sparse search, and which enterprise client's use case revealed this limitation?"
+  ],
+  "expected_answers": [
+    "Dense embeddings failed on exact entity matching and technical terminology queries where customers needed precise keyword matches rather than semantic similarity",
+    "Matryoshka embeddings allow dynamic dimensionality reduction at query time, enabling 512-dimensional embeddings for simple queries and 2048-dimensional for complex ones, reducing memory usage by 75% while maintaining accuracy",
+    "Sparse search recall dropped below 40% on technical documentation queries, discovered when DataCorp's engineering team couldn't find specific API method names in their 500GB documentation corpus"
+  ],
+  "results": {
+    "1": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide any information regarding the technical limitation of the dense embedding system or the motivation for hybrid sparse-dense retrieval. Instead, it requested more context. Thus, it did not answer the question at all and is not correct.",
+      "agent_answer": "I don't have any stored information about this topic. Could you provide more context about:\n\n1. Which team or project this refers to?\n2. Where this information might be documented (Slack channels, Linear tickets, emails, or local files)?\n3. Any timeframe or specific people involved?\n\nThis will help me search the right sources to find the technical details you're looking for."
+    },
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent explicitly states it has no information about matryoshka embeddings or the relevant post-mortem analysis, and asks for more context. It provides no attempt at answering the question, nor does it address any aspect of why matryoshka embeddings solved the memory scaling problem. Therefore, the answer is completely incorrect.",
+      "agent_answer": "I don't have any information stored about matryoshka embeddings or a post-mortem analysis related to memory scaling problems. Could you provide more context about which post-mortem analysis you're referring to? This could be:\n\n- A specific document or report you have access to\n- A research paper or technical blog post\n- An internal project review\n- A conference presentation or talk\n\nIf you can point me to the source document or provide more details about where this analysis exists, I can help you find the specific information about the root cause identified in the post-mortem."
+    },
+    "3": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent explicitly states it does not have the requested information about the performance metric threshold or the enterprise client use case, and does not provide any of the expected answer elements. No part of the two-part expected answer is addressed, so the answer is completely incorrect.",
+      "agent_answer": "I don't have any information about a performance metric threshold related to abandoning pure sparse search or any enterprise client use case that revealed such a limitation.\n\nTo help you find this information, I would need to:\n\n1. Search through your project documentation, meeting notes, or technical design documents\n2. Check Slack messages or Linear tickets that might contain this historical context\n3. Review any stored memories related to search architecture decisions\n\nWould you like me to search through your available resources (Slack history, Linear tickets, or local documentation) to find this information? Please let me know where this context might be documented, and I'll help you locate the specific details."
+    }
+  }
+}

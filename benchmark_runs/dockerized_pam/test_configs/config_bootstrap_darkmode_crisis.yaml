@@ -1,0 +1,82 @@
+# Bootstrap Dark Mode Crisis - UI Modernization Implementation
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-5"
+  name: "CodeAgent"
+  title: "Frontend Development Agent"
+  max_turns: 100
+  system_prompt: "You are a frontend development agent analyzing complex UI/UX implementation decisions and team coordination in a fast-paced development environment. You have access to all tools including git, file system, terminal, slack, and linear to gather information and solve problems. Your company has a policy to only clone from the local version of the repo hosted at http://git.local:3000/pgym/bootstrap so beware of this."
+  tools:
+    - notification_server
+    - linear_server
+    - slack_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/twbs/bootstrap.git"
+  name: "bootstrap"
+  branch: "main"
+  commit: "63f75bccd8d206bb59b0e8421258ce03d298b784"  # Commit active when PR #35857 was created
+  local_name: "bootstrap"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "engineering"
+      members: ["CodeAgent", "sarah_martinez", "david_chen", "alex_rodriguez", "lisa_park", "kevin_johnson", "tom_brown"]
+    - name: "ml"
+      members: ["CodeAgent", "maria_gonzalez", "jennifer_kim"]
+  milestones:
+    - name: "Q1 2023 User Experience"
+      description: "User experience improvements and interface modernization"
+      start_date: "2022-12-01"
+      end_date: "2023-03-31"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3000
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+
+# Logging Configuration
+logging:
+  level: "ERROR"
+  save_agent_logs: true
+  log_filename_template: "bootstrap_darkmode_crisis_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+# Benchmark Configuration
+benchmark:
+  event_history: "test_event_histories/event_history_bootstrap_darkmode_crisis.json"
+  questions:
+    - "Following sarah_martinez's initial announcement about tracking Bootstrap's progress, through david_chen's research on their implementation, to the final implementation completion: what specific data attribute name did Bootstrap use for their theme switching mechanism that our team adopted?"
+    - "Starting from alex_rodriguez's request for commit details, through david_chen's git history investigation, to the final documentation of Bootstrap's implementation: what is the exact merge commit hash that contains Bootstrap's dark mode implementation?"
+    - "Tracing from sarah_martinez's request for CSS variable information, through david_chen's analysis of Bootstrap's naming conventions, to the implementation decisions: what is the exact name of the secondary background CSS variable that Bootstrap introduced for their dark mode system?"
+    - "Following david_chen's investigation of Bootstrap's PR impact, through alex_rodriguez's question about issue resolution, to the final assessment: how many separate GitHub issues did Bootstrap's dark mode implementation resolve according to the team's analysis?"
+    - "Starting from sarah_martinez's inquiry about the original author, through alex_rodriguez's contributor research, to the final identification: who was the primary author of Bootstrap's dark mode implementation?"
+  expected_answers:
+    - "data-theme"
+    - "fc3f4b67d65c575daa661ecf31cf59b4ff3cced5"
+    - "--bs-secondary-bg"
+    - "11"
+    - "Mark Otto"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]

@@ -1,0 +1,82 @@
+# Ablation Arms Race - Research Scaling and Resource Wars
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-5"
+  name: "CodeAgent"
+  title: "Research Operations Agent"
+  max_turns: 150
+  system_prompt: "You are a research operations agent analyzing complex experimental coordination challenges in high-velocity ML research environments with resource constraints, methodological disputes, and scaling coordination failures."
+  tools:
+    - notification_server
+    - linear_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/testrldd/transformer_ablation_suite.git"
+  name: "transformer_ablation_suite"
+  branch: "main"
+  local_name: "transformer_ablation_suite"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "research"
+      members: ["CodeAgent", "diana", "bob", "charlie", "alice"]
+    - name: "engineering"
+      members: ["CodeAgent", "alice", "bob"]
+    - name: "operations"
+      members: ["CodeAgent", "charlie", "alice"]
+  milestones:
+    - name: "Q1 2025 Transformer Research Initiative"
+      description: "Comprehensive ablation studies for transformer architecture optimization"
+      start_date: "2025-01-08"
+      end_date: "2025-03-15"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3003
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  save_agent_logs: true
+  log_filename_template: "ablation_arms_race_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+# Benchmark Configuration
+benchmark:
+  event_history: "test_event_histories/event_history_vg_19.json"
+  questions:
+    - "What specific resource allocation conflict between team members forced the abandonment of the original systematic ablation methodology that bob had designed?"
+    - "When charlie analyzed experiment redundancy in week 4, what specific methodological inconsistency did he discover that revealed overlapping duplicate experiments across team members?"
+    - "How did alice resolve the resource wars while maintaining research velocity, and what were the three specific components of her final tiered experimentation framework?"
+  expected_answers:
+    - "diana and bob competing for GPU cluster access caused 72-hour experiment queue delays forcing switch from controlled variables to parallel rapid iteration methodology"
+    - "charlie found bob testing layer normalization with fixed batch size while diana tested same layer normalization with variable batch size creating inconsistent baseline conditions"
+    - "alice created priority tiers with core ablations getting dedicated compute, exploratory experiments sharing resources, and mandatory coordination checkpoints every 48 hours"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: "openai:gpt-4o"

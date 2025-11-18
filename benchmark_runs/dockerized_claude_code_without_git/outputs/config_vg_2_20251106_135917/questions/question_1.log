@@ -1,0 +1,20 @@
+Perfect! I now have all the information needed to answer your question. Based on the Slack messages and Linear tickets, I can provide you with a clear answer.
+
+## Answer
+
+The single technical change that caused failures across report generation, API performance, and monitoring dashboards in December was:
+
+**The utils-common library update from v2.1.3 to v2.2.0**, which pulled in **fast-json-parse v3.0.0** as a transitive dependency. This new version changed null-handling behavior from returning `null` to returning `undefined`.
+
+### Timeline and Impact:
+
+1. **December 2nd**: Charlie deployed security library updates, including updating utils-common from v2.1.3 to v2.2.0
+2. **December 3rd-4th**: Multiple failures emerged across three different systems:
+   - **Report Generation (Alice)**: "Invalid JSON" errors because report templates expected `null` for empty fields but received `undefined`, breaking JSON.stringify
+   - **API Performance (Bob)**: Response times jumped from ~150ms to ~400ms because API processing checks for `=== null` but got `undefined`, forcing the slow validation path
+   - **Monitoring Dashboards (Diana)**: Intermittent data gaps where metrics showed as empty because the parsing logic filtered out `undefined` values as invalid
+
+3. **December 4th**: Charlie identified the root cause - fast-json-parse updated from v2.8.1 to v3.0.0 changed fundamental null-handling behavior
+4. **December 5th**: Emergency rollback deployed by pinning fast-json-parse to v2.8.1, restoring all systems
+
+This is a classic example of how a seemingly minor transitive dependency update in a widely-used utility library can cascade into multiple system failures across different domains.

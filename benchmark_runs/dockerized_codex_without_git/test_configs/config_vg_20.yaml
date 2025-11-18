@@ -1,0 +1,89 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 120
+  system_prompt: You are a software development agent analyzing complex workplace
+    dynamics involving research breakthroughs, enterprise compliance requirements,
+    and competitive pressures.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/ml_infrastructure_platform.git
+  name: ml_infrastructure_platform
+  branch: main
+  local_name: ml_infrastructure_platform
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: engineering
+    members:
+    - CodeAgent
+    - alice
+    - bob
+    - diana
+    - charlie
+  - name: research
+    members:
+    - CodeAgent
+    - diana
+  - name: compliance
+    members:
+    - CodeAgent
+    - charlie
+    - alice
+  milestones:
+  - name: Q1 2024 Enterprise Compliance
+    description: SOC2 audit preparation and enterprise feature requirements
+    start_date: '2024-01-01'
+    end_date: '2024-03-31'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3002
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: research_cascade_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_20.json
+  questions:
+  - During the February 14th emergency competitor response, which specific research
+    paper that diana had previously shared in january enabled the rapid prototype
+    development, and what was the exact technical capability from that paper that
+    bob implemented in the 48-hour sprint?
+  - In the march post-mortem discussion about the delayed SOC2 compliance, what was
+    the specific reason alice gave for why the audit logs were implemented incorrectly,
+    and which team member did she assign responsibility to for the requirements misunderstanding?
+  - What was the exact name of TechCorp's threatened cancellation feature that forced
+    the team to abandon the distributed training prototype, and on which specific
+    date did alice first mention this threat in slack?
+  expected_answers:
+  - Efficient Distributed Training with Gradient Compression by Chen et al, gradient
+    compression with 90% bandwidth reduction that bob implemented in the streaming
+    pipeline architecture
+  - alice said the audit logs captured actions but not user intent context as required
+    by SOC2 appendix B, and assigned responsibility to charlie for misreading the
+    compliance requirements specification
+  - real-time model retraining dashboard feature, alice first mentioned TechCorp cancellation
+    threat on february 16th
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o

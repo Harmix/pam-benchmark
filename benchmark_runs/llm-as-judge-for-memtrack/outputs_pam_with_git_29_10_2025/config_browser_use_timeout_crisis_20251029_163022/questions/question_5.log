@@ -1,0 +1,6 @@
+The main timeout configuration parameters are located in `/workspace/browser-use/browser_use/agent/views.py`:
+
+- **Line 53**: `llm_timeout: int = 60` - Timeout in seconds for LLM calls
+- **Line 54**: `step_timeout: int = 180` - Timeout in seconds for each step
+
+The most significant one is **line 54** which contains `step_timeout`, as this is the primary timeout that controls how long each agent step is allowed to run (180 seconds = 3 minutes by default).

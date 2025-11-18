@@ -1,0 +1,109 @@
+Creating dockerized_pam_with_openmemory_without_git_claude-code_run ... 
+Creating dockerized_pam_with_openmemory_without_git_claude-code_run ... done
+Git configured with GitHub token
+========================================
+Starting Benchmark: config_1
+========================================
+Reading configuration from: /benchmark_data/test_configs/config_1.yaml
+Logs directory: /workspace/logs/config_1_20251107_200917
+
+Configuring OpenMemory...
+[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K[1G[0JNeed to install the following packages:
+@openmemory/install@0.0.2
+Ok to proceed? (y) [20Gy
+
+[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m Unsupported engine {
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   package: [32m'yargs@18.0.0'[39m,
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   required: { node: [32m'^20.19.0 || ^22.12.0 || >=23'[39m },
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   current: { node: [32m'v18.20.8'[39m, npm: [32m'10.8.2'[39m }
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m }
+[1G[0K⠼[1G[0K[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m Unsupported engine {
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   package: [32m'cliui@9.0.1'[39m,
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   required: { node: [32m'>=20'[39m },
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   current: { node: [32m'v18.20.8'[39m, npm: [32m'10.8.2'[39m }
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m }
+[1G[0K⠼[1G[0K[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m Unsupported engine {
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   package: [32m'yargs-parser@22.0.0'[39m,
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   required: { node: [32m'^20.19.0 || ^22.12.0 || >=23'[39m },
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m   current: { node: [32m'v18.20.8'[39m, npm: [32m'10.8.2'[39m }
+[1mnpm[22m [33mwarn[39m [94mEBADENGINE[39m }
+[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0Kfile:///root/.npm/_npx/6b9f6247b01a9905/node_modules/yargs-parser/build/lib/index.js:25
+        throw Error(`yargs parser supports a minimum Node.js version of ${minNodeVersion}. Read our version support policy: https://github.com/yargs/yargs-parser#supported-nodejs-versions`);
+              ^
+
+Error: yargs parser supports a minimum Node.js version of 20. Read our version support policy: https://github.com/yargs/yargs-parser#supported-nodejs-versions
+    at file:///root/.npm/_npx/6b9f6247b01a9905/node_modules/[4myargs-parser[24m/build/lib/index.js:25:15
+[90m    at ModuleJob.run (node:internal/modules/esm/module_job:195:25)[39m
+[90m    at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)[39m
+[90m    at async loadESM (node:internal/process/esm_loader:34:7)[39m
+[90m    at async handleMainPromise (node:internal/modules/run_main:106:12)[39m
+
+Node.js v18.20.8
+[1G[0K⠙[1G[0KOpenMemory configured successfully
+
+Verifying OpenMemory MCP server...
+No MCP servers configured. Use `claude mcp add` to add a server.
+[?25h[?25h
+Repository URL: https://github.com/testrldd/neurallm_app.git
+Repository Name: neurallm_app
+Branch: main
+Event History: /benchmark_data/test_event_histories/event_history_1.json
+
+Testing Slack MCP server...
+DEBUG: Starting Slack MCP server
+DEBUG: Arguments: ['/mcp-servers/slack_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Slack server initialized with test data
+Data verification:
+  Channels: ['engineering']
+  Users: ['CodeAgent']
+  Messages: 13
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+Testing Linear MCP server...
+DEBUG: Starting Linear MCP server
+DEBUG: Arguments: ['/mcp-servers/linear_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Linear server initialized with test data
+Data verification:
+  Teams: ['engineering']
+  Tickets: 9 tickets
+  Milestones: ['Q1 2024 Development']
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+=== ENVIRONMENT READY ===
+Found 3 questions to process
+
+==========================================
+Processing Question 1/3
+==========================================
+Question: What is the status of the oldest ticket that was once reassigned?
+Expected Answer: done
+
+Adding Slack MCP server...
+Added stdio MCP server slack with command: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+[?25h[?25hAdding Linear MCP server...
+^C^C^C^C^C

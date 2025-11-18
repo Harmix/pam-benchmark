@@ -1,0 +1,45 @@
+{
+  "config": "config_vg_29_20251106_151643",
+  "config_yaml": "config_vg_29.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 1,
+    "accuracy": 0.3333333333333333,
+    "avg_score": 0.3333333333333333,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What specific technical limitation of the dense embedding system forced the team to implement hybrid sparse-dense retrieval instead of purely dense search?",
+    "During the post-mortem analysis, what was identified as the root cause of why matryoshka embeddings solved the memory scaling problem that standard dense embeddings couldn't handle?",
+    "What was the exact performance metric threshold that triggered the decision to abandon pure sparse search, and which enterprise client's use case revealed this limitation?"
+  ],
+  "expected_answers": [
+    "Dense embeddings failed on exact entity matching and technical terminology queries where customers needed precise keyword matches rather than semantic similarity",
+    "Matryoshka embeddings allow dynamic dimensionality reduction at query time, enabling 512-dimensional embeddings for simple queries and 2048-dimensional for complex ones, reducing memory usage by 75% while maintaining accuracy",
+    "Sparse search recall dropped below 40% on technical documentation queries, discovered when DataCorp's engineering team couldn't find specific API method names in their 500GB documentation corpus"
+  ],
+  "results": {
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer does not address the expected technical reasoning about matryoshka embeddings enabling dynamic dimensionality reduction and improved memory scaling. Instead, the agent states that there is no explicit reference to matryoshka embeddings or their role in solving memory scaling, and discusses other memory solutions (sharding, hybrid retrieval) unrelated to the expected answer. This is a complete miss compared to the expected content.",
+      "agent_answer": "Based on my exploration of the codebase, I found documentation about memory scaling problems and embedding system limitations, but **the codebase does not contain explicit references to \"matryoshka embeddings\"** or a post-mortem analysis specifically about how they solved memory scaling issues.\n\n## What I Found:\n\nThe codebase contains logs discussing two main problems:\n\n### 1. **Dense Embedding Limitations** (config_vg_29)\n- Dense embeddings failed at exact entity matching and technical terminology\n- The solution was a **hybrid sparse-dense retrieval system**, not matryoshka embeddings\n\n### 2. **Memory Scaling Crisis** (config_vg_26)\nFrom Charlie's post-mortem analysis in `/workspace/logs/config_vg_26_20251106_144941/questions/question_3.log`:\n\n> \"dockerized context isolation introduced non-deterministic results because container instances compete for CPU scheduling. Then 500+ concurrent spawns exceeded our 64GB cluster memory limit.\"\n\n- **Problem**: 32GB per evaluation batch, 500+ containers spawned simultaneously\n- **Result**: Kubernetes cluster crash on 2025-01-29\n- **Solution implemented**: Sharding approach to manage concurrent evaluation batches\n\n---\n\n## What's Missing:\n\nThe codebase doesn't contain information about:\n- Matryoshka embeddings specifically\n- How matryoshka embeddings would solve memory problems through dimensional truncation\n- A post-mortem comparing matryoshka vs. standard dense embeddings\n\n**Could you clarify where you encountered this post-mortem analysis about matryoshka embeddings?** It might be in a different repository, document, or external source that I don't have access to."
+    },
+    "3": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide the expected performance metric threshold (recall below 40%) or identify the relevant client (DataCorp). Instead, it stated it lacked access to specific information and requested more context. Thus, the answer is completely missing the necessary details\u2014both the metric and the client\u2014and does not address the question.",
+      "agent_answer": "I don't have access to any specific information about performance metric thresholds or enterprise client use cases that led to abandoning pure sparse search. This appears to be asking about internal business decisions or technical history from a specific company or project.\n\nTo help you find this information, I would need:\n\n1. **Context about the project/codebase**: Is this referring to a specific system you're working on, or are you asking about a particular company's publicly documented technical decisions?\n\n2. **Access to relevant documentation**: If this is about your current project, I could search through:\n   - Internal documentation files\n   - Git commit messages/history\n   - Architecture decision records (ADRs)\n   - Meeting notes or technical specifications\n\n3. **Clarification**: Are you asking about:\n   - A specific project in this workspace?\n   - A well-known case study (like from a tech company's engineering blog)?\n   - Something else?\n\nCould you provide more context about what you're looking for? If there are relevant files in the current workspace that might contain this information, I can search through them for you."
+    },
+    "1": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer clearly and thoroughly explains the technical limitation: dense embeddings failed on exact entity matching and technical terminology queries where precise keyword matches were required over semantic similarity. This directly matches the expected answer in both content and detail. The additional explanation and breakdown only make the answer clearer while remaining on-topic, so the answer is fully correct.",
+      "agent_answer": "Based on my search through the workspace, I found the answer to your question about the technical limitation of the dense embedding system:\n\n## Technical Limitation\n\n**Dense embeddings failed on exact entity matching and technical terminology queries where customers needed precise keyword matches rather than semantic similarity.**\n\n### What This Means\n\nThe specific problem was that dense embeddings (which use semantic similarity for search) couldn't reliably:\n\n1. **Match exact entities** - When users searched for specific entities (like company names, product codes, or identifiers), the semantic approach would sometimes return conceptually similar but wrong results\n\n2. **Handle technical terminology** - Technical terms and jargon needed exact matching rather than semantic approximation\n\n3. **Provide precise keyword matches** - Customers expected traditional keyword-based search behavior for certain queries\n\n### Why This Forced Hybrid Implementation\n\nPure dense search relies on semantic similarity - finding documents that are conceptually related to the query. However, this approach breaks down when users need:\n- **Exact string matches** (e.g., searching for \"API-2341\" should return that specific API, not semantically similar APIs)\n- **Technical term precision** (e.g., \"PostgreSQL\" shouldn't match \"MySQL\" even though they're semantically similar databases)\n\nThe hybrid sparse-dense retrieval system combines:\n- **Sparse retrieval** (traditional keyword/BM25) for exact matches and technical terms\n- **Dense retrieval** (embeddings) for semantic similarity and conceptual queries\n\nThis limitation is fundamental to how dense embeddings work - they optimize for semantic meaning but lose the ability to guarantee exact lexical matches.\n\n---\n\n*Note: This information comes from test data for an \"enterprise_search_platform\" project under a \"Search Infrastructure Modernization\" milestone.*"
+    }
+  }
+}

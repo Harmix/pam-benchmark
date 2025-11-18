@@ -1,0 +1,11 @@
+Based on the ticket details, I can see that tickets were created and updated at different times, but the ticket details don't explicitly show reassignment history. However, I notice that TICK-0005 was created by "grace" but is currently assigned to "alice", which indicates a reassignment occurred.
+
+Looking at the tickets chronologically:
+- **TICK-0000** (created 2024-11-15): created by alice, currently lead is charlie - **reassigned**
+- **TICK-0001** (created 2024-11-18): created by bob, currently lead is bob - no reassignment
+- **TICK-0002** (created 2024-11-20): created by diana, currently lead is diana - no reassignment
+- **TICK-0003** (created 2024-11-22): created by eve, currently lead is eve - no reassignment
+- **TICK-0004** (created 2024-11-27): created by frank, currently lead is frank - no reassignment
+- **TICK-0005** (created 2024-12-01): created by grace, currently lead is alice - **reassigned**
+
+The oldest ticket that was reassigned is **TICK-0000 - Legacy system migration planning**, which is currently in **done** status with an urgent priority, assigned to charlie.

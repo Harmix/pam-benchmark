@@ -1,0 +1,25 @@
+Based on Bob's Slack messages from early December, here's his mental model of the performance problem:
+
+## Bob's Diagnostic Reasoning
+
+**Core Assumption**: Bob saw 3-5 second API response times and immediately framed it as a **database efficiency problem** caused by repeated query execution. His mental model was:
+
+1. **User behavior pattern**: Dashboard users frequently refresh their analytics views
+2. **Technical consequence**: The same complex aggregation queries run repeatedly for each user session
+3. **Root cause diagnosis**: "Users are hitting the same queries over and over" - redundant database load from repetitive requests
+
+**Key quote** (2024-12-01 14:45:00): *"The same complex aggregation queries are running repeatedly. Each user session probably triggers the same analytics queries multiple times. Classic case for aggressive caching"*
+
+## Solution Approach This Led To
+
+Bob's assumption led him to choose **aggressive caching with long TTLs** (2 hours) because:
+
+- He believed the problem was **computational waste** - expensive queries being recalculated unnecessarily
+- He reasoned analytics data didn't need real-time accuracy, so long cache periods were acceptable
+- His goal was to "eliminate redundant database load from repeated user requests"
+
+## What He Missed
+
+Bob never questioned whether the queries themselves were actually slow. He saw slow API responses and pattern-matched to "database optimization" without checking **where** the time was being spent. As he later discovered (2024-01-09), the queries were actually fast - the 2.5 seconds was **network latency** from misconfigured VPN routing.
+
+His mental model was "slow API responses = inefficient database queries" when it should have been "slow API responses = check the full request path including network infrastructure first."

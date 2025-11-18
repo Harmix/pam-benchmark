@@ -1,0 +1,17 @@
+Based on the engineering channel conversation, I can answer your question:
+
+**How the database migration interfered:**
+
+The PostgreSQL migration (started around January 15) created performance issues that masked and confused the logging system's separate performance problems. When both systems were running together, it became impossible to distinguish which was causing the API slowdowns - was it the new database queries or the comprehensive logging overhead?
+
+The interference was bidirectional:
+- API response times degraded 200-400ms, but the team couldn't isolate whether it was due to PostgreSQL query optimization needs or logging/encryption overhead
+- This made troubleshooting extremely difficult and slowed down resolution of both issues
+
+**Who first made the connection:**
+
+**Diana** first identified the connection between the two problems on **January 26, 2025 at 10:15 UTC**. 
+
+After temporarily rolling back the PostgreSQL migration and seeing dramatic performance improvements (even with the logging system still running), she stated: *"I think the database migration performance issues were masking the logging system performance problems. When both were running together, it was impossible to tell which was causing the slowdown."*
+
+This insight was later reinforced in the post-mortem discussion on January 28, when Diana noted the need for better change management to isolate system changes in the future.

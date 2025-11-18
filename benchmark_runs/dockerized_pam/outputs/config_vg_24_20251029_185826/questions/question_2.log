@@ -1,0 +1,15 @@
+I've checked the `/workspace/pretraining_infrastructure` directory, but it appears to be empty. There are no files in this codebase that contain information about infrastructure resource limits or pipeline configurations.
+
+To answer your question about which specific infrastructure resource limit forced the team to abandon running all three pipelines simultaneously and how quickly it was reached, I would need:
+
+1. Documentation files (README, design docs, architecture notes)
+2. Configuration files (YAML, JSON)
+3. Source code or logs that reference this issue
+4. Issue tracking or incident reports
+
+Could you provide:
+- Additional context about where this information might be located?
+- Any specific files or repositories I should examine?
+- Or the actual files/documents that contain this infrastructure information?
+
+Without access to the relevant documentation or code, I cannot determine which resource (CPU, memory, disk, network bandwidth, etc.) was the bottleneck or the timeline of when this limit was reached.

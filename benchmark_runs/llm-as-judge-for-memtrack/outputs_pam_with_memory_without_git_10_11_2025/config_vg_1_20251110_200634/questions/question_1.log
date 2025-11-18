@@ -1,0 +1,24 @@
+## Investigation Results
+
+**Specific Technical Change:**
+A **2-hour cache TTL (Time To Live)** was implemented on dashboard metrics as part of Q4 2024 performance improvements.
+
+**Business Impact:**
+This change broke real-time data visibility for e-commerce customers who depend on up-to-date metrics for:
+- Flash sales monitoring
+- Inventory management decisions
+- Time-sensitive business operations
+
+**Root Cause Mechanism:**
+The performance optimization prioritized system efficiency (reduced database load through caching) over customer needs. E-commerce businesses require real-time metrics to make critical operational decisions. With a 2-hour data lag:
+- Customers couldn't see current inventory levels during flash sales
+- Sales performance data was outdated
+- Business decisions were based on stale information
+- Platform reliability perception dropped
+- Customers lost trust in the analytics dashboard as a decision-making tool
+
+This resulted in the renewal rate dropping from above 90% to below 80%.
+
+**Source:** `/workspace/logs/batch_range_1_to_32_20251110_203738/config_vg_1_container.log:70`
+
+The irony: a performance improvement that made the system faster actually made it less valuable to customers, demonstrating that technical optimization must be balanced with customer requirements and use cases.

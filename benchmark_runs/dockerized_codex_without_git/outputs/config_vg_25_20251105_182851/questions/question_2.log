@@ -1,0 +1,43 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5548-2743-7fc3-83ba-d4391dc83aaa
+--------
+user
+Which external API reliability issue led to the discovery of reward signal corruption during tool-calling evaluations, and what was the corruption rate?
+codex
+I’ll search the repo for references to tool-calling evaluations and reward corruption.
+exec
+bash -lc 'rg -n "reward signal corruption|reward.*corrupt|tool-calling evaluations|tool calling evaluations|external API reliability|API reliability|corruption rate|corrupted reward|reward noise" -S' in /workspace exited 101 in 27ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exec
+bash -lc 'ls -la' in /workspace exited 101 in 24ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+tool codex.list_mcp_resources({"server":""})
+codex.list_mcp_resources({"server":""}) success in 44ms:
+{
+  "content": [
+    {
+      "text": "{\"resources\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+codex
+I don’t have enough context to answer confidently. Can you point me to the specific doc/post this refers to (or paste the relevant snippet)? My shell access is currently failing due to a sandbox error, so I can’t search the workspace.
+tokens used
+19,692
+I don’t have enough context to answer confidently. Can you point me to the specific doc/post this refers to (or paste the relevant snippet)? My shell access is currently failing due to a sandbox error, so I can’t search the workspace.

@@ -1,0 +1,17 @@
+Perfect! I found the exact information you're looking for.
+
+## Branching Factor Explosion Details
+
+**Exact branching factor:** 8^50 (8 branches per node, depth of 50+ steps)
+
+**Magnitude:** Over 10^45 possible paths
+
+**Root cause:** Increasing the search depth from 5 steps (beam search) to 50+ steps (tree search)
+
+**Latency:** 45 seconds
+
+**Triggering parameter:** The search depth parameter was increased from 5 to 50+
+
+According to Bob's message from January 31st, 2025: "The root explosion happened when we went from beam search depth 5 to tree search depth 50+. That created 8^50 branching factor explosion - over 10^45 possible paths. No amount of optimization could handle exponential growth of that magnitude."
+
+The 45-second latency was specifically mentioned on January 9th, 2025, when Bob noted they were "exploring 8^50 possible paths instead of just 5 linear steps."

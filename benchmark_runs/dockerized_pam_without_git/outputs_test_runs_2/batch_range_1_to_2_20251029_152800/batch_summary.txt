@@ -1,0 +1,9 @@
+
+Batch Range Run: Config 1 to 2
+Start Time: Wed Oct 29 15:28:00 CET 2025
+
+Skipping: config_1 (file not found)
+Skipping: config_2 (file not found)
+
+Summary: 0/2 successful, 2 failed
+Batch directory: ./outputs/batch_range_1_to_2_20251029_152800

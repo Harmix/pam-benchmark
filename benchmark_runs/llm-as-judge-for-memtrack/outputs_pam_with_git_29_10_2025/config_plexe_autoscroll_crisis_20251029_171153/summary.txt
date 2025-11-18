@@ -1,0 +1,64 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_plexe_autoscroll_crisis
+Timestamp: 20251029_171153
+Run Date: Wed Oct 29 17:20:53 UTC 2025
+Total Questions: 4
+
+Repository Information:
+----------------------
+Name: plexe
+URL: https://github.com/plexe-ai/plexe.git
+Branch: main
+Commit: 3c4929d542f46497a61c1ec6a9112e5563a1a709
+Available: true
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+Starting from vaibs_d's Slack announcement about the smart auto-scroll feature being live, find the Linear ticket that tracks this completion, extract the associated milestone name, then determine: which team member was originally assigned as lead for the first ticket created under that milestone?
+
+Expected Answer:
+sarah_kim
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+Following sarah_kim's reference to documenting 'that version we discussed in yesterday's design review', trace through Linear to find the version documentation ticket, get its expected_finish_date, then check repository commit history: what is the exact commit message of the commit made closest to (but not after) that expected finish date?
+
+Expected Answer:
+fix: multi-agent mermaid chart (#138)
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Trace the progression from the initial UX enhancement initiative ticket through to completion: extract the milestone completion percentage when the PR was marked as done, then examine the repository at the merge commit hash mentioned in that ticket's attached_resources: what is the exact function name that handles scroll position detection in the modified file?
+
+Expected Answer:
+handleScroll
+
+Log File: questions/question_3.log
+---
+
+Question 4:
+Starting from kevin_park's analysis of git history mentioning commit b9c8d7e6f5a4b3c2d1e0f9g8h7i6j5k4l3m2n1o0, find the Linear ticket that references this commit in its description, extract the team assigned to that ticket, then determine: what was the priority level of the most recent ticket created by the lead of that team before the auto-scroll feature was completed?
+
+Expected Answer:
+medium
+
+Log File: questions/question_4.log
+---
+
+Directory Structure:
+====================
+config_plexe_autoscroll_crisis_20251029_171153/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    ├── question_3.log
+    └── question_4.log

@@ -1,0 +1,477 @@
+[
+  {
+    "timestamp": "20241115T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Legacy system migration planning",
+      "description": "Plan the migration of our legacy authentication system to the new infrastructure. This is a critical foundational task that affects all other systems.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2024-11-15",
+      "expected_finish_date": "2024-11-30",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241115T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Started the legacy system migration planning. This is going to be a complex project spanning multiple teams.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241118T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Database performance optimization",
+      "description": "Optimize database queries and add proper indexing to improve system performance. Critical for user experience.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "start_date": "2024-11-18",
+      "expected_finish_date": "2024-12-01",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241120T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Machine learning model training pipeline",
+      "description": "Set up automated training pipeline for our ML models with proper monitoring and versioning.",
+      "team": "ml",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2024-11-20",
+      "expected_finish_date": "2024-12-15",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241121T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Legacy system migration planning",
+      "description": "Plan the migration of our legacy authentication system to the new infrastructure. This is a critical foundational task that affects all other systems.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "charlie",
+      "start_date": "2024-11-15",
+      "expected_finish_date": "2024-11-30",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241121T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Reassigning the legacy migration to @charlie - he has more experience with the old system architecture.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241122T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "User interface redesign",
+      "description": "Complete redesign of the user interface with modern design principles and better accessibility.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "eve",
+      "start_date": "2024-11-25",
+      "expected_finish_date": "2024-12-20",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241125T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Database performance optimization",
+      "description": "Optimize database queries and add proper indexing to improve system performance. Critical for user experience.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "start_date": "2024-11-18",
+      "expected_finish_date": "2024-12-01",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241126T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Database optimization is going well. Found several slow queries that we can improve dramatically.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241127T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "API rate limiting implementation",
+      "description": "Implement rate limiting for all API endpoints to prevent abuse and ensure fair usage across clients.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "frank",
+      "start_date": "2024-11-28",
+      "expected_finish_date": "2024-12-05",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241128T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Machine learning model training pipeline",
+      "description": "Set up automated training pipeline for our ML models with proper monitoring and versioning.",
+      "team": "ml",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2024-11-20",
+      "expected_finish_date": "2024-12-15",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241129T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Legacy migration is more complex than expected. We need to coordinate with the database team.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241130T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Database performance optimization",
+      "description": "Optimize database queries and add proper indexing to improve system performance. Critical for user experience.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "start_date": "2024-11-18",
+      "expected_finish_date": "2024-12-01",
+      "status": "done"
+    }
+  },
+  {
+    "timestamp": "20241130T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Database optimization is COMPLETE! Query performance improved by 300% on average.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241201T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Security audit preparation",
+      "description": "Prepare all systems for the upcoming security audit. Document all security measures and fix potential vulnerabilities.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "grace",
+      "start_date": "2024-12-01",
+      "expected_finish_date": "2024-12-10",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241202T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Legacy system migration planning",
+      "description": "Plan the migration of our legacy authentication system to the new infrastructure. This is a critical foundational task that affects all other systems.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "charlie",
+      "start_date": "2024-11-15",
+      "expected_finish_date": "2024-12-15",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241202T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Extending the deadline for legacy migration. Found some dependencies we missed initially.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "User interface redesign",
+      "description": "Complete redesign of the user interface with modern design principles and better accessibility.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "eve",
+      "start_date": "2024-11-25",
+      "expected_finish_date": "2024-12-20",
+      "status": "cancelled"
+    }
+  },
+  {
+    "timestamp": "20241203T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "eve",
+      "message": "UI redesign has been cancelled due to budget constraints. Will focus on smaller improvements instead.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241204T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "API rate limiting implementation",
+      "description": "Implement rate limiting for all API endpoints to prevent abuse and ensure fair usage across clients.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "frank",
+      "start_date": "2024-11-28",
+      "expected_finish_date": "2024-12-05",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241205T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Memory evaluation framework",
+      "description": "Create a comprehensive framework for evaluating different types of memory capabilities in AI agents.",
+      "team": "ml",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2024-12-05",
+      "expected_finish_date": "2024-12-20",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241206T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "API rate limiting implementation",
+      "description": "Implement rate limiting for all API endpoints to prevent abuse and ensure fair usage across clients.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "frank",
+      "start_date": "2024-11-28",
+      "expected_finish_date": "2024-12-05",
+      "status": "done"
+    }
+  },
+  {
+    "timestamp": "20241206T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "frank",
+      "message": "API rate limiting is now live! All endpoints are protected with intelligent throttling.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241207T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Security audit preparation",
+      "description": "Prepare all systems for the upcoming security audit. Document all security measures and fix potential vulnerabilities.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2024-12-01",
+      "expected_finish_date": "2024-12-10",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241207T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "grace",
+      "message": "Reassigning security audit prep to @alice - she has more experience with compliance documentation.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241208T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Data pipeline optimization",
+      "description": "Optimize our data processing pipeline to handle larger volumes and improve processing speed.",
+      "team": "ml",
+      "priority": "medium",
+      "lead": "henry",
+      "start_date": "2024-12-08",
+      "expected_finish_date": "2024-12-18",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241209T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Memory evaluation framework",
+      "description": "Create a comprehensive framework for evaluating different types of memory capabilities in AI agents.",
+      "team": "ml",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2024-12-05",
+      "expected_finish_date": "2024-12-20",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241210T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Security audit preparation",
+      "description": "Prepare all systems for the upcoming security audit. Document all security measures and fix potential vulnerabilities.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2024-12-01",
+      "expected_finish_date": "2024-12-10",
+      "status": "done"
+    }
+  },
+  {
+    "timestamp": "20241210T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Security audit preparation is COMPLETE! All documentation ready and vulnerabilities addressed.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241211T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Monitoring dashboard enhancement",
+      "description": "Enhance the monitoring dashboard with new metrics and improved visualizations for better system observability.",
+      "team": "engineering",
+      "priority": "low",
+      "lead": "iris",
+      "start_date": "2024-12-12",
+      "expected_finish_date": "2024-12-25",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20241212T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Data pipeline optimization",
+      "description": "Optimize our data processing pipeline to handle larger volumes and improve processing speed.",
+      "team": "ml",
+      "priority": "medium",
+      "lead": "henry",
+      "start_date": "2024-12-08",
+      "expected_finish_date": "2024-12-18",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20241213T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "henry",
+      "message": "Data pipeline optimization is progressing well. Already seeing 50% improvement in processing time.",
+      "channel": "ml"
+    }
+  },
+  {
+    "timestamp": "20241214T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Legacy system migration planning",
+      "description": "Plan the migration of our legacy authentication system to the new infrastructure. This is a critical foundational task that affects all other systems.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "charlie",
+      "start_date": "2024-11-15",
+      "expected_finish_date": "2024-12-15",
+      "status": "done"
+    }
+  },
+  {
+    "timestamp": "20241214T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "FINALLY! Legacy system migration planning is COMPLETE! What a journey - took longer than expected but we have a solid plan now.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241215T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Machine learning model training pipeline",
+      "description": "Set up automated training pipeline for our ML models with proper monitoring and versioning.",
+      "team": "ml",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2024-11-20",
+      "expected_finish_date": "2024-12-15",
+      "status": "done"
+    }
+  },
+  {
+    "timestamp": "20241215T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "ML training pipeline is LIVE! Automated model training and deployment is now fully operational.",
+      "channel": "ml"
+    }
+  }
+]

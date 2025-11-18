@@ -1,0 +1,11 @@
+Based on the Slack channel history, I found the answer:
+
+**The specific technical performance bottleneck** was the LLM inference overhead during the classification phase, which caused massive compute inefficiency.
+
+**The metric that revealed this issue** was **GPU utilization dropping to 12%** during classification phases, meaning the pipeline was wasting 88% of the compute budget on classification overhead.
+
+Diana reported on 2024-10-07: "*First results from LLM classifier pipeline: quality filtering working but throughput is concerning. GPU utilization dropped to 12% during classification phases. Inference is roughly 100x slower than training.*"
+
+Bob confirmed this was the critical problem: "*12% GPU utilization means we're wasting 88% of our compute budget on classification overhead.*"
+
+The GPU utilization metric continued to be problematic even after initial optimizations, averaging only 28% according to Diana's October 15th update, showing the inference bottleneck remained unsolved for weeks.

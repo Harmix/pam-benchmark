@@ -1,0 +1,15 @@
+Based on the Slack engineering channel history and Linear tickets, **Bob** was the team member who first discovered the connection between the database optimization and external integration failures.
+
+**Discovery timeline:**
+- **April 17, 2025 at 10:00 UTC**: Bob started investigating customer workflows to understand the satisfaction drop
+- **April 18, 2025 at 15:00 UTC**: Bob made the critical discovery, posting: *"🚨 Found something critical! Webhook deliveries to external services are failing silently. Stripe payment confirmations, email campaign triggers, Slack notification webhooks - they're all timing out. But our internal logs show no errors!"*
+
+**Customer workflow evidence that led to the discovery:**
+Bob analyzed specific customer-facing workflows including:
+1. **Payment flows** - Stripe payment confirmation webhooks were timing out
+2. **Notification systems** - Slack notification webhooks were failing
+3. **Email campaigns** - Email campaign trigger webhooks were not being delivered
+
+As Bob later confirmed (April 20, 10:23 UTC): *"The customer workflow analysis was key - payment failures, missing notifications, delayed email campaigns. All external-facing integrations that customers directly experience but we don't monitor internally."*
+
+The breakthrough came from examining customer-facing workflows rather than internal system metrics, which revealed that while internal monitoring showed "perfect" performance, external third-party integrations requiring 5-10 second response windows were being killed by the aggressive sub-second timeouts optimized for internal microservices.

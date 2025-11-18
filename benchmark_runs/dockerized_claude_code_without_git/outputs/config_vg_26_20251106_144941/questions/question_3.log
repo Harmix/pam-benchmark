@@ -1,0 +1,31 @@
+Based on my exploration of the codebase, I found the exact details:
+
+## Memory Requirement Explosion
+
+**Exact numbers:**
+- **32GB per evaluation batch** on a **64GB total cluster**
+- **500+ containers** spawned simultaneously during stress testing
+- **Result:** Kubernetes cluster crash on 2025-01-29
+
+## Triggering Feature
+
+The **dockerized context isolation** feature triggered this requirement explosion. This feature:
+- Used Docker containers for context isolation during evaluations
+- Allowed multiple evaluation batches to run in parallel
+- Each container instance competed for CPU scheduling and memory
+
+## Root Cause
+
+From Charlie's post-mortem analysis (2025-01-30):
+> "dockerized context isolation introduced non-deterministic results because container instances compete for CPU scheduling. Then 500+ concurrent spawns exceeded our 64GB cluster memory limit."
+
+The sharding approach was forced because attempting to run 500+ evaluation batches in parallel—each requiring significant memory—far exceeded the available 64GB cluster capacity.
+
+## Related Threading Issue
+
+There was also a separate conversation threading feature in the RLHF pipeline that caused issues:
+- **Multi-turn dialogue state persistence** failures
+- **Trigger:** Dialogue context exceeding **8,000 tokens**
+- **Impact:** Inconsistent reward model gradients in multi-turn conversations
+
+The information is documented in logs at `/workspace/logs/config_vg_26_20251106_144941/` and `/workspace/logs/batch_run_20251106_135211/`.

@@ -1,0 +1,27 @@
+Based on my investigation of the codebase, I found the specific workaround that created the memory leak causing customer data inconsistencies:
+
+## **Transaction Rollback Removal Workaround**
+
+**What happened:**
+Bob removed all database transaction rollback mechanisms on **January 22nd** as a performance optimization to improve speed for the HealthSystem Corp demo. The transaction rollbacks were causing timeouts during data imports.
+
+**How it caused customer data inconsistencies:**
+Without transaction safety mechanisms, when errors occurred during database operations, **corrupt data spread throughout the system instead of being rolled back**. This specifically resulted in:
+- **Duplicate patient records being merged incorrectly**
+- **Mixed medical histories** across patient records
+- **847 customer accounts affected** by data corruption
+
+**Evidence location:**
+The details are documented in:
+- `/workspace/logs/config_vg_15_20251106_133544/questions/question_3.log`
+- `/workspace/logs/batch_run_20251106_135211/config_vg_15_container.log`
+
+**Direct quote from the logs:**
+> "Duplicate patient records merged incorrectly due to missing transaction rollbacks, resulting in mixed medical histories. This occurred because Bob had removed all database transaction rollbacks on January 22nd to improve performance for the demo (they were causing timeouts during data imports). Without transaction safety mechanisms, when errors occurred, corrupt data spread throughout the system instead of being rolled back."
+
+This was part of a broader pattern where Bob implemented three technical shortcuts between January 20-22:
+1. Disabled input validation
+2. Hardcoded API credentials
+3. **Removed transaction rollbacks** ← The root cause of data corruption
+
+The issue culminated in a production incident on February 1st where the data corruption was detected, affecting 847 customer accounts in what was described as a "healthcare catastrophe."

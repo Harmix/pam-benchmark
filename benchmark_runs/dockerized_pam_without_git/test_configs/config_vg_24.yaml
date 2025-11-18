@@ -1,0 +1,94 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 100
+  system_prompt: You are a software development agent analyzing complex pretraining
+    infrastructure decisions, pipeline evolution, and cross-team resource conflicts
+    in a high-performance ML environment.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/pretraining_infrastructure.git
+  name: pretraining_infrastructure
+  branch: main
+  local_name: pretraining_infrastructure
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: engineering
+    members:
+    - CodeAgent
+    - alice
+    - bob
+    - diana
+    - charlie
+    - eve
+  - name: ml_infrastructure
+    members:
+    - CodeAgent
+    - bob
+    - diana
+    - charlie
+  - name: research
+    members:
+    - CodeAgent
+    - diana
+    - eve
+  - name: post_training
+    members:
+    - CodeAgent
+    - eve
+    - charlie
+  milestones:
+  - name: Q4 2024 Pretraining Scale-Up
+    description: Scale pretraining pipeline to 512-node A100 cluster with optimized
+      throughput
+    start_date: '2024-10-01'
+    end_date: '2024-12-15'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3002
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: pipeline_wars_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_24.json
+  questions:
+  - What was the specific technical performance bottleneck that made diana's quality
+    classifier pipeline fail to meet training throughput requirements, and what metric
+    revealed this issue?
+  - What specific infrastructure resource limit forced the team to abandon running
+    all three pipelines (ingestion, classification, synthetic generation) simultaneously,
+    and how quickly was this limit reached?
+  - When charlie analyzed the epoch training inconsistencies in the final crisis week,
+    what specific technical bug did the checkpoint analysis reveal as the root cause?
+  expected_answers:
+  - LLM classifier inference throughput was 100x slower than training speed, revealed
+    by GPU utilization dropping to 12% during quality filtering
+  - Kubernetes persistent volume storage capacity was exhausted, reached the limit
+    after 4 days of concurrent pipeline operation
+  - PyTorch DataLoader shuffling bug with filtered datasets caused actual 0.3 epoch
+    training while logging systems reported full epochs
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o

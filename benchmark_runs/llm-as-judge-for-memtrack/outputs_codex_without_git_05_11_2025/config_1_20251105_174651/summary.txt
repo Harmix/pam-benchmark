@@ -1,0 +1,46 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_1
+Timestamp: 20251105_174651
+Run Date: Wed Nov  5 17:49:18 UTC 2025
+Total Questions: 3
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+What is the status of the oldest ticket that was once reassigned?
+
+Expected Answer:
+done
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+Who is the lead of that oldest reassigned ticket?
+
+Expected Answer:
+charlie
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+How many tickets are currently done?
+
+Expected Answer:
+5
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_1_20251105_174651/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

@@ -1,0 +1,13 @@
+Based on the Linear tickets I found, I now have a clear picture of what happened to both projects after the rollback:
+
+**Alerts Dashboard (TICK-0001, TICK-0006):**
+- The original "Intelligent alerts dashboard" project (TICK-0001) was 70% complete but heavily dependent on the advanced monitoring APIs
+- After the rollback, a dependency impact assessment ticket (TICK-0006) was created and the project was **cancelled** because the advanced monitoring APIs were no longer available
+- The dashboard was later replaced with a simpler alternative (TICK-0009: "Simple alerts interface")
+
+**Auto-Scaling (TICK-0002, TICK-0010, TICK-0011):**
+- The original "Auto-scaling with performance intelligence" project (TICK-0002) also depended on the advanced monitoring system
+- After the rollback, the project was **split** (TICK-0010) into two separate efforts: a basic rule-based version and a future advanced version
+- The basic version (TICK-0011) was completed using simple CPU/memory metrics instead of being cancelled
+
+[FINAL ANSWER] cancelled (alerts dashboard was 70% complete but cancelled due to dependency on rolled-back monitoring APIs), split into basic and future versions (auto-scaling was divided into immediate basic rule-based version and future advanced version)

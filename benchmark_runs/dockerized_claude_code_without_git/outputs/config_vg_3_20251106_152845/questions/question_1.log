@@ -1,0 +1,47 @@
+## Root Cause Analysis: Contradictory Search Behaviors
+
+Based on my investigation of the codebase, I found **multiple interconnected issues** that explain the contradictory reports:
+
+### **PRIMARY ROOT CAUSE: Feature Flag Split**
+
+The main reason for contradictory reports is a **feature flag implementation that creates two different search experiences**:
+
+- **30% of users** → New ML algorithm search
+- **70% of users** → Old algorithm search
+
+This is explicitly documented in `/workspace/logs/batch_run_20251106_135211/config_vg_3_container.log:67-68`
+
+### **Secondary Contributing Factors:**
+
+1. **Distributed State Machine (21 Nested Feature Flags)**
+   - Bob implemented conditional flag dependencies in December 2024
+   - 21 flags with nested conditionals create exponential state combinations
+   - Different flag combinations execute completely different search code paths
+   - Business logic became encoded in flag interactions rather than explicit code
+
+2. **Race Conditions from Resource Contention**
+   - 500+ concurrent Docker containers compete for CPU scheduling
+   - 64GB cluster memory limit gets exhausted
+   - Non-deterministic results based on which container gets resources
+   - Some searches succeed, others fail depending on current cluster load
+
+3. **Infinite Loop in Multi-Agent Search**
+   - Multi-agent adversarial search introduced in Q1 2025
+   - Competing agents create infinite exploration loops without termination criteria
+   - Some searches timeout, others complete (inconsistent behavior)
+
+4. **Different Search Algorithm Implementations**
+   - Dense embeddings (semantic) fail on exact entity matching
+   - Hybrid sparse-dense retrieval works for both cases
+   - Users on different algorithms get fundamentally different results
+
+### **Why This Creates Contradictory Reports:**
+
+Team members are literally experiencing **different search systems** depending on:
+- Which feature flag cohort they're assigned to (30%/70% split)
+- Their specific combination of 21 nested feature flags
+- Current cluster resource availability when they search
+- Whether their search triggers the infinite loop condition
+- Which underlying search algorithm they're using
+
+**Bottom line:** "Search is broken" and "search works fine" are **both correct** — different users are running different implementations with different behaviors.

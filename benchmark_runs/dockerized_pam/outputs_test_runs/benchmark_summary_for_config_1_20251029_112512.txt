@@ -1,0 +1,18 @@
+Benchmark Summary
+=================
+
+Configuration: config_1
+Timestamp: 20251029_112512
+Total Questions: 3
+Repository: neurallm_app
+Branch: main
+
+Question 1: What is the status of the oldest ticket that was once reassigned?
+Expected: done
+
+Question 2: Who is the lead of that oldest reassigned ticket?
+Expected: charlie
+
+Question 3: How many tickets are currently done?
+Expected: 5
+

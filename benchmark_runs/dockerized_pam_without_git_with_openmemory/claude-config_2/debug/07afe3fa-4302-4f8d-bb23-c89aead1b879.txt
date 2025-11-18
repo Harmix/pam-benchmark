@@ -1,0 +1,12 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[DEBUG] [LSP MANAGER] initializeLspServerManager() called
+[DEBUG] [LSP MANAGER] Created manager instance, state=pending
+[DEBUG] [LSP MANAGER] Starting async initialization (generation 1)
+[DEBUG] [LSP SERVER MANAGER] initialize() called
+[DEBUG] [LSP SERVER MANAGER] Calling getAllLspServers()
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.1183.1762810422270
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 713 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.1183.1762810422270 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically

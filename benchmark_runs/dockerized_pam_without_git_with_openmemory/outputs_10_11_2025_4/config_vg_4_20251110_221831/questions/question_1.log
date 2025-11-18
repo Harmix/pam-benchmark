@@ -1,0 +1,3 @@
+This appears to be a hypothetical technical scenario question rather than a task related to your projects or schedule management.
+
+The most common hidden root cause is that database query optimizations improved **average** response times (what monitoring tracked) but increased **tail latency** (p95/p99) or introduced periodic lock contention/blocking during peak loads, which disproportionately affected user experience but was masked by mean-based metrics and insufficient percentile monitoring of end-user request latency.

@@ -1,0 +1,17 @@
+{
+  "forceLoginMethod": "console",
+  "model": "claude-sonnet-4-5-20250929",
+  "apiKeyHelper": "echo $ANTHROPIC_API_KEY",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MCPTool(*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["slack", "linear"]
+}

@@ -1,0 +1,56 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a554c-f9e1-74b3-9ed1-778e8ae31f20
+--------
+user
+What was the exact branching factor explosion that caused the 45-second latency issue, and which search depth parameter triggered this exponential growth?
+codex
+I’m going to scan the repo for notes about latency, branching factor, and search depth to locate the exact cause.
+exec
+bash -lc 'rg -n "branch|branching|latency|45.?second|search depth|exponential|explosion|45s|45 sec|seconds latency" -S' in /workspace exited 101 in 26ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+tool codex.list_mcp_resources({"server":""})
+codex.list_mcp_resources({"server":""}) success in 43ms:
+{
+  "content": [
+    {
+      "text": "{\"resources\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+tool codex.list_mcp_resource_templates({"server":""})
+codex.list_mcp_resource_templates({"server":""}) success in 23ms:
+{
+  "content": [
+    {
+      "text": "{\"resourceTemplates\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+codex
+I don’t have access to the repo/logs here to verify the numbers. Can you point me to the incident note or file that mentions the 45-second spike, or paste the relevant snippet?
+
+If you can run a quick search and paste results:
+- `rg -n "45.?second|latency|branching factor|search depth|max_depth|beam|expan" -S`
+- Or share the code path where the search parameters are set (e.g., `max_depth`, `search_depth`, `beam_width`).
+tokens used
+1,671
+I don’t have access to the repo/logs here to verify the numbers. Can you point me to the incident note or file that mentions the 45-second spike, or paste the relevant snippet?
+
+If you can run a quick search and paste results:
+- `rg -n "45.?second|latency|branching factor|search depth|max_depth|beam|expan" -S`
+- Or share the code path where the search parameters are set (e.g., `max_depth`, `search_depth`, `beam_width`).

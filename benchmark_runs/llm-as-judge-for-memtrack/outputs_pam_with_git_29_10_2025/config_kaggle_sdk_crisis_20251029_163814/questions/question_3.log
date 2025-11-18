@@ -1,0 +1,25 @@
+Now I'll count all the function definitions (lines starting with `def `) in the file:
+
+Looking at the file, I can identify the following function definitions:
+
+1. `create_prepared_dir` (line 32)
+2. `download_and_prepare_dataset` (line 37)
+3. `is_dataset_prepared` (line 153)
+4. `is_api_exception` (line 189)
+5. `download_dataset` (line 202)
+6. `_need_to_accept_rules` (line 246)
+7. `_prompt_user_to_accept_rules` (line 250)
+8. `is_valid_prepare_fn` (line 260)
+9. `generate_checksums` (line 274)
+10. `get_last_modified` (line 314)
+11. `file_cache` (line 320)
+12. `wrapper` (line 333 - nested function inside `file_cache`)
+13. `get_checksum` (line 346)
+14. `ensure_leaderboard_exists` (line 370)
+15. `get_leaderboard` (line 401)
+
+**The total number of function definitions (def statements) in the mlebench/data.py file is 15.**
+
+This includes:
+- 14 top-level functions
+- 1 nested function (`wrapper` inside the `file_cache` decorator at line 333)

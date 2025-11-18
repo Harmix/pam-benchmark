@@ -1,0 +1,42 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5542-5a80-7a43-a2a4-54696984c8d9
+--------
+user
+Which specific workaround implementation created the memory leak that caused customer data inconsistencies?
+codex
+I’ll scan the repo for incident notes and code comments mentioning “memory leak”, “workaround”, or “customer data inconsistencies” to identify the culprit implementation.
+exec
+bash -lc 'rg -n --no-ignore -S "memory leak|workaround|data inconsisten|inconsistenc|customer data" || true' in /workspace exited 101 in 26ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+codex
+I tried searching the repo for “memory leak”, “workaround”, and “customer data inconsistencies”, but the sandbox blocked read commands in this session.
+
+To identify the exact workaround implementation, please point me to any of the following:
+- The incident/RC doc file path (e.g., `incidents/`, `postmortems/`).
+- The service/component name and timeframe of the hotfix.
+- A PR/commit ID or keyword used (e.g., “workaround”, “hotfix”, “leak”, “retain”, “cache”, “pool”).
+- Any file you suspect (e.g., a cache, connection pool, or retry/goroutine workaround).
+
+With that, I’ll locate the specific implementation and confirm it as the leak’s root cause.
+tokens used
+9,190
+I tried searching the repo for “memory leak”, “workaround”, and “customer data inconsistencies”, but the sandbox blocked read commands in this session.
+
+To identify the exact workaround implementation, please point me to any of the following:
+- The incident/RC doc file path (e.g., `incidents/`, `postmortems/`).
+- The service/component name and timeframe of the hotfix.
+- A PR/commit ID or keyword used (e.g., “workaround”, “hotfix”, “leak”, “retain”, “cache”, “pool”).
+- Any file you suspect (e.g., a cache, connection pool, or retry/goroutine workaround).
+
+With that, I’ll locate the specific implementation and confirm it as the leak’s root cause.

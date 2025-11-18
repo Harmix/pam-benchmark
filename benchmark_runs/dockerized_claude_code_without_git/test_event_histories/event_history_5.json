@@ -1,0 +1,410 @@
+[
+  {
+    "timestamp": "20240401T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Advanced performance monitoring system",
+      "description": "Build comprehensive performance monitoring system with real-time metrics collection, custom dashboards, and detailed performance analytics. This will be the foundation for intelligent alerting and auto-scaling features.",
+      "team": "platform",
+      "priority": "high",
+      "lead": "alex",
+      "start_date": "2024-04-01",
+      "expected_finish_date": "2024-05-01",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["monitoring", "performance", "infrastructure", "foundation"],
+      "attached_resources": [
+        "/design/monitoring-architecture.pdf",
+        "https://docs.company.com/performance-requirements"
+      ]
+    }
+  },
+  {
+    "timestamp": "20240403T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Advanced performance monitoring system",
+      "description": "Build comprehensive performance monitoring system with real-time metrics collection, custom dashboards, and detailed performance analytics. This will be the foundation for intelligent alerting and auto-scaling features.",
+      "team": "platform",
+      "priority": "high",
+      "lead": "alex",
+      "start_date": "2024-04-01",
+      "expected_finish_date": "2024-05-01",
+      "status": "in_progress",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240408T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Intelligent alerts dashboard",
+      "description": "Create smart alerts dashboard that leverages the advanced performance monitoring system. Features include anomaly detection, trend analysis, and predictive alerting based on the comprehensive metrics from the monitoring system.",
+      "team": "frontend",
+      "priority": "medium",
+      "lead": "casey",
+      "start_date": "2024-04-15",
+      "expected_finish_date": "2024-05-15",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["alerts", "dashboard", "anomaly-detection", "depends-on-monitoring"],
+      "attached_resources": [
+        "/design/alerts-dashboard-mockups.pdf"
+      ]
+    }
+  },
+  {
+    "timestamp": "20240410T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Auto-scaling with performance intelligence",
+      "description": "Implement intelligent auto-scaling system that uses data from the advanced performance monitoring system to make smart scaling decisions. Will analyze CPU, memory, response times, and custom application metrics to optimize resource allocation automatically.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "elena",
+      "start_date": "2024-04-20",
+      "expected_finish_date": "2024-05-30",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["auto-scaling", "intelligence", "performance", "depends-on-monitoring"],
+      "attached_resources": [
+        "/design/intelligent-autoscaling-algorithm.pdf",
+        "/devops/scaling-requirements.md"
+      ]
+    }
+  },
+  {
+    "timestamp": "20240415T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Intelligent alerts dashboard",
+      "description": "Create smart alerts dashboard that leverages the advanced performance monitoring system. Features include anomaly detection, trend analysis, and predictive alerting based on the comprehensive metrics from the monitoring system.",
+      "team": "frontend",
+      "priority": "medium",
+      "lead": "casey",
+      "start_date": "2024-04-15",
+      "expected_finish_date": "2024-05-15",
+      "status": "in_progress",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240420T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Auto-scaling with performance intelligence",
+      "description": "Implement intelligent auto-scaling system that uses data from the advanced performance monitoring system to make smart scaling decisions. Will analyze CPU, memory, response times, and custom application metrics to optimize resource allocation automatically.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "elena",
+      "start_date": "2024-04-20",
+      "expected_finish_date": "2024-05-30",
+      "status": "in_progress",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240428T1500",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Advanced performance monitoring system",
+      "description": "Build comprehensive performance monitoring system with real-time metrics collection, custom dashboards, and detailed performance analytics. This will be the foundation for intelligent alerting and auto-scaling features. FEATURE FLAG: monitoring_v2_enabled = true in production.",
+      "team": "platform",
+      "priority": "high",
+      "lead": "alex",
+      "start_date": "2024-04-01",
+      "expected_finish_date": "2024-05-01",
+      "status": "done",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240502T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Database performance degradation investigation",
+      "description": "URGENT: Production databases showing 300% increased query times since April 28th. Initial investigation suggests correlation with new monitoring system deployment. Database CPU usage consistently above 90%, connection pool exhaustion occurring during peak hours.",
+      "team": "platform",
+      "priority": "urgent",
+      "lead": "blake",
+      "start_date": "2024-05-02",
+      "expected_finish_date": "2024-05-03",
+      "status": "in_progress",
+      "labels": ["urgent", "database", "performance", "production-issue"],
+      "attached_resources": [
+        "/monitoring/db-performance-graphs-may2.pdf",
+        "/logs/database-slow-queries-analysis.txt"
+      ]
+    }
+  },
+  {
+    "timestamp": "20240503T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Monitoring system performance impact analysis",
+      "description": "CRITICAL: Analysis confirms the advanced monitoring system is causing severe database performance degradation. The comprehensive metrics collection is generating 50x more database queries than anticipated. Immediate rollback recommended to prevent service outage.",
+      "team": "platform",
+      "priority": "urgent",
+      "lead": "alex",
+      "start_date": "2024-05-03",
+      "expected_finish_date": "2024-05-03",
+      "status": "done",
+      "labels": ["critical", "rollback", "performance-analysis", "monitoring"]
+    }
+  },
+  {
+    "timestamp": "20240503T1600",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Emergency rollback: Advanced monitoring system",
+      "description": "EMERGENCY ROLLBACK: Disabling monitoring_v2_enabled feature flag immediately due to critical database performance impact. System will revert to basic monitoring until lightweight solution can be implemented.",
+      "team": "platform",
+      "priority": "urgent",
+      "lead": "alex",
+      "start_date": "2024-05-03",
+      "expected_finish_date": "2024-05-03",
+      "status": "done",
+      "labels": ["emergency", "rollback", "feature-flag", "production-fix"]
+    }
+  },
+  {
+    "timestamp": "20240504T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Intelligent alerts dashboard - dependency impact assessment",
+      "description": "BLOCKED: Alerts dashboard development blocked due to monitoring system rollback. The dashboard was 70% complete and heavily dependent on the advanced monitoring APIs that are no longer available. Need to reassess approach.",
+      "team": "frontend",
+      "priority": "medium",
+      "lead": "casey",
+      "start_date": "2024-04-15",
+      "expected_finish_date": "2024-05-15",
+      "status": "cancelled",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240504T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Auto-scaling dependency crisis meeting",
+      "description": "Emergency meeting to assess auto-scaling project impact after monitoring system rollback. The intelligent auto-scaling feature was 60% complete and fundamentally dependent on the rolled-back monitoring system's advanced metrics.",
+      "team": "devops",
+      "priority": "urgent",
+      "lead": "elena",
+      "start_date": "2024-05-04",
+      "expected_finish_date": "2024-05-04",
+      "status": "done",
+      "labels": ["emergency", "dependency-analysis", "auto-scaling", "meeting"]
+    }
+  },
+  {
+    "timestamp": "20240506T1100",
+    "platform": "linear",
+    "generation_meta_data": {
+      "title": "Lightweight metrics collection system",
+      "description": "NEW APPROACH: Build minimal metrics collection system focused only on essential performance indicators. Designed to avoid database performance issues while providing basic monitoring capabilities for critical systems.",
+      "team": "platform",
+      "priority": "high",
+      "lead": "blake",
+      "start_date": "2024-05-06",
+      "expected_finish_date": "2024-05-20",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["lightweight", "metrics", "performance-safe", "monitoring"],
+      "attached_resources": [
+        "/design/lightweight-monitoring-design.pdf"
+      ]
+    },
+    "generation_type": "manual"
+  },
+  {
+    "timestamp": "20240507T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Simple alerts interface",
+      "description": "REPLACEMENT: Build basic alerts interface using standard system metrics (CPU, memory, disk) instead of advanced monitoring data. Simplified approach to provide essential alerting capabilities without dependency on complex monitoring system.",
+      "team": "frontend",
+      "priority": "medium",
+      "lead": "drew",
+      "start_date": "2024-05-07",
+      "expected_finish_date": "2024-05-25",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["simple", "alerts", "basic-metrics", "replacement"]
+    }
+  },
+  {
+    "timestamp": "20240508T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Auto-scaling project split analysis",
+      "description": "DECISION: Split the intelligent auto-scaling project into two separate efforts: 1) Basic rule-based auto-scaling using simple CPU/memory metrics, 2) Future advanced auto-scaling when proper monitoring infrastructure is available. Focus on #1 for immediate value.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "elena",
+      "start_date": "2024-05-08",
+      "expected_finish_date": "2024-05-08",
+      "status": "done",
+      "labels": ["project-split", "analysis", "auto-scaling", "decision"]
+    }
+  },
+  {
+    "timestamp": "20240509T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Basic rule-based auto-scaling",
+      "description": "SIMPLIFIED VERSION: Implement basic auto-scaling using simple CPU and memory thresholds. Scale up when CPU > 80% for 5 minutes, scale down when CPU < 30% for 15 minutes. Uses standard system metrics instead of advanced performance intelligence.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "finn",
+      "start_date": "2024-05-09",
+      "expected_finish_date": "2024-05-25",
+      "status": "todo",
+      "milestone": "Q2 2024 Observability",
+      "labels": ["basic", "rule-based", "auto-scaling", "cpu-metrics", "simplified"]
+    }
+  },
+  {
+    "timestamp": "20240515T1200",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Basic rule-based auto-scaling",
+      "description": "SIMPLIFIED VERSION: Implement basic auto-scaling using simple CPU and memory thresholds. Scale up when CPU > 80% for 5 minutes, scale down when CPU < 30% for 15 minutes. Uses standard system metrics instead of advanced performance intelligence.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "finn",
+      "start_date": "2024-05-09",
+      "expected_finish_date": "2024-05-25",
+      "status": "in_progress",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240520T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Lightweight metrics collection system",
+      "description": "COMPLETED: Build minimal metrics collection system focused only on essential performance indicators. Successfully deployed without database performance impact. Collecting CPU, memory, disk, and basic application response times.",
+      "team": "platform",
+      "priority": "high",
+      "lead": "blake",
+      "start_date": "2024-05-06",
+      "expected_finish_date": "2024-05-20",
+      "status": "done",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240525T1600",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Basic rule-based auto-scaling",
+      "description": "COMPLETED: Basic auto-scaling system successfully implemented and deployed. Uses simple CPU and memory thresholds with standard system metrics. Provides 80% of the value with 20% of the complexity compared to the original intelligent system design.",
+      "team": "devops",
+      "priority": "high",
+      "lead": "finn",
+      "start_date": "2024-05-09",
+      "expected_finish_date": "2024-05-25",
+      "status": "done",
+      "milestone": "Q2 2024 Observability"
+    }
+  },
+  {
+    "timestamp": "20240527T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Database connection pool optimization",
+      "description": "Follow-up optimization to improve database connection handling after the monitoring system rollback. Increasing connection pool size and implementing connection retry logic to prevent future performance bottlenecks.",
+      "team": "platform",
+      "priority": "medium",
+      "lead": "blake",
+      "start_date": "2024-05-27",
+      "expected_finish_date": "2024-06-05",
+      "status": "todo",
+      "labels": ["database", "optimization", "connection-pool", "performance"]
+    }
+  },
+  {
+    "timestamp": "20240528T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "User documentation for new auto-scaling",
+      "description": "Create comprehensive documentation for the new basic auto-scaling system. Include setup guides, threshold configuration examples, and troubleshooting tips for the operations team.",
+      "team": "devops",
+      "priority": "low",
+      "lead": "elena",
+      "start_date": "2024-05-28",
+      "expected_finish_date": "2024-06-10",
+      "status": "todo",
+      "labels": ["documentation", "auto-scaling", "user-guide", "operations"]
+    }
+  },
+  {
+    "timestamp": "20240530T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Advanced monitoring system redesign research",
+      "description": "Research phase for future advanced monitoring system redesign. Investigating alternative architectures that avoid database performance issues. This is exploratory work for potential Q3/Q4 implementation, not related to current basic systems.",
+      "team": "platform",
+      "priority": "low",
+      "lead": "alex",
+      "start_date": "2024-05-30",
+      "expected_finish_date": "2024-06-15",
+      "status": "todo",
+      "labels": ["research", "future", "advanced-monitoring", "architecture"]
+    }
+  },
+  {
+    "timestamp": "20240603T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Simple alerts interface UI polish",
+      "description": "Polish the UI/UX of the simple alerts interface based on initial user feedback. Adding better visual indicators, improved color coding, and mobile responsiveness. Does not change core functionality.",
+      "team": "frontend",
+      "priority": "low",
+      "lead": "drew",
+      "start_date": "2024-06-03",
+      "expected_finish_date": "2024-06-12",
+      "status": "in_progress",
+      "labels": ["ui-polish", "alerts", "user-feedback", "frontend"]
+    }
+  },
+  {
+    "timestamp": "20240605T1500",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Performance testing framework",
+      "description": "Build automated performance testing framework to catch performance regressions before they reach production. This would have helped identify the monitoring system database issues during development instead of after deployment.",
+      "team": "platform",
+      "priority": "medium",
+      "lead": "blake",
+      "start_date": "2024-06-05",
+      "expected_finish_date": "2024-06-25",
+      "status": "todo",
+      "labels": ["performance", "testing", "automation", "prevention"]
+    }
+  }
+]

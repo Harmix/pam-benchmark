@@ -1,0 +1,15 @@
+I've retrieved all the tickets, but the detailed information shown doesn't include reassignment history. Based on the available information, I can see that TICK-0000 is the oldest ticket (created on 2024-11-15), but I cannot determine from these details which tickets have been reassigned.
+
+The Linear API responses don't include assignment change history. From what I can see:
+
+**TICK-0000** is the oldest ticket:
+- **Title:** Legacy system migration planning
+- **Current Status:** done
+- **Priority:** urgent
+- **Current Lead:** charlie
+- **Created:** 2024-11-15 09:00:00 by alice
+- **Team:** engineering
+
+However, I cannot confirm whether this ticket was reassigned at any point, as the system doesn't show assignment history in the ticket details. If you need to track reassignment history, that information would need to be stored separately or tracked through activity logs that aren't currently exposed through the available tools.
+
+Would you like me to check if there's additional information available about ticket assignment changes?

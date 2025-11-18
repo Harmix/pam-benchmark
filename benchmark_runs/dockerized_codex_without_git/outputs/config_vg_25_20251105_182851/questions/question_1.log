@@ -1,0 +1,38 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5547-6974-77d0-b3d2-3c1f5bc1e536
+--------
+user
+What specific technical failure in multi-turn conversation state management caused the reward model training to become unstable during the RLHF pipeline migration?
+codex
+I’m going to scan the repo for incident or postmortem notes about the RLHF pipeline migration and reward model instability.
+exec
+bash -lc 'rg -n "RLHF|reward model|multi-turn|conversation state|pipeline migration|instability|postmortem|incident" -S --hidden' in /workspace exited 101 in 29ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+codex
+Attempting a lighter directory listing to find relevant docs before deeper search.
+exec
+bash -lc 'ls -la' in /workspace exited 101 in 31ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+codex
+I can’t read the repo due to a sandbox error. Could you point me to the incident/postmortem file or paste the relevant excerpt? If you share the filename or text, I’ll answer precisely.
+
+If you just want the likely root cause: in similar RLHF migrations, instability has come from failing to reset multi-turn conversation state between episodes on worker reuse, which leaks turns across dialogs and misaligns chosen/rejected pairs. This cross-conversation state leak destabilizes reward model training.
+tokens used
+9,770
+I can’t read the repo due to a sandbox error. Could you point me to the incident/postmortem file or paste the relevant excerpt? If you share the filename or text, I’ll answer precisely.
+
+If you just want the likely root cause: in similar RLHF migrations, instability has come from failing to reset multi-turn conversation state between episodes on worker reuse, which leaks turns across dialogs and misaligns chosen/rejected pairs. This cross-conversation state leak destabilizes reward model training.

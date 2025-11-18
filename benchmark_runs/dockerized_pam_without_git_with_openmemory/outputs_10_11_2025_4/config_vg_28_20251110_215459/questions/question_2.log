@@ -1,0 +1,1 @@
+The Anthropic Constitutional AI paper that Charlie shared on February 1st became critical for solving the conversation state persistence problem across multiple turns by providing a framework to maintain conversation context across tool calls and multi-turn interactions.

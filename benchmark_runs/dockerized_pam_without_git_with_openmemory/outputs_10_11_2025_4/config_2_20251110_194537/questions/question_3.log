@@ -1,0 +1,7 @@
+There are **5 tickets** currently marked as done:
+
+1. **TICK-0000** - Legacy system migration planning (engineering, urgent, led by charlie)
+2. **TICK-0001** - Database performance optimization (engineering, high, led by bob)
+3. **TICK-0002** - Machine learning model training pipeline (ml, high, led by diana)
+4. **TICK-0004** - API rate limiting implementation (engineering, medium, led by frank)
+5. **TICK-0005** - Security audit preparation (engineering, urgent, led by alice)

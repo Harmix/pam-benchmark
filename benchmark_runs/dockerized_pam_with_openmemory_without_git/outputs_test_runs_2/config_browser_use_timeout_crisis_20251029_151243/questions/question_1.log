@@ -1,0 +1,21 @@
+Based on my investigation of the git history, I found the specific DOM method that caused automation failures starting last Tuesday (October 21, 2025).
+
+The method name that caused the issue was **`highlightIndex`** (also referenced as `highlight_index` in Python code).
+
+On Tuesday, October 21, 2025 at 21:02:28 -0700, commit `b678f27a` titled "Migration from highlight index to backendnode id" was merged. This commit migrated the codebase away from using `highlightIndex` to using `backendNodeId` instead.
+
+The migration affected 12 files across the codebase:
+- browser_use/agent/prompts.py
+- browser_use/browser/events.py
+- browser_use/browser/python_highlights.py
+- browser_use/browser/session.py
+- browser_use/browser/views.py
+- browser_use/browser/watchdogs/default_action_watchdog.py
+- browser_use/browser/watchdogs/dom_watchdog.py
+- browser_use/dom/serializer/eval_serializer.py
+- browser_use/dom/serializer/serializer.py
+- browser_use/dom/service.py
+- browser_use/dom/views.py
+- browser_use/llm/tests/test_single_step.py
+
+The failures likely occurred because the old `highlightIndex` method was replaced with the new `backendNodeId` approach for element identification in the DOM manipulation system.

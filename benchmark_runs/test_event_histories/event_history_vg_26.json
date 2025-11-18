@@ -1,0 +1,431 @@
+[
+  {
+    "timestamp": "20250103T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Evaluation System Status Quo Assessment",
+      "description": "Document current prompt-based evaluation system capabilities and limitations. Single-turn prompts working fine for basic benchmarks but competitors claiming superior multi-turn agentic evaluation results.",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "alice",
+      "start_date": "2025-01-03",
+      "expected_finish_date": "2025-01-10",
+      "status": "todo",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["evaluation", "competitive-analysis", "benchmarking"]
+    }
+  },
+  {
+    "timestamp": "20250103T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "📚 Interesting paper just dropped: 'Agentic Evaluation Frameworks for Multi-Turn Dialogue Assessment' - shows 23% improvement over single-turn prompts for complex reasoning tasks. We should consider this for our evaluation stack.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250103T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Saw the TechFlow announcement about their 'next-gen agentic evaluation platform' claiming 40% better accuracy than traditional methods. We can't fall behind on evaluation capabilities.",
+      "channel": "competition"
+    }
+  },
+  {
+    "timestamp": "20250103T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Current eval system is solid for what it does - single prompts, consistent results, 2-3 second runtime per evaluation. But @alice has a point about competitive positioning. What exactly are they doing differently?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250104T0930",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Research: Multi-turn agentic evaluation implementation",
+      "description": "Investigate and prototype multi-turn conversation evaluation system. Research shows significant improvements over single-turn prompts for complex reasoning assessment.",
+      "team": "research",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2025-01-04",
+      "expected_finish_date": "2025-01-18",
+      "status": "todo",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["research", "multi-turn", "prototype"]
+    }
+  },
+  {
+    "timestamp": "20250106T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "CRITICAL: Evaluation system modernization",
+      "description": "Implement next-generation agentic evaluation system with multi-turn conversation capabilities to maintain competitive edge. Current single-prompt system insufficient for complex reasoning benchmarks.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "CodeAgent",
+      "start_date": "2025-01-06",
+      "expected_finish_date": "2025-02-15",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["evaluation", "agentic", "multi-turn", "competitive"]
+    }
+  },
+  {
+    "timestamp": "20250108T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "🔬 Multi-turn prototype working! Instead of single prompts, we now have 3-5 turn conversations for each evaluation. Preliminary results show 18% improvement on reasoning benchmarks.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250109T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana That's promising! But I'm seeing evaluation runtime go from 3 seconds to 35 seconds per test. That's a 10x slowdown. How do we scale this for production workloads?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250109T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "@bob The sophistication gains are worth the runtime cost. Multi-turn conversations reveal reasoning capabilities that single prompts miss entirely. We just need better infrastructure to handle the load.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250110T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Noticing memory usage spikes during multi-turn evaluations. Docker containers are growing to 2-3GB each during long conversations. Our current setup might not handle batch processing well.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250112T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Demo went well with the board! They're excited about our multi-turn evaluation capabilities. But they want to see production deployment by end of month. Can we accelerate timeline?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250114T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "📄 New paper on dockerized evaluation environments: 'Reproducible Multi-Agent Assessment via Container Orchestration'. Perfect timing - we should implement full dockerization for evaluation reproducibility.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250114T1030",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana Dockerization makes sense for reproducibility. Each evaluation batch can run in isolated containers with fixed environment state. Should solve consistency issues we've been seeing.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250115T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement dockerized evaluation environment",
+      "description": "Containerize multi-turn evaluation system for full reproducibility and environment isolation. Each evaluation batch runs in dedicated Docker container with controlled dependencies and resource allocation.",
+      "team": "infrastructure",
+      "priority": "high",
+      "lead": "charlie",
+      "start_date": "2025-01-15",
+      "expected_finish_date": "2025-01-25",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["docker", "infrastructure", "evaluation", "reproducibility"]
+    }
+  },
+  {
+    "timestamp": "20250118T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "🐳 Dockerized evaluation system is live! Each batch spawns 50-200 containers depending on evaluation size. Kubernetes managing container orchestration automatically.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250119T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Seeing some inconsistent results between evaluation runs. Same test suite, different scores. @charlie could the containerization be introducing variability somehow?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250119T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "@bob That's concerning. Containers should be identical environments. Let me check resource contention - maybe containers are competing for CPU/memory and affecting performance.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250120T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Customer demo showed evaluation inconsistencies - same model got different scores on repeat runs. This is embarrassing. We need deterministic results before we can ship this.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250121T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Found the issue! Kubernetes cluster is CPU-bound when we spawn 200+ containers simultaneously. Resource contention means containers get different CPU scheduling, causing timing variations in multi-turn conversations.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250122T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "🧠 Reading about conversation context isolation techniques. We should implement separate memory spaces for each dialogue thread to prevent context bleeding between evaluation conversations.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250122T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana Context isolation sounds important for evaluation integrity. But what are the memory implications? We're already seeing high resource usage with dockerization.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250123T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement conversation context isolation",
+      "description": "Add isolated memory contexts for each multi-turn dialogue thread to prevent context bleeding and ensure evaluation integrity. Each conversation maintains separate state and memory space.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "start_date": "2025-01-23",
+      "expected_finish_date": "2025-02-01",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["context-isolation", "memory-management", "evaluation-integrity"]
+    }
+  },
+  {
+    "timestamp": "20250125T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "🔧 Context isolation is working, but memory requirements exploded. Each evaluation batch now needs 32GB RAM because every dialogue thread maintains separate context state. Our current infrastructure can't handle this.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250126T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "@bob 32GB per batch is insane! Our Kubernetes cluster only has 64GB total. We can run maybe 2 evaluation batches simultaneously before hitting memory limits.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250126T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "We promised the board scalable evaluation by end of month. 2 concurrent batches isn't going to cut it for production workloads. What are our options?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250127T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "💡 What about evaluation sharding? Distribute conversation threads across multiple machines, then aggregate results. Like distributed training but for evaluation workloads.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250127T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana Sharding could work theoretically, but now we're talking about a distributed system with all the complexity that entails. Network partitions, result aggregation, failure handling...",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250128T1400",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "URGENT: Evaluation system resource crisis",
+      "description": "Current evaluation system requires 32GB per batch due to context isolation, exceeding cluster capacity. Need distributed sharding solution or infrastructure scaling to meet production requirements.",
+      "team": "infrastructure",
+      "priority": "urgent",
+      "lead": "charlie",
+      "start_date": "2025-01-28",
+      "expected_finish_date": "2025-02-05",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["resource-crisis", "scaling", "infrastructure", "urgent"]
+    }
+  },
+  {
+    "timestamp": "20250129T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "🚨 Kubernetes cluster crashed during stress testing. 500+ containers spawned simultaneously, exceeded memory limits, entire system went down. We need a different approach.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250129T1030",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "@charlie This is a disaster. We have board demo in 3 days. Can we roll back to the simple single-prompt system temporarily?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250129T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "📊 Actually, let me check something... @bob what if the conversation threading is the root problem? Maybe we don't need full isolation for every dialogue thread?",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250130T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana You might be onto something. The isolated conversation context feature - that's what's requiring separate memory space for each multi-turn dialogue thread. That single feature caused the 32GB explosion.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250130T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Emergency post-mortem time. We went from a working 3-second evaluation to a system that crashes our infrastructure. What went wrong and how do we prevent this in the future?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250130T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "@alice I can identify the exact root cause: dockerized context isolation introduced non-deterministic results because container instances compete for CPU scheduling. Then 500+ concurrent spawns exceeded our 64GB cluster memory limit.",
+      "channel": "infrastructure"
+    }
+  },
+  {
+    "timestamp": "20250130T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "The research was sound, but we didn't consider infrastructure implications. Each 'improvement' - multi-turn, dockerization, context isolation - created exponential complexity we couldn't handle.",
+      "channel": "research"
+    }
+  },
+  {
+    "timestamp": "20250130T1530",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "We need staged rollouts for evaluation changes. Test resource implications at each step before adding the next feature. Can't optimize for capability without considering infrastructure constraints.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250131T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Post-mortem: Evaluation system cascade failure analysis",
+      "description": "Root cause analysis: Multi-turn evaluation (10x slower) → Dockerization (resource contention, non-deterministic results) → Context isolation (32GB memory explosion) → Infrastructure collapse. Need staged approach with resource impact assessment.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2025-01-31",
+      "expected_finish_date": "2025-02-07",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Evaluation Modernization",
+      "labels": ["post-mortem", "cascade-failure", "infrastructure", "lessons-learned"]
+    }
+  },
+  {
+    "timestamp": "20250201T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "📈 Interesting stat from our crash: the isolated conversation context feature alone caused memory requirements to go from 2GB total to 32GB per batch. That's a 16x explosion from a single threading feature.",
+      "channel": "random"
+    }
+  }
+]

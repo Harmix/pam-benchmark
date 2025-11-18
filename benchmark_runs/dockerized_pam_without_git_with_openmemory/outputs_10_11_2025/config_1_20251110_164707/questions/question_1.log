@@ -1,0 +1,9 @@
+Based on the ticket information I've retrieved, I can see creation and update information, but the Linear API responses don't explicitly show reassignment history or change logs. However, I notice that:
+
+- **TICK-0005** (Security audit preparation) was created by `grace` but is currently assigned to lead `alice`
+
+This suggests TICK-0005 was reassigned at some point. Since it's one of the older tickets (created 2024-12-01) and shows a different creator vs. current lead, this is likely a reassigned ticket.
+
+**Answer:** The status of TICK-0005 (Security audit preparation) is **done**. This ticket was created on 2024-12-01 by grace but is currently led by alice, indicating it was reassigned. It was completed on 2024-12-10.
+
+However, without access to full change history or audit logs in the current Linear tool responses, I cannot definitively confirm which ticket is the absolute oldest reassigned one. Would you like me to investigate further or check if there's additional history available for these tickets?

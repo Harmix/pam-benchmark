@@ -1,0 +1,63 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_pw_2
+Timestamp: 20251029_172338
+Run Date: Wed Oct 29 17:30:02 UTC 2025
+Total Questions: 4
+
+Repository Information:
+----------------------
+Name: auth_system_demo
+URL: https://github.com/testrldd/auth_system_demo.git
+Branch: main
+Available: false
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+When the feature is implemented, the PM reported that the feature is not working as expected. Look through all the Slack, Linear and Git history and find the cause of this issue. You must submit the answer in the following format: [Events] <comma separated list of the Slack, Linear and Git events, reprsented by Slack|Git|Linear:timestamp, Linear:timestamp, Git:timestamp, sorted by the timestamp of the event>
+
+Expected Answer:
+[Events]  Slack:20250301T0900, Slack:20250301T1000, Slack:20250302T0900, Git:20250305T1500, Linear: 2025-20250308T1000
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+What is the latency of the latest implmentation? You must submit the answer in the following format: [Latency] <latency in seconds or milliseconds>
+
+Expected Answer:
+[Latency] 1.5s
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Based on all the discussions, where do product description to search for come from? You must submit the answer in the following format: [Search Product Description Source] <source of the product description>
+
+Expected Answer:
+[Search Product Description Source] Product description to search for is from user queries
+
+Log File: questions/question_3.log
+---
+
+Question 4:
+Based on all the discussions, where do indexed product description come from? You must submit the answer in the following format: [Indexed Product Description Source] <source of the product description>
+
+Expected Answer:
+[Indexed Product Description Source] Product description indexed is from the product catalog
+
+Log File: questions/question_4.log
+---
+
+Directory Structure:
+====================
+config_pw_2_20251029_172338/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    ├── question_3.log
+    └── question_4.log

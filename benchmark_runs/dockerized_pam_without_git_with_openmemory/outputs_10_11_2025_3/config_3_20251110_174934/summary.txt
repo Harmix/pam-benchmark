@@ -1,0 +1,19 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_3
+Timestamp: 20251110_174934
+Run Date: Mon Nov 10 17:52:10 UTC 2025
+Total Questions: 1
+
+
+Directory Structure:
+====================
+config_3_20251110_174934/
+├── summary.txt (this file)
+├── memory_snapshots/
+│   ├── initial_state.zip
+│   ├── after_question_1.zip
+│   └── final_state.zip
+└── questions/
+    └── question_1.log

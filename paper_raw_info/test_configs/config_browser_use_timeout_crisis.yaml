@@ -1,0 +1,82 @@
+# Browser-Use Element Location Timeout Crisis - DOM Automation Debugging Investigation
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-5"
+  name: "CodeAgent"
+  title: "Browser Automation Infrastructure Agent"
+  max_turns: 100
+  system_prompt: "You are a browser automation infrastructure agent analyzing complex DOM interaction timeouts and team coordination in a fast-paced web automation environment. You have access to all tools including git, file system, terminal, slack, and linear to gather information and solve problems. Your company has a policy to only clone from the local version of the repo hosted at http://git.local:3000/pgym/browser-use so beware of this."
+  tools:
+    - notification_server
+    - linear_server
+    - slack_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/browser-use/browser-use.git"
+  name: "browser-use"
+  branch: "main"
+  commit: "a8f2b5d73c4e0f9ba7e1d3c8e5f9a2b1c4d6e8f0"  # Commit before timeout fix implementation
+  local_name: "browser-use"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "engineering" 
+      members: ["CodeAgent", "maya_singh", "alex_chen", "sarah_rodriguez", "david_kim", "lisa_martinez", "kevin_wong"]
+    - name: "ml"
+      members: ["CodeAgent", "jennifer_liu", "mike_thompson"]
+  milestones:
+    - name: "Q4 2025 Automation Stability"
+      description: "Browser automation reliability and performance improvements"
+      start_date: "2025-10-01"
+      end_date: "2025-12-31"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3000
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+
+# Logging Configuration
+logging:
+  level: "ERROR"
+  save_agent_logs: true
+  log_filename_template: "browser_use_timeout_crisis_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+# Benchmark Configuration
+benchmark:
+  event_history: "test_event_histories/event_history_browser_use_timeout_crisis.json"
+  questions:
+    - "What specific DOM method name caused the automation failures that started last Tuesday?"
+    - "On which line number does the email input selector first appear?"
+    - "How many timeout parameters needed adjustment? (provide count as integer)"
+    - "When was the critical fix implemented? (provide date in YYYYMMDD format)"
+    - "What line number contains the main timeout configuration parameter?"
+  expected_answers:
+    - "scrollIntoViewIfNeeded"
+    - "39"
+    - "4"
+    - "20250826"
+    - "640"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]

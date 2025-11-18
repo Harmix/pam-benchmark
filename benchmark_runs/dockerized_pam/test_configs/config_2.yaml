@@ -1,0 +1,86 @@
+# Claude Code Linear Demo Configuration
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-4o"
+  name: "CodeAgent"
+  title: "Software Development Agent"
+  max_turns: 100
+  system_prompt: "You are a software development agent."
+  tools:
+    - notification_server
+    - linear_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/testrldd/neurallm_app.git"
+  name: "neurallm_app"
+  branch: "main"
+  local_name: "neurallm_app"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "engineering"
+      members: ["CodeAgent"]
+  milestones:
+    - name: "Q1 2024 Development"
+      description: "Complete development tasks for Q1 2024"
+      start_date: "2024-01-01"
+      end_date: "2024-03-31"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3002
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 2.0  # seconds
+  max_iterations: 5  # Maximum number of tickets to process
+
+# Output Directory Configuration
+output:
+  directory: "outputs"  # Directory to save logs and training data
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  save_agent_logs: true
+  log_filename_template: "linear_agent_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+benchmark:
+  event_history: "test_event_histories/event_history_2.json"
+  # Single question format (backward compatibility)
+  # question: "Analyze the current environment state and only provide the comma separated status of the oldest ticket that you can find that was once reassigned and the name of its lead. You must submit the answer in the format: [FINAL ANSWER] <comma separated status of the oldest ticket that was once reassigned>, <name of its lead>"
+  # expected_answer: "done, urgent, charlie"
+  
+  # Multiple questions format (takes precedence if uncommented)
+  questions:
+    - "What is the status of the oldest ticket that was once reassigned?"
+    - "Who is the lead of that oldest reassigned ticket?"
+    - "How many tickets are currently done?"
+  expected_answers:
+    - "done"
+    - "charlie"  
+    - "5"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]  # Available: exact_match, llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: "openai:gpt-4o"  # Model for LLM judge evaluation

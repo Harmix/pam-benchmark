@@ -1,0 +1,16 @@
+Based on the Slack engineering channel messages, **Bob** was the team member who connected the conflicting user reports to the actual technical implementation.
+
+**Evidence provided:**
+
+On January 18, 2025 at 10:30 UTC, Bob made the critical connection:
+> "@alice Wait a minute... @diana that 30/70 split in engagement metrics... that exactly matches our feature flag distribution! Could we be seeing the difference between new and old search algorithms?"
+
+**Key details:**
+
+1. **The problem**: Team was receiving conflicting reports - some users said search was "amazing," others said it was "completely broken"
+
+2. **Bob's insight**: He noticed that Diana's analytics showing a 30/70 split in engagement metrics exactly matched the feature flag distribution they had implemented (30% new ML search algorithm, 70% old algorithm)
+
+3. **The revelation**: The "inconsistent" search results weren't bugs at all - they were two completely different algorithms serving different user groups, and even internal team members were randomly distributed across test groups without knowing it
+
+This explained why Alice was seeing excellent results while Charlie was seeing the old behavior when testing - they were in different cohorts experiencing entirely different implementations.

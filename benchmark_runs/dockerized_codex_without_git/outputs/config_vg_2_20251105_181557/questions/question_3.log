@@ -1,0 +1,46 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a553c-ff4e-7a23-ade8-c166bf5d262c
+--------
+user
+What was the specific behavioral change in the dependency that caused multiple different failure modes?
+codex
+I’m going to search the repository for context about failure modes and dependency changes to pinpoint the exact behavioral change.
+exec
+bash -lc 'rg -n "failure mode|failure modes|behavioral change|behavioural change|dependency|regression|caused multiple|multiple different failure|breaking change|root cause|what was the specific" -S' in /workspace exited 101 in 26ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exec
+bash -lc 'ls -la' in /workspace exited 101 in 23ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+codex
+I don’t have enough context to answer that yet. Could you point me to the relevant file or note where this is discussed (e.g., an incident postmortem, PR, or changelog)? A snippet or path would work too.
+
+If you share:
+- Dependency name and version change
+- The PR/commit message or changelog entry
+- The failing code path or error messages
+
+I can identify the exact behavioral change and how it led to the different failure modes.
+tokens used
+1,188
+I don’t have enough context to answer that yet. Could you point me to the relevant file or note where this is discussed (e.g., an incident postmortem, PR, or changelog)? A snippet or path would work too.
+
+If you share:
+- Dependency name and version change
+- The PR/commit message or changelog entry
+- The failing code path or error messages
+
+I can identify the exact behavioral change and how it led to the different failure modes.

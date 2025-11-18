@@ -1,0 +1,27 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  codex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codex
+    environment:
+      # Pass the API key from your host environment (e.g., a .env file)
+      - CODEX_API_KEY=${CODEX_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      # Mount the codex config directory, which contains config.toml
+      - ./codex-config:/root/.codex
+      # Cache npm packages for faster builds
+      - codex-npm-cache:/root/.npm
+      # Map the output logs directory to the host
+      - ./outputs:/workspace/logs
+    working_dir: /workspace
+    # Run the benchmark script headlessly on start
+    # You can change the config file path as needed
+    command: /benchmark_data/setup_and_run.sh /benchmark_data/test_configs/config_1.yaml
+
+volumes:
+  codex-npm-cache:

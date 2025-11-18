@@ -1,0 +1,9 @@
+Perfect! I found it. Looking at the commit dates, the commit made **closest to but not after July 22, 2025** is:
+
+**Commit 4e76d44** - committed on **2025-07-22 06:11:39 -0400**
+
+The exact commit message is:
+
+**"Implemented smart auto-scroll in chat (#143)"**
+
+This commit was made on the exact expected finish date (July 22, 2025) of the version documentation ticket (TICK-0002) that sarah_kim referenced from the design review.

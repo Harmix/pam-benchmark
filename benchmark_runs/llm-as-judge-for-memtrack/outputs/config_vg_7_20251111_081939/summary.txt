@@ -1,0 +1,23 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_7
+Timestamp: 20251111_081939
+Run Date: Tue Nov 11 08:26:41 UTC 2025
+Total Questions: 3
+
+
+Directory Structure:
+====================
+config_vg_7_20251111_081939/
+├── summary.txt (this file)
+├── memory_snapshots/
+│   ├── initial_state.zip
+│   ├── after_question_1.zip
+│   ├── after_question_2.zip
+│   ├── after_question_3.zip
+│   └── final_state.zip
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

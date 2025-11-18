@@ -1,0 +1,13 @@
+I don't have any stored information about this issue. 
+
+To help you investigate this technical problem, I would need:
+
+1. **Access to logs or error messages** - Can you provide specific error logs, stack traces, or monitoring data showing when the instability occurs?
+
+2. **System context** - What RLHF framework/codebase are you working with?
+
+3. **Symptoms** - What specific instability are you seeing? (e.g., loss divergence, gradient explosions, inconsistent rewards across conversation turns)
+
+4. **Recent changes** - What was changed during the "pipeline migration"?
+
+Would you like me to help you search through any logs, codebases, or documentation you have available to diagnose this issue?

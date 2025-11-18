@@ -1,0 +1,6 @@
+The exact string 'import kaggle' appears in **2 distinct Python files** throughout the entire repository:
+
+1. `/workspace/mle_bench/extras/kernels/download_kernel_references.py:5`
+2. `/workspace/mle_bench/extras/kernels/download_kernels.py:5`
+
+Both are straightforward `import kaggle` statements (not `from kaggle` imports or `import kaggle.something` variants).

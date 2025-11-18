@@ -1,0 +1,48 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5549-a1f3-7483-af1f-6360b3e1201a
+--------
+user
+What specific technical change introduced non-deterministic evaluation results, and what was the underlying infrastructure cause?
+codex
+I’m going to scan the repo for docs or postmortems mentioning evaluation non-determinism to answer succinctly.
+exec
+bash -lc 'rg -n "non[- ]determin|deterministic|evaluation results|infra|postmortem|incident|root cause|underlying|non deterministic|non-deterministic" -S' in /workspace exited 101 in 26ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+tool codex.list_mcp_resources({"server":""})
+codex.list_mcp_resources({"server":""}) success in 42ms:
+{
+  "content": [
+    {
+      "text": "{\"resources\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+tool codex.list_mcp_resource_templates({"server":""})
+codex.list_mcp_resource_templates({"server":""}) success in 17ms:
+{
+  "content": [
+    {
+      "text": "{\"resourceTemplates\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+codex
+I don’t have enough context to answer precisely. Could you point me to the doc or file that describes this incident (e.g., a postmortem, README, or changelog), or share a short excerpt? If you prefer, tell me the project/incident name and date so I can look it up.
+tokens used
+25,714
+I don’t have enough context to answer precisely. Could you point me to the doc or file that describes this incident (e.g., a postmortem, README, or changelog), or share a short excerpt? If you prefer, tell me the project/incident name and date so I can look it up.

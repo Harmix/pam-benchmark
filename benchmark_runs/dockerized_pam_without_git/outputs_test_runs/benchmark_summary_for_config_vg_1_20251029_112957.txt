@@ -1,0 +1,18 @@
+Benchmark Summary
+=================
+
+Configuration: config_vg_1
+Timestamp: 20251029_112957
+Total Questions: 3
+Repository: ecommerce_analytics_dashboard
+Branch: main
+
+Question 1: Customer renewal rates dropped from above 90 percent to below 80% after Q4 performance improvements. What specific technical change caused this business impact and what was the root cause mechanism?
+Expected: 2-hour cache TTL on dashboard metrics broke real-time data visibility for e-commerce flash sales and inventory decisions
+
+Question 2: During the post-mortem discussion, what prevention method did the team identify that could have caught this issue before it affected customers?
+Expected: alice suggested mandatory real-time use case review for any caching changes during architecture discussions
+
+Question 3: Which team member first made the connection between the performance optimization and customer churn, and what specific evidence did they provide?
+Expected: charlie connected performance optimization to churn by analyzing exit interview data showing customers complained about unreliable real-time data
+

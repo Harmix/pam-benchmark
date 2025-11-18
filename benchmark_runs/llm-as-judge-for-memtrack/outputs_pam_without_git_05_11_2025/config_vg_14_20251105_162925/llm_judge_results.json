@@ -1,0 +1,45 @@
+{
+  "config": "config_vg_14_20251105_162925",
+  "config_yaml": "config_vg_14.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 1,
+    "accuracy": 0.3333333333333333,
+    "avg_score": 0.3333333333333333,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What were the three competing pivot strategies that emerged after the competitive disruption, and which team member championed each approach?",
+    "What specific enterprise customer complaint pattern led to the realization that the multi-directional pivot was failing?",
+    "During the week 8 technical debt crisis, what was the root cause of the system integration failures across all three pivot codebases?"
+  ],
+  "expected_answers": [
+    "AI integration championed by alice, performance doubling championed by bob, enterprise security focus championed by diana",
+    "TechCorp and DataFlow complained about feature inconsistencies and broken integrations during their pilot deployments",
+    "Shared database schema conflicts when bob tried to merge incompatible data models from all three pivot directions"
+  ],
+  "results": {
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide the expected information about enterprise customer complaint patterns or mention TechCorp and DataFlow's specific complaints. Instead, the agent claimed ignorance and only offered strategies to locate the information given more context. There is no overlap or partial correctness compared to the expected answer.",
+      "agent_answer": "I don't have access to information about enterprise customer complaint patterns or multi-directional pivot failures in the current workspace. \n\nTo help you find this information, I would need to:\n\n1. Search through available documentation, reports, or communication records\n2. Check meeting notes, customer feedback logs, or incident reports\n3. Review any business analysis or retrospective documents\n\nCould you provide more context about:\n- What product or service this relates to?\n- Where this information might be stored (specific files, emails, documents)?\n- What timeframe I should focus on?\n\nOnce I know where to look, I can help you locate the specific customer complaint pattern and pivot analysis you're asking about."
+    },
+    "3": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide the answer to the question at all. Instead, it stated it had no information about the event and suggested looking through documentation. There is no reference to 'shared database schema conflicts,' 'Bob,' or 'incompatible data models' as required by the expected answer. The agent offered no partial or semantic match to the expected root cause.",
+      "agent_answer": "I don't have any information about a \"week 8 technical debt crisis\" or system integration failures across pivot codebases. This appears to be asking about a specific historical event or project that I don't have access to in my current context.\n\nTo help you find this information, I would need to:\n\n1. Search through your project documentation, meeting notes, or incident reports\n2. Check Linear tickets or Slack messages from that time period\n3. Review any postmortem documents or technical assessments\n\nWould you like me to search through your available resources (Linear tickets, Slack messages, or any project files in this workspace) to find information about this incident? If so, please provide any additional context like:\n- Approximate timeframe (month/year)\n- Project or team name\n- Any specific keywords or system names I should search for"
+    },
+    "1": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer correctly identifies the three competing pivot strategies\u2014AI integration (Alice), performance doubling (Bob), and enterprise security focus (Diana)\u2014matching both the content and the team member champions from the expected answer. The additional context and wording (such as 'performance superiority campaign' and 'enterprise security & compliance AI platform') are semantically equivalent to the expected answer. No relevant information is missing or incorrect.",
+      "agent_answer": "Based on the Linear tickets I found, here are the **three competing pivot strategies** that emerged after the competitive disruption from AutomateFlow:\n\n## 1. **AI Integration Strategy** - Championed by **Alice**\n- **Focus**: Natural Language Workflow Builder\n- **Approach**: Rapid AI integration with natural language workflow creation, intelligent automation suggestions, and predictive analytics for enterprise workflows\n- **Timeline**: Jan 6 - Jan 20, 2025\n- **Ticket**: TICK-0001\n\n## 2. **Performance Superiority Campaign** - Championed by **Bob**\n- **Focus**: 10x Speed Initiative\n- **Approach**: Counter AutomateFlow by emphasizing performance advantages, targeting 10x faster execution than competitors through workflow engine optimization and advanced caching\n- **Timeline**: Jan 7 - Jan 25, 2025\n- **Ticket**: TICK-0002\n\n## 3. **Enterprise Security & Compliance AI Platform** - Championed by **Diana**\n- **Focus**: Secure AI Alternative\n- **Approach**: Position as the secure enterprise option with on-premise AI deployment, GDPR compliance, SOC2 certification, and enterprise-grade security for AI workflows\n- **Timeline**: Jan 7 - Jan 30, 2025\n- **Ticket**: TICK-0003\n\nEach strategy represents a different competitive response angle: Alice focused on matching AI capabilities, Bob emphasized technical performance differentiation, and Diana targeted enterprise security concerns around AI adoption."
+    }
+  }
+}

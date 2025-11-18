@@ -1,0 +1,90 @@
+agent:
+  model: openai:gpt-4o
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 100
+  system_prompt: You are a software development agent analyzing the evolution of feature
+    flag systems from simple A/B testing to complex state management nightmares, including
+    customer-specific configurations, cross-team dependencies, and testing challenges.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/enterprise_analytics_platform.git
+  name: enterprise_analytics_platform
+  branch: main
+  local_name: enterprise_analytics_platform
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: engineering
+    members:
+    - CodeAgent
+    - alice
+    - bob
+    - diana
+    - charlie
+    - eve
+  - name: product
+    members:
+    - CodeAgent
+    - alice
+    - frank
+  - name: qa
+    members:
+    - CodeAgent
+    - grace
+    - henry
+  - name: sales
+    members:
+    - CodeAgent
+    - frank
+    - iris
+  milestones:
+  - name: Q1 2025 Platform Flexibility
+    description: Enable rapid feature experimentation and customer customization
+    start_date: '2025-01-01'
+    end_date: '2025-03-31'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3003
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: feature_flag_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_23.json
+  questions:
+  - What specific technical architectural decision by bob made the feature flag system
+    impossible to test comprehensively?
+  - Which customer-specific flag configuration created the production incident that
+    revealed the system's fundamental complexity problem?
+  - During the system audit, what was eve's core insight about why the flag system
+    had become unmanageable despite each individual decision being reasonable?
+  expected_answers:
+  - bob implemented nested conditional flag dependencies where flags could reference
+    other flags creating exponential state combinations
+  - TechCorp's compliance_mode combined with enterprise_dashboard and custom_reporting
+    flags created a state that disabled critical audit logging
+  - eve identified that the system became a distributed state machine where business
+    logic was encoded in flag interactions rather than explicit code
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o

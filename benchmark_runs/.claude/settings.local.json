@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__slack-mcp__list_channels",
+      "mcp__linear-mcp__list_tickets"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

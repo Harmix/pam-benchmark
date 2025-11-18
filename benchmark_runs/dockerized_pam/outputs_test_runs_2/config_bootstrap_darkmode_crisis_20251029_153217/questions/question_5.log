@@ -1,0 +1,16 @@
+## Answer
+
+The primary author of Bootstrap's dark mode implementation was **Mark Otto** (markd.otto@gmail.com).
+
+He authored the initial dark mode support in commit `fc3f4b67d` on November 28, 2022, through PR #35857 titled "Add dark mode support". This was a massive commit that:
+
+- Added 1,973 lines and modified 91 files
+- Introduced the new `_variables-dark.scss` file
+- Created the `_color-mode.scss` mixin
+- Implemented CSS variables for dark mode throughout components
+- Added the color mode switcher JavaScript
+- Created comprehensive documentation in `customize/color-modes.md`
+
+The commit also shows co-authorship with **Julien Déramond** from Orange, who contributed to the implementation and review process.
+
+Mark Otto is one of Bootstrap's co-creators and has been a primary maintainer of the project since its inception.

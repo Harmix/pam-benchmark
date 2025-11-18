@@ -1,0 +1,677 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[DEBUG] [LSP MANAGER] initializeLspServerManager() called
+[DEBUG] [LSP MANAGER] Created manager instance, state=pending
+[DEBUG] [LSP MANAGER] Starting async initialization (generation 1)
+[DEBUG] [LSP SERVER MANAGER] initialize() called
+[DEBUG] [LSP SERVER MANAGER] Calling getAllLspServers()
+[DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+[DEBUG] Total LSP servers loaded: 0
+[DEBUG] [LSP SERVER MANAGER] getAllLspServers returned 0 server(s)
+[DEBUG] LSP manager initialized with 0 servers
+[DEBUG] LSP server manager initialized successfully
+[DEBUG] LSP notification handlers registered successfully for all 0 server(s)
+[DEBUG] Loading skills from directories: managed=/etc/claude-code/.claude/skills, user=/root/.claude/skills, project=/workspace/.claude/skills
+[DEBUG] >>>>> getPluginSkills CALLED <<<<<
+[DEBUG] Creating shell snapshot for bash (/bin/bash)
+[DEBUG] Looking for shell config file: /root/.bashrc
+[DEBUG] Snapshots directory: /root/.claude/shell-snapshots
+[DEBUG] Creating snapshot at: /root/.claude/shell-snapshots/snapshot-bash-1762812673994-pf0xzd.sh
+[DEBUG] Shell binary exists: true
+[DEBUG] Execution timeout: 10000ms
+[DEBUG] Writing to temp file: /root/.claude/todos/19861b92-7ef8-4b95-b69b-af62ac763fd4-agent-19861b92-7ef8-4b95-b69b-af62ac763fd4.json.tmp.1298.1762812674053
+[DEBUG] Temp file written successfully, size: 2 bytes
+[DEBUG] Renaming /root/.claude/todos/19861b92-7ef8-4b95-b69b-af62ac763fd4-agent-19861b92-7ef8-4b95-b69b-af62ac763fd4.json.tmp.1298.1762812674053 to /root/.claude/todos/19861b92-7ef8-4b95-b69b-af62ac763fd4-agent-19861b92-7ef8-4b95-b69b-af62ac763fd4.json
+[DEBUG] File /root/.claude/todos/19861b92-7ef8-4b95-b69b-af62ac763fd4-agent-19861b92-7ef8-4b95-b69b-af62ac763fd4.json written atomically
+[DEBUG] getPluginSkills: Processing 0 enabled plugins
+[DEBUG] Total plugin skills loaded: 0
+[DEBUG] Total plugin commands loaded: 0
+[DEBUG] Registered 0 hooks from 0 plugins
+[DEBUG] Loaded 0 unique skills (managed: 0, user: 0, project: 0, duplicates removed: 0)
+[DEBUG] getSkillsIfEnabled returning: 0 skill dir commands, 0 plugin skills
+[DEBUG] Total plugin agents loaded: 0
+[DEBUG] MCP server "slack": Starting connection with timeout of 30000ms
+[DEBUG] MCP server "linear": Starting connection with timeout of 30000ms
+[DEBUG] MCP server "openmemory": SSE transport initialized, awaiting connection
+[DEBUG] MCP server "openmemory": Starting connection with timeout of 30000ms
+[DEBUG] MCP server "openmemory": No token data found
+[DEBUG] Ripgrep first use test: PASSED (mode=builtin, path=/usr/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg)
+[DEBUG] Shell snapshot created successfully (1596 bytes)
+[DEBUG] MCP server "openmemory": No token data found
+[ERROR] AxiosError: AxiosError: Request failed with status code 401
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ft2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3771:7832)
+[DEBUG] MCP server "openmemory": No token data found
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.1298.1762812675744
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 1454 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.1298.1762812675744 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.1298.1762812675797
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 1454 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.1298.1762812675797 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] MCP server "openmemory": Successfully connected to sse server in 2014ms
+[DEBUG] MCP server "openmemory": Connection established with capabilities: {"hasTools":true,"hasPrompts":true,"hasResources":true,"serverVersion":{"name":"mem0-mcp-server","version":"1.21.0"}}
+[DEBUG] MCP server "openmemory": No token data found
+[DEBUG] MCP server "openmemory": No token data found
+[DEBUG] MCP server "openmemory": No token data found
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async wrA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2026:39764)
+    at async Js2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:10987)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8918
+    at async q00 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:1970)
+    at async H6A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8888)
+[DEBUG] Stream started - received first chunk
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async wrA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2026:39764)
+    at async Js2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:10987)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8918
+    at async q00 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:1970)
+    at async H6A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8888)
+[DEBUG] Stream started - received first chunk
+[ERROR] MCP server "slack" Server stderr: DEBUG: Starting Slack MCP server
+[ERROR] MCP server "slack" Server stderr: DEBUG: Arguments: ['/mcp-servers/slack_mcp_server.py', '/benchmark_data/test_configs/config_vg_3.yaml', '/benchmark_data/test_event_histories/event_history_vg_3.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_vg_3.yaml
+  Events: /benchmark_data/test_event_histories/event_history_vg_3.json
+[ERROR] MCP server "slack" Server stderr: ✓ Slack server initialized with test data
+Data verification:
+[ERROR] MCP server "slack" Server stderr: Channels: ['engineering', 'product', 'data']
+  Users: ['charlie', 'diana', 'CodeAgent', 'bob', 'alice']
+  Messages: 21
+DEBUG: Starting MCP server
+[ERROR] MCP server "slack" Server stderr: ╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+│                                                                              │
+│                    🖥  Server name: slack-mock                                │
+│                                                                              │
+│                    📦 Transport:   STDIO                                     │
+│                                                                              │
+│                    📚 Docs:        https://gofastmcp.com                     │
+│                    🚀 Hosting:     https://fastmcp.cloud                     │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+[ERROR] MCP server "slack" Server stderr: [11/10/25 22:11:21] INFO     Starting MCP server 'slack-mock'     server.py:1966
+                             with transport 'stdio'
+[ERROR] MCP server "linear" Server stderr: DEBUG: Starting Linear MCP server
+[ERROR] MCP server "linear" Server stderr: DEBUG: Arguments: ['/mcp-servers/linear_mcp_server.py', '/benchmark_data/test_configs/config_vg_3.yaml', '/benchmark_data/test_event_histories/event_history_vg_3.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_vg_3.yaml
+  Events: /benchmark_data/test_event_histories/event_history_vg_3.json
+[DEBUG] MCP server "slack": Successfully connected to stdio server in 7081ms
+[DEBUG] MCP server "slack": Connection established with capabilities: {"hasTools":true,"hasPrompts":true,"hasResources":true,"serverVersion":{"name":"slack-mock","version":"2.13.0.2"}}
+[ERROR] MCP server "linear" Server stderr: ✓ Linear server initialized with test data
+Data verification:
+[ERROR] MCP server "linear" Server stderr: Teams: ['engineering', 'product', 'data']
+  Tickets: 8 tickets
+  Milestones: ['Q1 2025 Search Improvements']
+DEBUG: Starting MCP server
+[ERROR] MCP server "linear" Server stderr: ╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+│                                                                              │
+│                    🖥  Server name: linear-mock                               │
+│                                                                              │
+│                    📦 Transport:   STDIO                                     │
+│                                                                              │
+│                    📚 Docs:        https://gofastmcp.com                     │
+│                    🚀 Hosting:     https://fastmcp.cloud                     │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+[ERROR] MCP server "linear" Server stderr: [11/10/25 22:11:21] INFO     Starting MCP server 'linear-mock'    server.py:1966
+                             with transport 'stdio'
+[DEBUG] MCP server "linear": Successfully connected to stdio server in 7093ms
+[DEBUG] MCP server "linear": Connection established with capabilities: {"hasTools":true,"hasPrompts":true,"hasResources":true,"serverVersion":{"name":"linear-mock","version":"2.13.0.2"}}
+[DEBUG] Getting matching hook commands for SessionStart with query: startup
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "startup" (0 before deduplication)
+[DEBUG] LSP Diagnostics: getLSPDiagnosticAttachments called
+[DEBUG] LSP Diagnostics: Checking registry - 0 pending
+[DEBUG] LSP Diagnostics: Returning 0 diagnostic set(s) for delivery
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Getting matching hook commands for UserPromptSubmit with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Getting matching hook commands for SubagentStop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Getting matching hook commands for SubagentStop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 0)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 6)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 10)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 18)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 24)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 23)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 12)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 20)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 16)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 9)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 7)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 2)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 11)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 14)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 17)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 15)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 19)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 4)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 22)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 3)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 13)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 5)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async Promise.all (index 21)
+    at async ewA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:3159)
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async uKA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:1577:519)
+    at async A$A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:1851)
+    at async g01 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:2060)
+    at async gg2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2458:530)
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: mcp__openmemory__search_memory
+[DEBUG] Getting matching hook commands for PreToolUse with query: mcp__openmemory__search_memory
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__openmemory__search_memory" (0 before deduplication)
+[DEBUG] MCP server "openmemory": Calling MCP tool: search_memory
+[DEBUG] MCP server "openmemory": No token data found
+[DEBUG] MCP server "openmemory": Tool 'search_memory' completed successfully in 1s
+[DEBUG] Getting matching hook commands for PostToolUse with query: mcp__openmemory__search_memory
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__openmemory__search_memory" (0 before deduplication)
+[DEBUG] executePreToolHooks called for tool: mcp__slack__get_channel_messages
+[DEBUG] Getting matching hook commands for PreToolUse with query: mcp__slack__get_channel_messages
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__slack__get_channel_messages" (0 before deduplication)
+[DEBUG] MCP server "slack": Calling MCP tool: get_channel_messages
+[DEBUG] MCP server "slack": Tool 'get_channel_messages' completed successfully in 26ms
+[DEBUG] Getting matching hook commands for PostToolUse with query: mcp__slack__get_channel_messages
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__slack__get_channel_messages" (0 before deduplication)
+[DEBUG] executePreToolHooks called for tool: mcp__linear__list_tickets
+[DEBUG] Getting matching hook commands for PreToolUse with query: mcp__linear__list_tickets
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__linear__list_tickets" (0 before deduplication)
+[DEBUG] MCP server "linear": Calling MCP tool: list_tickets
+[DEBUG] MCP server "linear": Tool 'list_tickets' completed successfully in 25ms
+[DEBUG] Getting matching hook commands for PostToolUse with query: mcp__linear__list_tickets
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "mcp__linear__list_tickets" (0 before deduplication)
+[DEBUG] LSP Diagnostics: getLSPDiagnosticAttachments called
+[DEBUG] LSP Diagnostics: Checking registry - 0 pending
+[DEBUG] LSP Diagnostics: Returning 0 diagnostic set(s) for delivery
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] AxiosError: AxiosError: Request failed with status code 400
+    at WT (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:51:1136)
+    at IncomingMessage.<anonymous> (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:56:9845)
+    at IncomingMessage.emit (node:events:531:35)
+    at IncomingMessage.emit (node:domain:489:12)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at sGA.request (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:58:2129)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async n92 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2239:10541)
+    at async Za (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3724:2123)
+    at async fU (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:854:23256)
+    at async wrA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2026:39764)
+    at async Js2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:10987)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8918
+    at async q00 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:1970)
+    at async H6A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3512:8888)
+[DEBUG] Stream started - received first chunk
+[DEBUG] Getting matching hook commands for Stop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Getting matching hook commands for SessionEnd with query: other
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "other" (0 before deduplication)
+[DEBUG] Cleaned up session snapshot: /root/.claude/shell-snapshots/snapshot-bash-1762812673994-pf0xzd.sh
+[DEBUG] MCP server "openmemory": SSE connection closed after 30s (cleanly)
+[DEBUG] MCP server "slack": Sending SIGINT to MCP server process
+[DEBUG] MCP server "linear": Sending SIGINT to MCP server process
+[DEBUG] LSP server manager shut down successfully
+[DEBUG] MCP server "slack": SIGINT failed, sending SIGTERM to MCP server process
+[DEBUG] MCP server "linear": SIGINT failed, sending SIGTERM to MCP server process
+[DEBUG] MCP server "slack": STDIO connection closed after 25s (cleanly)
+[DEBUG] MCP server "linear": STDIO connection closed after 25s (cleanly)
+[DEBUG] MCP server "slack": MCP server process exited cleanly
+[DEBUG] MCP server "linear": MCP server process exited cleanly
+[DEBUG] Metrics opt-out API response: enabled=true
+[DEBUG] BigQuery metrics exported successfully
+[DEBUG] API Response: {
+  "accepted_count": 10,
+  "rejected_count": 0
+}
+[DEBUG] BigQuery metrics exporter flush complete
+[DEBUG] BigQuery metrics exporter flush complete
+[DEBUG] BigQuery metrics exporter shutdown complete

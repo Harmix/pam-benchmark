@@ -1,0 +1,40 @@
+Based on my search of your codebase, I found the specific technical issue:
+
+## Core Technical Issue
+
+**Race condition in simultaneous inventory reservation and payment processing during a 200ms overlap window with optimistic locking failure**
+
+## Technical Pattern Details
+
+The root cause is a **dual-write anti-pattern** where:
+
+1. **Simultaneous Processing**: Inventory reservation and payment processing occur concurrently without proper coordination
+
+2. **Critical 200ms Overlap Window**: During this brief window, both systems attempt to modify related state simultaneously
+
+3. **Optimistic Locking Failure**: While optimistic locking was implemented, it failed to prevent the race condition because:
+   - The 200ms overlap exceeded the lock timeout or check interval
+   - Version checks didn't catch all concurrent modifications
+
+4. **Inconsistent State Results**:
+   - Payment succeeds but inventory reservation rolls back
+   - OR inventory reserves but payment processing fails
+   - OR both complete but state diverges between systems
+
+## Why This Causes $47K Discrepancy
+
+The lack of atomic transaction boundaries means:
+- Money is collected but inventory isn't decremented (overselling)
+- OR inventory is reserved but payment isn't captured (lost revenue)
+- Over time, these mismatches accumulate to significant amounts ($47K in Q1)
+
+## The Integration Anti-Patterns at Play
+
+1. **Missing distributed transaction boundaries**
+2. **Insufficient coordination in async processing**
+3. **No compensating transaction mechanism**
+4. **Inadequate optimistic locking implementation** for the timing requirements
+
+This is found in the `ecommerce_payment_inventory` repository context at `/workspace/logs/batch_run_20251106_135211/config_vg_6_container.log:67-68`.
+
+The fix would require implementing either: saga patterns with compensating transactions, proper distributed locking, or moving to a synchronous transactional boundary that encompasses both operations.

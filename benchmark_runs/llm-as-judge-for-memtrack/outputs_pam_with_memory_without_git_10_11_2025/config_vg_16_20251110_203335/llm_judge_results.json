@@ -1,0 +1,45 @@
+{
+  "config": "config_vg_16_20251110_203335",
+  "config_yaml": "config_vg_16.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 1,
+    "accuracy": 0.3333333333333333,
+    "avg_score": 0.3333333333333333,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What was the specific evidence that revealed TechCorp's true acquisition strategy, and who discovered this evidence?",
+    "Which team member made the first public declaration of resistance to the migration, and in what specific channel?",
+    "What competing product name did bob discover TechCorp was building internally?"
+  ],
+  "expected_answers": [
+    "bob discovered TechCorp's internal Slack channel #project-neural-competitor discussing building identical AI features, found through leaked integration documentation",
+    "alice declared resistance in #engineering channel stating she would not migrate Python codebase to legacy Java infrastructure",
+    "NeuralCore Analytics"
+  ],
+  "results": {
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "There is no provided answer from the agent to evaluate. Since the agent's extracted answer is empty, it cannot be correct or partially correct.",
+      "agent_answer": ""
+    },
+    "3": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer matches the expected answer exactly, correctly identifying the competing product name as 'NeuralCore Analytics.' The agent also provided additional relevant details without altering the correctness of the response.",
+      "agent_answer": "**Answer:** Bob discovered TechCorp was building **\"NeuralCore Analytics\"** internally.\n\nThis was revealed on 2024-11-25 at 11:00 UTC when Bob found leaked access to TechCorp's internal Slack channel #project-neural-competitor, which explicitly discussed building an \"AI analytics platform identical to acquired startup features.\""
+    },
+    "1": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide any of the requested information regarding TechCorp's acquisition strategy or who discovered the evidence. Instead, it stated it could not find relevant records and asked for more context. Therefore, the answer is entirely missing the specific evidence (Slack channel discussion, leaked documentation) and the discoverer (Bob).",
+      "agent_answer": "I searched through stored information but found no records about TechCorp's acquisition strategy or related evidence. \n\nCould you provide more context about:\n- Where this information might be stored (emails, documents, Linear tickets, Slack messages)?\n- What time period this relates to?\n- Any other details that could help me locate the relevant information?\n\nThis will help me search the appropriate sources to find the answer you're looking for."
+    }
+  }
+}

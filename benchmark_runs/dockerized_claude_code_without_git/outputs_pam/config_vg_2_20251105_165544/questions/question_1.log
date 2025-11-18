@@ -1,0 +1,18 @@
+Based on the Linear ticket investigation, I can provide you with a clear answer:
+
+## Single Technical Change That Caused December Failures
+
+**Root Cause:** Updating `utils-common` library to v2.2.0 during routine security patching (December 2nd).
+
+**Technical Detail:** The `utils-common` v2.2.0 update pulled in a new dependency version: `fast-json-parse v3.0`, which introduced a breaking change in null-handling behavior - changing from returning `null` to returning `undefined` for null values.
+
+**Impact Across Systems:**
+1. **Report Generation** - JSON serialization broke due to unexpected `undefined` values
+2. **API Performance** - User profile endpoints and null-field processing failed
+3. **Monitoring Dashboards** - Metric parsing encountered errors, causing data gaps
+
+**Timeline:**
+- December 2nd: Security updates applied (TICK-0003)
+- December 5th: Root cause identified and resolved (TICK-0007)
+
+The issue was triggered by what appeared to be a routine security patch, but it introduced a transitive dependency with a breaking behavioral change that wasn't caught in testing.

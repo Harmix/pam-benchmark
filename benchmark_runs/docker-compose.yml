@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  slack-mcp:
+    build: .
+    container_name: slack-mcp-server
+    command: ["slack", "${CONFIG_NAME:-config_1}"]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      - CONFIG_NAME=${CONFIG_NAME:-config_1}
+    volumes:
+      # Optional: Mount configs from host for easy updates
+      - ./test_configs:/app/test_configs:ro
+      - ./test_event_histories:/app/test_event_histories:ro
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5173:5173"  # FastMCP dev UI
+      - "3000:3000"  # SSE transport
+
+  linear-mcp:
+    build: .
+    container_name: linear-mcp-server
+    command: ["linear", "${CONFIG_NAME:-config_1}"]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      - CONFIG_NAME=${CONFIG_NAME:-config_1}
+    volumes:
+      # Optional: Mount configs from host for easy updates
+      - ./test_configs:/app/test_configs:ro
+      - ./test_event_histories:/app/test_event_histories:ro
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Combined server (for testing/development)
+  mcp-combined:
+    build: .
+    container_name: mcp-combined-server
+    command: ["both", "${CONFIG_NAME:-config_1}"]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      - CONFIG_NAME=${CONFIG_NAME:-config_1}
+    volumes:
+      - ./test_configs:/app/test_configs:ro
+      - ./test_event_histories:/app/test_event_histories:ro
+    networks:
+      - mcp-network
+    profiles:
+      - combined
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  mcp-network:
+    driver: bridge

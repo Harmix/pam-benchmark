@@ -1,0 +1,9 @@
+Based on Bob's damage report from February 1st, 2025:
+
+**Root Cause:** Patient records merging incorrectly due to **missing transaction rollbacks** (which Bob had removed on January 22nd to improve demo performance). This caused duplicate patient records to merge incorrectly, creating mixed medical histories.
+
+**Accounts Affected:** **847 customer accounts**
+
+This information was confirmed in Bob's Slack message on 2025-02-01 at 08:00:00 UTC: "Damage assessment complete: 847 customer accounts affected by data corruption. Duplicate patient records merged incorrectly due to missing transaction rollbacks. This is a healthcare catastrophe."
+
+The incident was severe enough to warrant a HIPAA violation concern and patient safety risk, as documented in Linear ticket TICK-0001.

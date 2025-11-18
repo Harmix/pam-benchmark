@@ -1,0 +1,244 @@
+[0;32m[INFO][0m Stopping OpenMemory services...
+[0;32m[INFO][0m OpenMemory services stopped
+========================================
+Starting Benchmark: config_1
+========================================
+Reading configuration from: /benchmark_data/test_configs/config_1.yaml
+Logs directory: /workspace/logs/config_1_20251107_213953
+
+========================================
+Initializing OpenMemory
+========================================
+[0;32m[INFO][0m Starting OpenMemory for user: default
+[0;32m[INFO][0m Creating environment files for user: default
+[0;32m[INFO][0m Environment files created
+[0;32m[INFO][0m Starting OpenMemory API on port 8765...
+[0;32m[INFO][0m OpenMemory API started (PID: 2103)
+[0;32m[INFO][0m Starting OpenMemory UI on port 3000...
+[0;32m[INFO][0m OpenMemory UI started (PID: 2112)
+[0;32m[INFO][0m OpenMemory is ready!
+[0;32m[INFO][0m API: http://localhost:8765
+[0;32m[INFO][0m UI: http://localhost:3000
+[0;32m[INFO][0m Docs: http://localhost:8765/docs
+[0;32m[INFO][0m Checking OpenMemory status...
+/usr/local/bin/openmemory_setup.sh: line 176: pgrep: command not found
+[1;33m[WARN][0m API: Not running
+/usr/local/bin/openmemory_setup.sh: line 189: pgrep: command not found
+[1;33m[WARN][0m UI: Not running
+[0;32m[INFO][0m Memory directories:
+/openmemory/memories
+/openmemory/memories/config_1
+/openmemory/memories/config_1/default
+
+Repository URL: https://github.com/testrldd/neurallm_app.git
+Repository Name: neurallm_app
+Branch: main
+Event History: /benchmark_data/test_event_histories/event_history_1.json
+
+Testing Slack MCP server...
+DEBUG: Starting Slack MCP server
+DEBUG: Arguments: ['/mcp-servers/slack_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Slack server initialized with test data
+Data verification:
+  Channels: ['engineering']
+  Users: ['CodeAgent']
+  Messages: 13
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+Testing Linear MCP server...
+DEBUG: Starting Linear MCP server
+DEBUG: Arguments: ['/mcp-servers/linear_mcp_server.py', '/benchmark_data/test_configs/config_1.yaml', '/benchmark_data/test_event_histories/event_history_1.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_1.yaml
+  Events: /benchmark_data/test_event_histories/event_history_1.json
+✓ Linear server initialized with test data
+Data verification:
+  Teams: ['engineering']
+  Tickets: 9 tickets
+  Milestones: ['Q1 2024 Development']
+DEBUG: Starting MCP server
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+
+=== ENVIRONMENT READY ===
+Found 3 questions to process
+
+==========================================
+Processing Question 1/3
+==========================================
+Question: What is the status of the oldest ticket that was once reassigned?
+Expected Answer: done
+
+Adding Slack MCP server...
+Added stdio MCP server slack with command: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding Linear MCP server...
+Added stdio MCP server linear with command: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding OpenMemory MCP server...
+
+ ╭──────────────────────────────────────────────────────╮
+ │                                                      │
+ │  Successfully installed local MCP server in claude.  │
+ │                                                      │
+ ╰──────────────────────────────────────────────────────╯
+
+Verifying MCP servers...
+Checking MCP server health...
+
+slack: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+linear: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+
+Asking Claude with memory...
+I can see the ticket details, but they don't explicitly show reassignment history. The Linear system doesn't appear to track assignment history in the basic ticket details. However, I notice that tickets show who created them and who the current lead is. Let me check if there's any indication of reassignment by looking for tickets where the creator and current lead differ:
+
+Looking at the tickets:
+- **TICK-0005**: Created by grace, Lead: alice - This suggests it was reassigned
+- Other tickets appear to have the same creator and lead
+
+Let me verify TICK-0005 is the oldest reassigned ticket by checking its creation date:
+
+**TICK-0005** was created on **2024-12-01 10:00:00**, making it the oldest ticket that shows signs of reassignment (created by grace but led by alice).
+
+**Current Status: done**
+
+The oldest ticket that was once reassigned is **TICK-0005 - Security audit preparation**, and its current status is **done** (completed on 2024-12-10 09:00:00).
+
+Question 1 completed. Log saved to: /workspace/logs/config_1_20251107_213953/questions/question_1.log
+Exporting memories for question 1...
+Memories saved to: /question_1_memories.json
+Removing MCP servers...
+Removed MCP server "slack" from local config
+File modified: /root/.claude.json [project: /workspace]
+Removed MCP server "linear" from local config
+File modified: /root/.claude.json [project: /workspace]
+
+==========================================
+Processing Question 2/3
+==========================================
+Question: Who is the lead of that oldest reassigned ticket?
+Expected Answer: charlie
+
+Adding Slack MCP server...
+Added stdio MCP server slack with command: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding Linear MCP server...
+Added stdio MCP server linear with command: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding OpenMemory MCP server...
+
+ ╭──────────────────────────────────────────────────────╮
+ │                                                      │
+ │  Successfully installed local MCP server in claude.  │
+ │                                                      │
+ ╰──────────────────────────────────────────────────────╯
+
+Verifying MCP servers...
+Checking MCP server health...
+
+slack: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+linear: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+
+Asking Claude with memory...
+Based on the ticket information I've retrieved, I can see that several tickets show a "Created by" person different from the current "Lead":
+
+- **TICK-0005**: Created by grace but Lead is alice (Created: 2024-12-01)
+- **TICK-0000**: Created by alice but Lead is charlie (Created: 2024-11-15)
+
+The oldest ticket that appears to have been reassigned is **TICK-0000** (created 2024-11-15), where it was created by alice but the current lead is **charlie**.
+
+**Answer:** Charlie is the lead of the oldest reassigned ticket (TICK-0000 - Legacy system migration planning).
+
+Question 2 completed. Log saved to: /workspace/logs/config_1_20251107_213953/questions/question_2.log
+Exporting memories for question 2...
+Memories saved to: /question_2_memories.json
+Removing MCP servers...
+Removed MCP server "slack" from local config
+File modified: /root/.claude.json [project: /workspace]
+Removed MCP server "linear" from local config
+File modified: /root/.claude.json [project: /workspace]
+
+==========================================
+Processing Question 3/3
+==========================================
+Question: How many tickets are currently done?
+Expected Answer: 5
+
+Adding Slack MCP server...
+Added stdio MCP server slack with command: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding Linear MCP server...
+Added stdio MCP server linear with command: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json to local config
+File modified: /root/.claude.json [project: /workspace]
+Adding OpenMemory MCP server...
+
+ ╭──────────────────────────────────────────────────────╮
+ │                                                      │
+ │  Successfully installed local MCP server in claude.  │
+ │                                                      │
+ ╰──────────────────────────────────────────────────────╯
+
+Verifying MCP servers...
+Checking MCP server health...
+
+slack: /mcp-servers/slack_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+linear: /mcp-servers/linear_wrapper.sh /benchmark_data/test_configs/config_1.yaml /benchmark_data/test_event_histories/event_history_1.json - ✓ Connected
+
+Asking Claude with memory...
+There are **5 tickets** currently marked as done:
+
+1. **TICK-0000** - Legacy system migration planning (Engineering, Urgent, Lead: charlie)
+2. **TICK-0001** - Database performance optimization (Engineering, High, Lead: bob)
+3. **TICK-0002** - Machine learning model training pipeline (ML, High, Lead: diana)
+4. **TICK-0004** - API rate limiting implementation (Engineering, Medium, Lead: frank)
+5. **TICK-0005** - Security audit preparation (Engineering, Urgent, Lead: alice)
+
+Question 3 completed. Log saved to: /workspace/logs/config_1_20251107_213953/questions/question_3.log
+Exporting memories for question 3...
+Memories saved to: /question_3_memories.json
+Removing MCP servers...
+Removed MCP server "slack" from local config
+File modified: /root/.claude.json [project: /workspace]
+Removed MCP server "linear" from local config
+File modified: /root/.claude.json [project: /workspace]
+
+==========================================
+All questions processed!
+==========================================
+
+Exporting final memory state...
+Final memories saved to: /workspace/logs/config_1_20251107_213953/final_memories.json
+
+
+Summary saved to: /workspace/logs/config_1_20251107_213953/summary.txt
+Questions saved to: /workspace/logs/config_1_20251107_213953/questions
+Memories saved to: 
+Config directory: /workspace/logs/config_1_20251107_213953
+
+========================================
+Benchmark Complete: config_1
+========================================
+
+To view memories in UI: http://localhost:3000
+To stop OpenMemory: /usr/local/bin/openmemory_setup.sh stop
+[0;32m[INFO][0m Stopping OpenMemory services...
+[0;32m[INFO][0m OpenMemory services stopped

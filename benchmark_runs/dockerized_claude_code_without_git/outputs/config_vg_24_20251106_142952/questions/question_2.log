@@ -1,0 +1,41 @@
+Based on my thorough search of the workspace logs, I found several infrastructure resource limits that forced the team to abandon running multiple pipelines simultaneously. Here are the key findings:
+
+## Primary Infrastructure Resource Limits
+
+### 1. **GPU Cluster Access - 72-Hour Queue Delays**
+**Location:** `/workspace/logs/config_vg_19_20251106_135457/summary.txt:16`
+
+The most direct answer to your question: **GPU cluster resource contention** between Diana and Bob caused **72-hour experiment queue delays**, which forced them to abandon their systematic approach and switch to parallel rapid iteration.
+
+### 2. **GPU Utilization Bottleneck - 12% Utilization**
+**Location:** `/workspace/logs/config_vg_24_20251106_142952/questions/question_1.log:1-12`
+
+Diana's quality classifier pipeline hit a critical bottleneck where:
+- LLM classifier inference was **100x slower than training speed**
+- **GPU utilization dropped to 12%** during quality filtering
+- This meant training GPUs sat idle waiting for the classifier
+- **Reached immediately** when the quality filtering phase began
+
+### 3. **Database Connection Limit - 150 Connections**
+**Location:** `/workspace/logs/config_vg_21_20251106_140904/questions/question_1.log:1-19`
+
+- Hard limit of **150 max_connections** (reduced from 500 during security hardening on Feb 12, 2024)
+- Multiple applications competing for connections
+- Led to production database crisis on **March 8, 2024**
+
+### 4. **GPU Memory Allocation Conflicts**
+**Location:** `/workspace/logs/config_vg_18_20251106_135058/summary.txt:24-25`
+
+Three different attention mechanisms (sparse, hierarchical, standard) created memory allocation conflicts:
+- Each optimized for different tensor shapes
+- Made them incompatible at GPU kernel level
+- **Reached during integration testing** when trying to combine approaches
+
+## How Quickly Limits Were Reached
+
+1. **GPU utilization bottleneck**: Hit **immediately** when quality filtering phase started
+2. **Queue delays**: Built up to **72 hours** due to resource contention
+3. **Database connections**: Manifested under production load (**March 8, 2024**)
+4. **Memory conflicts**: Discovered during **integration testing** phase
+
+The GPU cluster queue delays (72 hours) appear to be the specific constraint that forced abandonment of running all three pipelines simultaneously, as documented in the logs about Diana and Bob's competing resource demands.

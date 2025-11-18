@@ -1,0 +1,30 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[ERROR] Failed to save config with lock: Error: ENOENT: no such file or directory, lstat '/root/.claude.json'
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.127.1762847901674
+[DEBUG] Setting permissions for new file: 600
+[DEBUG] Temp file written successfully, size: 103 bytes
+[DEBUG] Renaming /root/.claude.json.tmp.127.1762847901674 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] [LSP MANAGER] initializeLspServerManager() called
+[DEBUG] [LSP MANAGER] Created manager instance, state=pending
+[DEBUG] [LSP MANAGER] Starting async initialization (generation 1)
+[DEBUG] [LSP SERVER MANAGER] initialize() called
+[DEBUG] [LSP SERVER MANAGER] Calling getAllLspServers()
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.127.1762847901906
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 183 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.127.1762847901906 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.127.1762847902045
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 220 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.127.1762847902045 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.127.1762847902150
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 907 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.127.1762847902150 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically

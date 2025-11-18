@@ -1,0 +1,27 @@
+{
+  "config": "config_3_20251029_160532",
+  "config_yaml": "config_3.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 1,
+    "correct_count": 1,
+    "accuracy": 1.0,
+    "avg_score": 1.0,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "Analyzing the tickets and other pertinent context, answer the following question: What was the original authentication feature that got cancelled, why was it cancelled, and what alternative solution was implemented instead? Provide your answer in the format: [FINAL ANSWER] <original feature>, <cancellation reason>, <alternative solution>"
+  ],
+  "expected_answers": [
+    "social login integration, security vulnerability in OAuth implementation, multi-factor authentication with email verification"
+  ],
+  "results": {
+    "1": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer matches the expected answer in all meaningful respects. The original feature ('social login integration' including OAuth), the reason for cancellation ('security vulnerabilities' in OAuth), and the alternative implemented ('multi-factor authentication with email verification') are all correctly identified. The agent provides slightly more detail on the vulnerabilities, which is acceptable.",
+      "agent_answer": "Perfect! I now have all the information needed to answer the question. Based on the ticket analysis:\n\n[FINAL ANSWER] Social login integration (Google, Facebook, GitHub OAuth), Security vulnerabilities (XSS-vulnerable token storage, insufficient redirect URI validation, missing state parameter validation, no PKCE implementation), Multi-factor authentication with email verification"
+    }
+  }
+}

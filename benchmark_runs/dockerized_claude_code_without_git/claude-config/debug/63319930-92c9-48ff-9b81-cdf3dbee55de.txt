@@ -1,0 +1,72 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+[DEBUG] MCP server "slack": Starting connection with timeout of 30000ms
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.192.1762444919703
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 1318 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.192.1762444919703 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[ERROR] MCP server "slack" Server stderr: DEBUG: Starting Slack MCP server
+[ERROR] MCP server "slack" Server stderr: DEBUG: Arguments: ['/mcp-servers/slack_mcp_server.py', '/benchmark_data/test_configs/config_vg_6.yaml', '/benchmark_data/test_event_histories/event_history_vg_6.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_vg_6.yaml
+  Events: /benchmark_data/test_event_histories/event_history_vg_6.json
+[ERROR] MCP server "slack" Server stderr: ✓ Slack server initialized with test data
+Data verification:
+  Channels: ['payments', 'inventory', 'security', 'infrastructure']
+[ERROR] MCP server "slack" Server stderr: Users: ['diana', 'charlie', 'bob', 'alice', 'CodeAgent']
+  Messages: 27
+DEBUG: Starting MCP server
+[ERROR] MCP server "slack" Server stderr: ╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+│                                                                              │
+│                    🖥  Server name: slack-mock                                │
+│                                                                              │
+│                    📦 Transport:   STDIO                                     │
+│                                                                              │
+│                    📚 Docs:        https://gofastmcp.com                     │
+│                    🚀 Hosting:     https://fastmcp.cloud                     │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+[ERROR] MCP server "slack" Server stderr: [11/06/25 16:02:03] INFO     Starting MCP server 'slack-mock'     server.py:1966
+                             with transport 'stdio'
+[DEBUG] MCP server "slack": Successfully connected to stdio server in 5315ms
+[DEBUG] MCP server "slack": Connection established with capabilities: {"hasTools":true,"hasPrompts":true,"hasResources":true,"serverVersion":{"name":"slack-mock","version":"2.13.0.2"}}
+[DEBUG] MCP server "linear": Starting connection with timeout of 30000ms
+[ERROR] MCP server "linear" Server stderr: DEBUG: Starting Linear MCP server
+[ERROR] MCP server "linear" Server stderr: DEBUG: Arguments: ['/mcp-servers/linear_mcp_server.py', '/benchmark_data/test_configs/config_vg_6.yaml', '/benchmark_data/test_event_histories/event_history_vg_6.json']
+Loading data from:
+  Config: /benchmark_data/test_configs/config_vg_6.yaml
+  Events: /benchmark_data/test_event_histories/event_history_vg_6.json
+[ERROR] MCP server "linear" Server stderr: ✓ Linear server initialized with test data
+Data verification:
+[ERROR] MCP server "linear" Server stderr: Teams: ['payments', 'inventory', 'security', 'infrastructure']
+  Tickets: 8 tickets
+  Milestones: ['Q4 2024 Checkout Integration']
+DEBUG: Starting MCP server
+[ERROR] MCP server "linear" Server stderr: ╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                               FastMCP 2.13.0.2                               │
+│                                                                              │
+│                                                                              │
+│                    🖥  Server name: linear-mock                               │
+│                                                                              │
+│                    📦 Transport:   STDIO                                     │
+│                                                                              │
+│                    📚 Docs:        https://gofastmcp.com                     │
+│                    🚀 Hosting:     https://fastmcp.cloud                     │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+[ERROR] MCP server "linear" Server stderr: [11/06/25 16:02:08] INFO     Starting MCP server 'linear-mock'    server.py:1966
+                             with transport 'stdio'
+[DEBUG] MCP server "linear": Successfully connected to stdio server in 4826ms
+[DEBUG] MCP server "linear": Connection established with capabilities: {"hasTools":true,"hasPrompts":true,"hasResources":true,"serverVersion":{"name":"linear-mock","version":"2.13.0.2"}}

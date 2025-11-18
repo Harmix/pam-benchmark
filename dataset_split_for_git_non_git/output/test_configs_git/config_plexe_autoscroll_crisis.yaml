@@ -1,0 +1,98 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Frontend Development Agent
+  max_turns: 100
+  system_prompt: You are a frontend development agent analyzing complex UI/UX feature
+    implementations and team coordination in a fast-paced development environment.
+    You have access to all tools including git, file system, terminal, slack, and
+    linear to gather information and solve problems. Your company has a policy to
+    only clone from the local version of the repo hosted at http://git.local:3000/pgym/plexe
+    so beware of this.
+  tools:
+  - notification_server
+  - linear_server
+  - slack_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/plexe-ai/plexe.git
+  name: plexe
+  branch: main
+  commit: 3c4929d542f46497a61c1ec6a9112e5563a1a709
+  local_name: plexe
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: engineering
+    members:
+    - CodeAgent
+    - sarah_kim
+    - aum_patel
+    - vaibs_d
+    - david_chen
+    - alex_rodriguez
+    - lisa_park
+    - kevin_park
+  - name: ml
+    members:
+    - CodeAgent
+    - david_wong
+    - sarah_chen
+  milestones:
+  - name: Q3 2025 UX Improvements
+    description: User experience enhancements and interface improvements
+    start_date: '2025-07-01'
+    end_date: '2025-09-30'
+  - name: Q3 2025 Operations
+    description: Infrastructure and operations improvements
+    start_date: '2025-07-01'
+    end_date: '2025-09-30'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3000
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: ERROR
+  save_agent_logs: true
+  log_filename_template: plexe_autoscroll_crisis_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_plexe_autoscroll_crisis.json
+  questions:
+  - 'Starting from vaibs_d''s Slack announcement about the smart auto-scroll feature
+    being live, find the Linear ticket that tracks this completion, extract the associated
+    milestone name, then determine: which team member was originally assigned as lead
+    for the first ticket created under that milestone?'
+  - 'Following sarah_kim''s reference to documenting ''that version we discussed in
+    yesterday''s design review'', trace through Linear to find the version documentation
+    ticket, get its expected_finish_date, then check repository commit history: what
+    is the exact commit message of the commit made closest to (but not after) that
+    expected finish date?'
+  - 'Trace the progression from the initial UX enhancement initiative ticket through
+    to completion: extract the milestone completion percentage when the PR was marked
+    as done, then examine the repository at the merge commit hash mentioned in that
+    ticket''s attached_resources: what is the exact function name that handles scroll
+    position detection in the modified file?'
+  - 'Starting from kevin_park''s analysis of git history mentioning commit b9c8d7e6f5a4b3c2d1e0f9g8h7i6j5k4l3m2n1o0,
+    find the Linear ticket that references this commit in its description, extract
+    the team assigned to that ticket, then determine: what was the priority level
+    of the most recent ticket created by the lead of that team before the auto-scroll
+    feature was completed?'
+  expected_answers:
+  - sarah_kim
+  - 'fix: multi-agent mermaid chart (#138)'
+  - handleScroll
+  - medium
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge

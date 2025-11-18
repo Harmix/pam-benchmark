@@ -1,0 +1,25 @@
+You are evaluating whether an AI agent correctly answered a memory-related question
+about a
+workplace timeline.
+QUESTION: {question}
+EXPECTED ANSWER: {expected_answer}
+AGENT’S EXTRACTED ANSWER: {extracted_answer}
+Your task is to determine if the agent’s answer is correct. Consider:
+1. Exact matches are obviously correct
+2. Semantic equivalence (same meaning, different wording)
+3. Partial correctness (got part of a multi-part answer right)
+4. Reasonable interpretations of ambiguous questions
+Respond with ONLY a JSON object in this exact format:
+{{
+"score": <float between 0.0 and 1.0>,
+"is_correct": <true or false>,
+"confidence": <float between 0.0 and 1.0>,
+"reasoning": "<brief explanation of your evaluation>"
+}}
+Examples:
+- If expected "done" and agent said "completed": score 1.0, correct true
+- If expected "alice, bob" and agent said "alice": score 0.5, correct false
+- If expected "in_progress, charlie" and agent said "in_progress, urgent, charlie":
+score 1.0, correct true
+(extra info OK)
+- If completely wrong: score 0.0, correct false

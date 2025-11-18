@@ -1,0 +1,46 @@
+Isolated Batch Benchmark Run
+============================
+Start Time: Wed Oct 29 14:33:54 CET 2025
+Total Configs: 46
+Batch Directory: ./outputs/batch_run_20251029_143354
+
+Config 1: config_1
+  Status: SUCCESS
+  Duration: 300s (5m 0s)
+  Container Log: config_1_container.log
+  Config Logs: Check outputs/ for config_1_* directories
+  Started: Wed Oct 29 14:33:54 CET 2025
+  Completed: Wed Oct 29 14:38:54 CET 2025
+
+Config 2: config_2
+  Status: SUCCESS
+  Duration: 251s (4m 11s)
+  Container Log: config_2_container.log
+  Config Logs: Check outputs/ for config_2_* directories
+  Started: Wed Oct 29 14:38:59 CET 2025
+  Completed: Wed Oct 29 14:43:10 CET 2025
+
+Config 3: config_3
+  Status: SUCCESS
+  Duration: 107s (1m 47s)
+  Container Log: config_3_container.log
+  Config Logs: Check outputs/ for config_3_* directories
+  Started: Wed Oct 29 14:43:15 CET 2025
+  Completed: Wed Oct 29 14:45:02 CET 2025
+
+Config 4: config_4
+  Status: SUCCESS
+  Duration: 117s (1m 57s)
+  Container Log: config_4_container.log
+  Config Logs: Check outputs/ for config_4_* directories
+  Started: Wed Oct 29 14:45:07 CET 2025
+  Completed: Wed Oct 29 14:47:04 CET 2025
+
+Config 5: config_5
+  Status: SUCCESS
+  Duration: 290s (4m 50s)
+  Container Log: config_5_container.log
+  Config Logs: Check outputs/ for config_5_* directories
+  Started: Wed Oct 29 14:47:09 CET 2025
+  Completed: Wed Oct 29 14:51:59 CET 2025
+

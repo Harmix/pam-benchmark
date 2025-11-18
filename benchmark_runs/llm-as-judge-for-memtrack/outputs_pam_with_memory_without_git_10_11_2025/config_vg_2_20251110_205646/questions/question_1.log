@@ -1,0 +1,14 @@
+## Answer
+
+The single technical change that caused failures across all three systems was:
+
+**The upgrade to `fast-json-parse` v3.0** (pulled in as a dependency by `utils-common` v2.2.0 during routine security updates).
+
+**The breaking change:** `fast-json-parse` v3.0 changed its null-handling behavior from returning `null` to returning `undefined`.
+
+**Impact across systems:**
+- **Report generation:** JSON serialization failures
+- **API performance:** Null-field processing errors in user profile endpoints
+- **Monitoring dashboards:** Metric parsing failures causing data gaps
+
+This was tracked in ticket TICK-0007 and resolved on December 5, 2024. The issue originated from the December 2nd security library updates (TICK-0003) that updated `utils-common` to patch CVE vulnerabilities, which inadvertently brought in the breaking dependency change.

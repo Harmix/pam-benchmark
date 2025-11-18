@@ -1,0 +1,24 @@
+Based on my exploration of the codebase, I found information about how a **monitoring system deployment** (not a database migration) interfered with identifying real performance issues:
+
+## How the Interference Occurred
+
+A performance monitoring system (**monitoring_v2**) was deployed to collect advanced metrics and logs for better performance visibility. However, this monitoring system itself became the problem:
+
+1. **The monitoring system generated 50x more database queries than anticipated**
+2. This caused severe database performance degradation with **300% increased query times**
+3. The monitoring system was meant to help identify performance issues, but instead it *created* the performance issues it was supposed to detect
+
+This is documented in:
+- `/workspace/logs/config_5_20251106_130556/questions/question_2.log`
+- `/workspace/logs/batch_run_20251106_135211/config_5_container.log:1-59`
+
+## Who Made the Connection
+
+**Alex** first made the connection between these two problems:
+- Alex led the root cause analysis (TICK-0004)
+- Alex led the emergency rollback (TICK-0005) by disabling the monitoring_v2_enabled feature flag
+- The **platform team** (which Alex was part of) led the overall analysis and rollback decision
+
+The connection was identified on **May 3, 2024**, when they detected the correlation between the new monitoring system deployment and the 300% increase in query times.
+
+There's also a separate incident where **Charlie** identified how performance optimization efforts (implementing a 2-hour cache TTL) actually caused customer churn by making dashboard data stale, affecting 67% of churned customers according to exit interviews.

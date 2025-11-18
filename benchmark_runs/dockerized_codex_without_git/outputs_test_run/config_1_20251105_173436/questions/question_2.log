@@ -1,0 +1,13 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5516-a2e8-7e93-b64e-d2467811e6a2
+--------
+user
+Who is the lead of that oldest reassigned ticket?

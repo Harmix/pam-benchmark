@@ -1,0 +1,53 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_1
+Timestamp: 20251029_155535
+Run Date: Wed Oct 29 16:00:25 UTC 2025
+Total Questions: 3
+
+Repository Information:
+----------------------
+Name: neurallm_app
+URL: https://github.com/testrldd/neurallm_app.git
+Branch: main
+Available: true
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+What is the status of the oldest ticket that was once reassigned?
+
+Expected Answer:
+done
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+Who is the lead of that oldest reassigned ticket?
+
+Expected Answer:
+charlie
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+How many tickets are currently done?
+
+Expected Answer:
+5
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_1_20251029_155535/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

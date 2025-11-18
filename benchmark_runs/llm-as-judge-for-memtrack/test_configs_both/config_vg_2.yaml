@@ -1,0 +1,84 @@
+# Stealth Dependency - Library Update Causes Cascading Cross-Team Failures
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-5"
+  name: "CodeAgent"
+  title: "Software Development Agent"
+  max_turns: 100
+  system_prompt: "You are a software development agent analyzing complex cross-team technical issues involving dependency management, library updates, and cascading system failures."
+  tools:
+    - notification_server
+    - linear_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/testrldd/enterprise_analytics_platform.git"
+  name: "enterprise_analytics_platform"
+  branch: "main"
+  local_name: "enterprise_analytics_platform"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "engineering"
+      members: ["CodeAgent", "alice", "bob", "diana", "charlie"]
+    - name: "frontend"
+      members: ["CodeAgent", "alice", "diana"]
+    - name: "backend"
+      members: ["CodeAgent", "bob", "charlie"]
+    - name: "devops"
+      members: ["CodeAgent", "charlie", "diana"]
+  milestones:
+    - name: "Q4 2024 Maintenance Sprint"
+      description: "Routine updates, security patches, and minor improvements"
+      start_date: "2024-11-01"
+      end_date: "2024-12-31"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3002
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  save_agent_logs: true
+  log_filename_template: "stealth_dependency_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+# Benchmark Configuration
+benchmark:
+  event_history: "test_event_histories/event_history_vg_2.json"
+  questions:
+    - "What single technical change caused failures across report generation, API performance, and monitoring dashboards in December?"
+    - "Which team member first identified the timeline correlation between these seemingly unrelated issues?"
+    - "What was the specific behavioral change in the dependency that caused multiple different failure modes?"
+  expected_answers:
+    - "utils-common library update from v2.1.3 to v2.2.0 pulled in fast-json-parse v3.0 which changed null-handling behavior"
+    - "charlie identified the timeline correlation by reviewing all recent changes after multiple teams reported issues"
+    - "fast-json-parse v3.0 changed null-handling from returning null to returning undefined breaking JSON serialization, API processing, and metric parsing"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: "openai:gpt-4o"

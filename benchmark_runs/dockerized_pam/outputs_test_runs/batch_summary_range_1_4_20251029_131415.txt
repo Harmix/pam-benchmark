@@ -1,0 +1,7 @@
+
+config_1: SUCCESS (253s)
+config_2: SUCCESS (218s)
+config_3: SUCCESS (109s)
+config_4: SUCCESS (135s)
+
+Summary: 4/4 successful, 0 failed

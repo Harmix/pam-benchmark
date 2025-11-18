@@ -1,0 +1,20 @@
+## Answer
+
+The specific dependency version change that caused the computer vision evaluation failures was:
+
+**`beartype==0.12.0` → `beartype>=0.12.0`**
+
+This change occurred in:
+- **Commit:** `518a9a8` 
+- **PR:** #1519 ("Unpin dependencies")
+- **Date:** April 17, 2024
+- **File:** `/workspace/ml_evals/pyproject.toml:10`
+
+**Why it caused failures:**
+
+Newer versions of beartype (>0.12.0) introduced breaking changes in type validation that broke the webarena multi-step web tasks evaluation code, which:
+- Uses extensive `@beartype` decorators in CV-related modules (browser screenshot processing, image evaluators)
+- Was incompatible with the new beartype type-checking behavior
+- Affected files like `webarena/browser_env/processors.py`, `evaluators.py`, and `browser_utils.py`
+
+The issue was subsequently mitigated by making `torch` an optional dependency in PR #1524 (commit `1d3f11c`), requiring explicit `.[torch]` installation flag.

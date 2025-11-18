@@ -1,0 +1,20 @@
+## Answer
+
+Based on my analysis of the NeMo-Run repository, **3 files** contain factory-related test methods.
+
+### Files with Factory Test Methods:
+
+1. **`/workspace/NeMo-Run/test/cli/test_api.py`** - 11 factory test methods
+2. **`/workspace/NeMo-Run/test/cli/test_cli_parser.py`** - 7 factory test methods  
+3. **`/workspace/NeMo-Run/test/cli/test_lazy.py`** - 11 factory test methods
+
+**Total: 3 files containing 29 factory-related test methods**
+
+### Test Convention Details:
+
+The team's convention for factory test naming follows patterns like:
+- `test_factory_<scenario>` (e.g., `test_factory_with_args`, `test_factory_loading`)
+- `test_<adjective>_factory_<detail>` (e.g., `test_simple_factory_function`, `test_complex_factory_scenario`)
+- `test_<action>_with_factory` (e.g., `test_init_with_factory_as_lazymodule`)
+
+All factory tests are concentrated in the `/workspace/NeMo-Run/test/cli/` directory, which aligns with testing the CLI factory functionality for registering and resolving factory functions decorated with `@run.cli.factory`.

@@ -1,0 +1,15 @@
+Perfect! Now I have the context. Based on the information from `/workspace/logs/config_vg_10_20251106_131958/questions/question_1.log`, I can provide you with the answer about the post-mortem discussion regarding over-engineering and compliance violations.
+
+## Answer
+
+According to the post-mortem discussion:
+
+**Over-engineering decision that created compliance violations:**
+- The engineering team **over-engineered the solution with extensive logging infrastructure** that logged comprehensive data access, including PII (Personally Identifiable Information)
+
+**Basic approach that should have been used instead:**
+- **Simple user action timestamps without PII** 
+
+The issue stemmed from a GDPR audit trail requirement that the engineering team misunderstood. They interpreted it as needing comprehensive logging of all data access, when legal actually only wanted simple user action timestamps without any sensitive data. This over-interpretation led to building a complex system that ironically created compliance violations by logging PII, when a much simpler timestamp-only log would have met the legal requirement without the compliance risks.
+
+This is documented in `/workspace/logs/config_vg_10_20251106_131958/questions/question_1.log:9-14`.

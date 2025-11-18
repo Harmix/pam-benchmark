@@ -1,0 +1,9 @@
+Based on the Slack message history, I found the answer to your question:
+
+**Technical Performance Bottleneck:** GPU underutilization during LLM inference for data quality classification.
+
+**Specific Metric:** **GPU utilization dropped to 12%** during classification phases (later improved to 28% average, but still problematic).
+
+**Root Cause:** The LLM-based quality classifier required inference operations that were approximately **100x slower than training**, causing the GPUs to sit mostly idle during classification phases. This meant 88% of compute resources were being wasted on classification overhead instead of actual model training.
+
+This throughput issue was first reported by Diana on October 7, 2024, and was a major concern because while quality filtering could potentially reduce total data requirements, the inference bottleneck was so severe that it made the pipeline economically unviable - the math only worked if quality gains were massive enough to offset the dramatic compute waste.

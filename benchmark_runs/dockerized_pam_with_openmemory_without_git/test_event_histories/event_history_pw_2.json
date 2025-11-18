@@ -1,0 +1,314 @@
+[
+  {
+    "timestamp": "20250301T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "channel": "product",
+      "message": "I’d like us to build a feature that lets users search for product images based on descriptions.\n\nWhy now / business rationale:\n- Customers often remember visual details (\"red running shoes with white stripes\") rather than exact model names or SKUs.\n- Improving findability should lift conversion on image-first product pages and reduce support tickets about “can’t find it.”\n- Competitors are investing in richer search; this helps us close a key discovery gap.\n\nFunctional requirements (v1 scope):\n- Users can enter a natural-language description in a single search box and get a ranked grid of product images.\n- Support basic filters (category, price range, availability).\n- Show result count and allow pagination.\n- Click-through opens the product detail page.\n- Track search queries and clicks for relevance metrics.\n\nNon-functional requirements:\n- Latency: P50 ≤ 300 ms, P95 ≤ 800 ms.\n- Availability: 99.9%.\n- Accessibility: WCAG AA compliance.\n- Internationalization: support UTF-8.\n- Scalability: handle 10x traffic spikes.\n\nSuccess criteria:\n- Lift in product discovery within 30 days.\n- Positive qualitative feedback from usability tests."
+    }
+  },
+  {
+    "timestamp": "20250301T0930",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Feature: Product image search by description",
+      "description": "Implement keyword-based product image search as v1. Requirements: query input, ranked results, filters, click tracking, observability dashboards.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "start_date": "2025-03-01",
+      "expected_finish_date": "2025-03-15",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20250301T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Alice, confirming — the search should use product descriptions in our catalog, right?",
+      "channel": "engineering",
+      "thread_of": "20250301T0900"
+    }
+  },
+  {
+    "timestamp": "20250301T1015",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Yes, let’s start with keyword matching on catalog descriptions for v1.",
+      "channel": "engineering",
+      "thread_of": "20250301T1000"
+    }
+  },
+  {
+    "timestamp": "20250302T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "thread_of": "20250301T0930",
+      "conversation": [
+        {
+          "sender": "bob",
+          "message": "Diana, confirming — we’re implementing keyword search on catalog descriptions."
+        },
+        {
+          "sender": "diana",
+          "message": "That’s fine. We’ll need indexing on description fields to keep it performant."
+        },
+        {
+          "sender": "bob",
+          "message": "Yep. I’ll add inverted indexes. Should keep P95 queries under 800ms."
+        },
+        {
+          "sender": "diana",
+          "message": "Don’t forget stemming/lemmatization. Users might type ‘running shoes’ vs catalog ‘run shoe’."
+        },
+        {
+          "sender": "bob",
+          "message": "Good call. I’ll add basic stemming."
+        },
+        {
+          "sender": "diana",
+          "message": "Let’s add logging too — query string + hits/misses."
+        },
+        {
+          "sender": "bob",
+          "message": "Agreed. That’ll help us measure zero-result rates."
+        },
+        {
+          "sender": "diana",
+          "message": "Cool. Once done, push to staging for Alice to test."
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "20250305T1500",
+    "platform": "git",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "commit_id": "d3f7c1a",
+      "author": "bob",
+      "message": "feat(search): add keyword search on product catalog descriptions",
+      "files_changed": ["search/index.ts", "search/query.ts", "tests/search.spec.ts"],
+      "status": "merged",
+      "pr": "#312"
+    }
+  },
+  {
+    "timestamp": "20250306T0930",
+    "platform": "git",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "commit_id": "f8c2a9d",
+      "author": "bob",
+      "message": "feat(search): add stemming support for description queries",
+      "files_changed": ["search/tokenizer.ts"],
+      "status": "merged",
+      "pr": "#315"
+    }
+  },
+  {
+    "timestamp": "20250307T1130",
+    "platform": "git",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "commit_id": "e5a9f12",
+      "author": "bob",
+      "message": "fix(search): improve tokenization for multi-word description queries",
+      "files_changed": ["search/tokenizer.ts"],
+      "status": "merged",
+      "pr": "#319"
+    }
+  },
+  {
+    "timestamp": "20250308T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Feature: Product image search by description",
+      "description": "Keyword-based search completed, merged into main, deployed to staging.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "bob",
+      "status": "closed"
+    }
+  },
+  {
+    "timestamp": "20250310T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "I tested the search feature — often I can’t find products using my descriptions. Feels broken.",
+      "channel": "product"
+    }
+  },
+  {
+    "timestamp": "20250310T0915",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "thread_of": "20250310T0900",
+      "conversation": [
+        {
+          "sender": "bob",
+          "message": "Strange, it searches catalog descriptions. Example?"
+        },
+        {
+          "sender": "alice",
+          "message": "‘Shoes with red stripes’ → nothing."
+        },
+        {
+          "sender": "diana",
+          "message": "Catalog says ‘Adidas Runner 2025,’ doesn’t mention stripes."
+        },
+        {
+          "sender": "alice",
+          "message": "Exactly. I meant *user descriptions*, not catalog text."
+        },
+        {
+          "sender": "bob",
+          "message": "Oh! We misunderstood. You mean free-text user input vs catalog metadata."
+        },
+        {
+          "sender": "alice",
+          "message": "Yes. Users describe what they see/remember, not catalog SKUs."
+        },
+        {
+          "sender": "diana",
+          "message": "That requires embeddings + semantic search."
+        },
+        {
+          "sender": "bob",
+          "message": "Yep, keyword matching won’t cut it."
+        },
+        {
+          "sender": "alice",
+          "message": "Let’s scope a v2 implementation."
+        },
+        {
+          "sender": "diana",
+          "message": "Agreed — I’ll draft a Linear ticket."
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "20250311T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Feature: Semantic search on user-provided descriptions",
+      "description": "Implement semantic search using embeddings to match user free-text descriptions with product images. Must support multilingual input, similarity scoring, and evaluation framework for relevance.",
+      "team": "ml",
+      "priority": "urgent",
+      "lead": "diana",
+      "start_date": "2025-03-11",
+      "expected_finish_date": "2025-03-31",
+      "status": "todo"
+    }
+  },
+  {
+    "timestamp": "20250312T1400",
+    "platform": "git",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "commit_id": "a73d9be",
+      "author": "diana",
+      "message": "feat(semantic-search): add embeddings pipeline with sentence-transformers",
+      "files_changed": ["ml/embedding_pipeline.py", "requirements.txt"],
+      "status": "merged",
+      "pr": "#327"
+    }
+  },
+  {
+    "timestamp": "20250315T1600",
+    "platform": "git",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "commit_id": "c88d221",
+      "author": "bob",
+      "message": "feat(search-api): integrate semantic search service into query API",
+      "files_changed": ["api/search.py", "tests/test_semantic.py"],
+      "status": "merged",
+      "pr": "#331"
+    }
+  },
+  {
+    "timestamp": "20250318T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Tested semantic search in staging — now queries like ‘shoes with red stripes’ actually return results 🎉",
+      "channel": "product"
+    }
+  },
+  {
+    "timestamp": "20250320T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Feature: Semantic search on user-provided descriptions",
+      "description": "Shipped to staging, validated by PM. Rollout to prod planned.",
+      "team": "ml",
+      "priority": "urgent",
+      "lead": "diana",
+      "status": "in_progress"
+    }
+  },
+  {
+    "timestamp": "20250325T1500",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Feature: Semantic search on user-provided descriptions",
+      "description": "Deployed semantic search to production. Monitoring CTR and zero-result rates.",
+      "team": "ml",
+      "priority": "urgent",
+      "lead": "diana",
+      "status": "closed"
+    }
+  },
+  {
+    "timestamp": "20250327T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "thread_of": "20250325T1500",
+      "conversation": [
+        {
+          "sender": "bob",
+          "message": "Heads-up: with embeddings, our latency is higher. P99 is ~1.5s right now."
+        },
+        {
+          "sender": "diana",
+          "message": "Yeah, I see that in logs too. P50 is ~400ms, but tail latency spikes due to vector DB lookups."
+        },
+        {
+          "sender": "alice",
+          "message": "1.5s feels slower than we expected. Is this acceptable for first release?"
+        },
+        {
+          "sender": "bob",
+          "message": "Our original non-functional requirement was P95 ≤ 800ms. We’re breaching that for tail cases."
+        },
+        {
+          "sender": "diana",
+          "message": "We could try caching embeddings for frequent queries and shard the vector index."
+        },
+        {
+          "sender": "alice",
+          "message": "Let’s document current metrics and see if users complain before we optimize."
+        }
+      ]
+    }
+  }
+]

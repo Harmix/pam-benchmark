@@ -1,0 +1,31 @@
+Based on my investigation of the Linear tickets and Slack engineering channel, I can provide you with a comprehensive answer:
+
+## Technical Change That Caused Business Impact
+
+**Specific Change:** Implementation of a **2-hour cache TTL (Time-To-Live) on dashboard metrics** using Redis caching (deployed December 3, 2024 via PR #156, commit a7f8b23).
+
+## Business Impact
+
+- Customer renewal rates dropped from **92% to 78%** (14 percentage point decline)
+- 67% of churned customers cited "unreliable real-time data" or "data doesn't update quickly enough" as a primary concern
+- E-commerce clients (FlashRetail, QuickMart, InstaBuy) were most affected
+
+## Root Cause Mechanism
+
+The performance optimization broke critical real-time use cases:
+
+1. **Initial Problem**: Dashboard queries were taking 15+ seconds, threatening enterprise client renewals
+
+2. **Solution Implemented**: Redis caching layer with 2-hour TTL on aggregated metrics to achieve sub-3 second load times
+
+3. **Unintended Consequence**: The 2-hour cache TTL made dashboard data up to 2 hours stale, which was catastrophic for e-commerce clients who depend on near-real-time data for:
+   - Flash sales operations
+   - Inventory management decisions  
+   - Real-time conversion tracking during campaigns
+   - Time-sensitive promotional events (e.g., Black Friday)
+
+4. **Specific Example**: FlashRetail lost money during Black Friday because sales data and inventory counts were 2+ hours behind, causing incorrect inventory decisions during flash sales
+
+## Key Failure
+
+The team optimized for performance (load time) without analyzing the real-time data freshness requirements of their customer use cases. They treated all dashboard metrics uniformly with a 2-hour TTL, when different data types required different freshness levels (some could be cached for hours, but flash-sale/inventory data needed sub-minute updates).

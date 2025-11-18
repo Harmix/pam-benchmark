@@ -1,0 +1,20 @@
+Based on my search of the codebase, I found the answer to your question:
+
+## Technical Failure: Conversation State Persistence
+
+**The specific technical failure was:** Conversation state persistence failure across training steps caused reward model gradients to become inconsistent when dialogue context exceeded 8k tokens.
+
+### Key Details
+
+The failure occurred during an RLHF pipeline migration and involved:
+
+1. **Root Cause**: Conversation state was not properly persisted across training steps in multi-turn dialogues
+2. **Trigger Condition**: Dialogue context exceeding 8,000 tokens
+3. **Impact**: Reward model gradients became inconsistent, leading to training instability
+4. **Context**: This occurred in the `agentic_post_training` repository during a Q4 2024 migration
+
+### Location
+This issue is documented in:
+- `/workspace/logs/batch_run_20251106_135211/config_vg_25_container.log:67-68`
+
+The technical failure essentially meant that when processing longer conversations in the reward model training pipeline, the system failed to maintain consistent state information across training iterations, causing gradient calculations to vary non-deterministically and destabilizing the training process.

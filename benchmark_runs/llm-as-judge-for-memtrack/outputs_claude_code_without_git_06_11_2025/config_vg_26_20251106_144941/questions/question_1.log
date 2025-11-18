@@ -1,0 +1,21 @@
+Based on my exploration of the codebase, I found the specific information about non-deterministic evaluation results:
+
+## Technical Change and Infrastructure Cause
+
+**Technical Change:** **Dockerized context isolation** was introduced to the evaluation platform.
+
+**Infrastructure Cause:** **Resource contention between container instances competing for CPU scheduling**.
+
+### Details
+
+This issue was documented in the agentic evaluation platform's Q1 2025 Evaluation Modernization milestone. The problem occurred when:
+
+1. The platform moved to using Docker containers for context isolation during evaluations
+2. Multiple container instances ran simultaneously on the same system
+3. These containers competed for shared CPU resources
+4. The kernel's CPU scheduler non-deterministically allocated resources to different containers
+5. This scheduling variability caused evaluation results to become non-deterministic
+
+The dockerization was intended to improve isolation between evaluation contexts, but the unintended consequence was that the same evaluation could produce different results depending on how container scheduling played out at runtime.
+
+**Source:** `/workspace/logs/batch_run_20251106_135211/config_vg_26_container.log:67-68`

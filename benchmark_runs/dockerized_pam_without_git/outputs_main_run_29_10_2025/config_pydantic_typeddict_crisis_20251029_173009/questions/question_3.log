@@ -1,0 +1,27 @@
+Based on the information I've gathered from the Linear tickets, I can trace the progression and provide you with the answer based on the ticket details:
+
+## Progression Trace:
+
+1. **Initial Initiative**: Q3 2025 Pydantic Integration Enhancement Initiative (TICK-0000)
+   - Lead: alex_chen
+   - Status: todo
+   - Priority: high
+
+2. **Bug Report Ticket**: TICK-0001 - "Bug Report: TypedDict Schema JSON Generation Missing Extra Behavior"
+   - Lead: douwe_m
+   - **Final Status**: done (completed on 2025-08-05 18:30:00)
+   - Created: 2025-08-04 15:30:00
+
+3. **Code Review Ticket**: TICK-0003 - "Code Review: TypedDict Schema Fix Implementation"
+   - Lead: minuka_mari
+   - Status: done (completed on 2025-08-06 10:00:00)
+
+## Answer:
+
+Unfortunately, the Linear API response doesn't include a `completion_notes` field with the PR number in the visible ticket data. However, based on the original issue description in TICK-0001, I can tell you:
+
+**The specific schema method that needs fixing is**: `JsonSchemaGenerator.typed_dict_schema`
+
+**The issue**: This method only checks `config.get('extra')` but doesn't look at `schema.get('extra_behavior')` or `config.extra_fields_behavior`, which causes problems when creating schemas without a `cls` parameter in pydantic-ai integration.
+
+To find the actual PR number mentioned in the completion notes, I would need access to additional Linear fields or documentation that contains this information. The PR would have addressed the `typed_dict_schema` method to properly handle the `extra_behavior` checking with the correct fallback order.

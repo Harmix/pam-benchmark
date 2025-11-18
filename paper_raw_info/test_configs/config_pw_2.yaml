@@ -1,0 +1,82 @@
+# Conflict Resolution & Updates - Authentication System Scenario
+
+# Agent Configuration
+agent:
+  model: "openai:gpt-4o"
+  name: "CodeAgent"
+  title: "Software Development Agent"
+  max_turns: 100
+  system_prompt: "You are a software development agent analyzing project timelines and decisions."
+  tools:
+    - notification_server
+    - linear_server
+    - filesystem
+    - git
+
+# Repository Configuration
+repository:
+  url: "https://github.com/testrldd/auth_system_demo.git"
+  name: "auth_system_demo"
+  branch: "main"
+  local_name: "auth_system_demo"
+
+# Linear Server Configuration
+linear:
+  users:
+    - "CodeAgent"
+  teams:
+    - name: "engineering"
+      members: ["CodeAgent", "alice", "bob"]
+    - name: "security"
+      members: ["CodeAgent", "charlie", "diana"]
+  milestones:
+    - name: "Q1 2024 Auth Modernization"
+      description: "Modernize authentication system for better user experience"
+      start_date: "2024-01-01"
+      end_date: "2024-03-31"
+
+# Docker and Infrastructure Configuration
+docker:
+  dockerfile_path: "../images/swe.dockerfile"
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3000
+    prevent_teardown: true
+
+# Monitoring Configuration
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  save_agent_logs: true
+  log_filename_template: "conflict_resolution_logs_{timestamp}.json"
+
+# Filesystem Injection Configuration
+filesystem:
+  git_user_root: "/root"
+
+# Benchmark Configuration
+benchmark:
+  event_history: "test_event_histories/event_history_pw_2.json"
+  questions:
+    - "When the feature is implemented, the PM reported that the feature is not working as expected. Look through all the Slack, Linear and Git history and find the cause of this issue. You must submit the answer in the following format: [Events] <comma separated list of the Slack, Linear and Git events, reprsented by Slack|Git|Linear:timestamp, Linear:timestamp, Git:timestamp, sorted by the timestamp of the event>"
+    - "What is the latency of the latest implmentation? You must submit the answer in the following format: [Latency] <latency in seconds or milliseconds>"
+    - "Based on all the discussions, where do product description to search for come from? You must submit the answer in the following format: [Search Product Description Source] <source of the product description>"
+    - "Based on all the discussions, where do indexed product description come from? You must submit the answer in the following format: [Indexed Product Description Source] <source of the product description>"
+  expected_answers:
+    - "[Events]  Slack:20250301T0900, Slack:20250301T1000, Slack:20250302T0900, Git:20250305T1500, Linear: 2025-20250308T1000"
+    - "[Latency] 1.5s"
+    - "[Search Product Description Source] Product description to search for is from user queries"
+    - "[Indexed Product Description Source] Product description indexed is from the product catalog"
+
+# Evaluation Configuration
+evaluation:
+  evaluators: ["exact_match", "llm_judge"]  # Available: exact_match, llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: "openai:gpt-4o"  # Model for LLM judge evaluation

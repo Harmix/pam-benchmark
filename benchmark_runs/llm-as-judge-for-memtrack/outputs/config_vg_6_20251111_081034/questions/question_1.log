@@ -1,0 +1,30 @@
+Based on my investigation of your systems, I can now provide you with the specific technical root cause:
+
+## Core Technical Issue: Race Condition in Distributed Transaction
+
+The $47K inventory-payment mismatch was caused by a **race condition during simultaneous payment processing and inventory reservation within a ~200ms overlap window with optimistic locking failure**.
+
+### Technical Details:
+
+**Integration Pattern Problem:**
+- The payment system and inventory system were integrated as independent services
+- Each system used optimistic locking internally, assuming sequential access
+- During high-concurrency periods (Black Friday, Cyber Monday, flash sales), payment and inventory operations could overlap within a ~200ms window
+
+**The Race Condition:**
+1. Payment processing begins (takes ~150-200ms)
+2. Inventory reservation simultaneously starts (also ~150ms average)
+3. When these operations overlap, the optimistic locking mechanisms within each individual system work correctly
+4. However, the **distributed transaction** across both systems fails because:
+   - Payment succeeds but inventory reservation fails, OR
+   - Inventory gets reserved but payment fails
+   - The systems become inconsistent with each other
+
+**Why It Wasn't Caught Initially:**
+- Individual system testing showed perfect performance (150ms response times, optimistic locking working correctly)
+- Integration testing didn't simulate the specific timing scenarios where operations overlap
+- The issue only manifested during actual high-load production scenarios
+
+**Source:** Linear ticket TICK-0007 (Lead: alice, Status: in_progress, Priority: urgent) and engineering team Slack discussions from February 2025.
+
+The solution requires implementing proper distributed locking (two-phase commit or saga pattern) rather than relying on each system's independent optimistic locking.

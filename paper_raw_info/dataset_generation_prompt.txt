@@ -1,0 +1,185 @@
+Configuration Setup
+Before beginning, configure the following variables:
+OWNER: The GitHub repository owner (e.g., "openai", "microsoft", "google")
+REPO: The repository name (e.g., "mle-bench", "vscode", "tensorflow")
+ORGANIZATION: The organization name for internal communications (can be same as OWNER or
+different)
+Creating the Setup
+Step 1: Repository Analysis
+Analyze the target repository: https://github.com/{OWNER}/{REPO}.git
+Pull all solved issues using the following script:
+bashCopycurl -H "Accept: application/vnd.github.v3+json" \
+-H "User-Agent: curl" \
+"https://api.github.com/repos/{OWNER}/{REPO}/issues?state=closed" | jq -r ’.[] | .
+number, .title, ""’
+Step 2: Issue Investigation
+Identify interesting issues that involve technical discussions, feature implementations,
+or bug resolutions. For promising issues, pull detailed information:
+bashCopycurl -H "Accept: application/vnd.github.v3+json" \
+-H "User-Agent: curl" \
+"https://api.github.com/repos/{OWNER}/{REPO}/issues/{ISSUE_NUMBER}" | jq -r ’.title,
+"", .body’
+Pull the complete comment history:
+bashCopycurl -H "Accept: application/vnd.github.v3+json" \
+-H "User-Agent: curl" \
+"https://api.github.com/repos/{OWNER}/{REPO}/issues/{ISSUE_NUMBER}/comments" | \
+jq -r ’.[] | "Author: " + .user.login + "\nDate: " + .created_at + "\n" + .body + "\n" +
+("-" * 50) + "\n"’
+Creating the Multi-Platform Scenario
+Core Requirements for Task Difficulty
+The scenario must be designed such that:
+
+No single platform contains the complete answer - Information must be distributed across
+Slack, Linear, and potentially email/documents
+Minimum 5 reasoning hops required - Each hop should require connecting information from
+different sources
+Minimum 3 platform switches - Must require switching between Slack channels, Linear
+tickets, and other platforms
+Temporal dependencies - Some information should only be meaningful when combined with
+timestamps from different platforms
+Multi-Platform Information Distribution Strategy
+Structure your scenario with information scattered as follows:
+Platform 1 (Slack #engineering): Contains initial problem identification and high-level
+technical approach decisions
+Platform 2 (Linear tickets): Contains detailed implementation specifications, status
+updates, and technical requirements
+Platform 3 (Slack #random or #general): Contains casual mentions of blockers,
+dependencies, or context that affects the technical decision
+Platform 4 (Slack DMs or #leadership): Contains resource allocation decisions, priority
+changes, or approval processes
+Platform 5 (Additional tickets/email): Contains external dependencies, vendor
+communications, or compliance requirements
+Scenario Creation Guidelines
+Create realistic organizational personas with distinct roles:
+Engineering leads, senior developers, product managers
+DevOps, security, QA team members
+External stakeholders or vendor contacts
+Implement strategic information fragmentation:
+
+Key decision rationale split across multiple Slack threads
+Implementation details spread between Linear descriptions and comments
+Critical context buried in seemingly unrelated conversations
+Timeline information requiring cross-referencing multiple platforms
+Add high-quality distractors:
+Similar but unrelated technical discussions
+Multiple tickets with similar names or purposes
+Conversations about abandoned approaches or rejected solutions
+Time-overlapping discussions about different features
+
+Ensure temporal complexity:
+Decisions that get revised across platforms
+Information that becomes relevant only after later context
+Status changes that affect interpretation of earlier discussions
+Question Design Requirements
+Ecological Validity Principles
+Questions should reflect real workplace information needs:
+Instead of: "What was the exact configuration parameter set for the Redis cache timeout
+?"
+Design: "I’m trying to understand why our caching layer behaves the way it does. Can you
+help me figure out what drove the performance decisions we made last quarter?"
+Instead of: "Which team member proposed the authentication fix?"
+Design: "The client is asking about our security implementation timeline. Who should I
+credit for the breakthrough that got us past that login issue?"
+Instead of: "What was the final status of ticket LIN-403?"
+Design: "I need to prep for the retrospective meeting. Can you remind me how that
+problematic feature request got resolved?"
+Strategic Vagueness Implementation
+Questions should be contextually ambiguous to require genuine reasoning:
+Time-based Vagueness
+"That issue from a few weeks back" (multiple issues in timeframe)
+"The recent performance discussion" (several performance topics)
+"After the client escalation" (need to identify which escalation)
+Domain-based Vagueness
+"The API changes" (multiple API modifications)
+"The security fix" (several security-related tickets)
+"The database optimization" (multiple DB-related work streams)
+Role-based Vagueness
+"What the team decided" (need to identify which team/decision)
+"The solution Alex proposed" (Alex proposed multiple solutions)
+"The approach we ultimately went with" (multiple approaches discussed)
+Outcome-based Vagueness
+"The workaround that actually worked" (multiple workarounds attempted)
+"The change that fixed the production issue" (multiple changes made)
+"The configuration that resolved the bottleneck" (several configs modified)
+Multi-Hop Reasoning Structure
+Your question must require connecting information such as:
+Hop 1: Vague question reference -> Identify specific context period/domain
+Hop 2: Context clues -> Locate initial problem discussion (Slack #engineering)
+Hop 3: Problem details -> Find corresponding implementation ticket (Linear)
+Hop 4: Implementation ticket -> Discover blocking dependency (Slack #random)
+Hop 5: Dependency context -> Locate resolution approach (Different Linear ticket)
+Hop 6: Resolution approach -> Confirm final outcome (Slack #leadership)
+Example Ecologically Valid + Vague Questions
+Scenario: Performance optimization issue resolution
+Poor Question: "What caching strategy did ticket LIN-427 implement on March 15th?"
+Good Question: "Hey, I’m onboarding the new performance engineer and they’re asking
+about that caching situation we dealt with after the big slowdown. Can you help me
+explain what we ended up implementing and why it worked?"
+Required reasoning path:
+Identify "big slowdown" -> find incident discussion in #engineering
+Locate related performance tickets in Linear
+Find caching strategy discussions across multiple threads
+Connect implementation approach to success metrics
+Verify final solution through status updates and retrospective comments
+
+Scenario: Security vulnerability fix
+Poor Question: "Who fixed the authentication bug in issue #234?"
+Good Question: "The security team is doing their quarterly review and asked about that
+authentication problem that had everyone stressed. Can you remind me what the root
+cause turned out to be and how we prevented it from happening again?"
+Required reasoning path:
+Identify "authentication problem" from stress context clues
+Find initial security discussions in relevant channels
+Locate corresponding security tickets and investigations
+Connect root cause analysis across multiple conversations
+Identify prevention measures from implementation updates
+Scenario: Feature rollback decision
+Poor Question: "Why was the notification feature disabled?"
+Good Question: "I’m updating the roadmap document and need to explain the notification
+feature situation to stakeholders. What ended up being the main concern that led to
+our decision there?"
+Required reasoning path:
+Identify notification feature context from roadmap implications
+Find feature development discussions
+Locate rollback decision conversations
+Connect stakeholder concerns across multiple platforms
+Verify decision rationale through leadership communications
+Progressive Question Design
+Primary Question (Multi-hop reasoning)
+Start with an ecologically valid, appropriately vague question requiring the full
+reasoning chain.
+Follow-up Questions (Memory testing)
+Design 2-3 progressively specific follow-ups that test retention:
+Follow-up 1: "And what was the timeline concern that influenced that decision?"
+Follow-up 2: "Who were the key people who made that call?"
+Follow-up 3: "How did this connect to the client requirements we discussed?"
+Output Requirements
+JSON Structure
+Create a comprehensive event history JSON containing:
+Chronologically ordered events across all platforms
+Realistic message threading and references
+Proper user attribution and timestamps
+Status transitions for Linear tickets
+Cross-platform references and mentions
+Question-Answer Pairs
+
+Design questions that:
+Sound like actual workplace inquiries - colleagues asking for context, preparing for
+meetings, onboarding explanations
+Require domain knowledge to interpret - understanding what "the performance issue" or "
+the client escalation" refers to
+Have deterministic answers despite vague framing
+Test both reasoning and memory through progressive follow-ups
+Verification Criteria
+Questions reflect realistic workplace information needs
+Vagueness requires genuine reasoning rather than keyword matching
+Answer requires information synthesis from minimum 3 platforms
+No single message thread or ticket contains sufficient information
+Human evaluator with JSON access can definitively verify correctness
+File Deliverables
+event_history_{REPO}.json - Complete multi-platform scenario
+config_{REPO}.yaml - Question-answer configuration with ecological validity ratings
+verification_guide.md - Step-by-step reasoning path for each question
+Remember: The goal is to create questions that sound like natural workplace
+communication while requiring sophisticated multi-platform reasoning to answer
+accurately.

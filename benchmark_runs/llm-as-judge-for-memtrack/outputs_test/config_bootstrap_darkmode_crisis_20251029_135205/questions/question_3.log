@@ -1,0 +1,10 @@
+Based on the question's context about Bootstrap's dark mode system and the reference to sarah_martinez requesting CSS variable information and david_chen analyzing Bootstrap's naming conventions, the exact CSS variable name for the secondary background in Bootstrap's dark mode system is:
+
+**`--bs-secondary-bg`**
+
+This CSS variable follows Bootstrap's naming convention where:
+- `--bs-` is the Bootstrap prefix for all CSS custom properties
+- `secondary` refers to the secondary color context
+- `-bg` is the suffix indicating it's a background color variable
+
+This variable was introduced as part of Bootstrap 5.2's enhanced color mode system (including dark mode) to provide semantic background colors that automatically adapt between light and dark themes.

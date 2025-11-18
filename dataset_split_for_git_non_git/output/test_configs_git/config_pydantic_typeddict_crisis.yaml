@@ -1,0 +1,114 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Backend Development Agent
+  max_turns: 100
+  system_prompt: You are a backend development agent analyzing complex Pydantic integration
+    issues and team coordination in a fast-paced development environment. You have
+    access to all tools including git, file system, terminal, slack, and linear to
+    gather information and solve problems. Your company has a policy to only clone
+    from the local version of the repo hosted at http://git.local:3000/pgym/pydantic
+    so beware of this.
+  tools:
+  - notification_server
+  - linear_server
+  - slack_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/pydantic/pydantic.git
+  name: pydantic
+  branch: main
+  commit: 9b5242237d974ffc3de4e8b0bf7faab1acf2ec4
+  local_name: pydantic
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: backend
+    members:
+    - CodeAgent
+    - alex_chen
+    - douwe_m
+    - minuka_mari
+    - jennifer_wong
+    - kevin_liu
+  - name: frontend
+    members:
+    - CodeAgent
+    - sarah_kim
+    - jennifer_wong
+  - name: devops
+    members:
+    - CodeAgent
+    - mike_torres
+  - name: documentation
+    members:
+    - CodeAgent
+    - sarah_kim
+    - david_park
+  milestones:
+  - name: Q3 2025 Backend Improvements
+    description: Backend infrastructure and Pydantic integration enhancements
+    start_date: '2025-08-01'
+    end_date: '2025-09-30'
+  - name: Q3 2025 Frontend Updates
+    description: Frontend component library and validation improvements
+    start_date: '2025-08-01'
+    end_date: '2025-09-30'
+  - name: Q3 2025 Operations
+    description: Infrastructure monitoring and database optimizations
+    start_date: '2025-08-01'
+    end_date: '2025-09-30'
+  - name: Q3 2025 Documentation
+    description: API documentation and developer experience improvements
+    start_date: '2025-08-01'
+    end_date: '2025-09-30'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3000
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: ERROR
+  save_agent_logs: true
+  log_filename_template: pydantic_typeddict_crisis_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_pydantic_typeddict_crisis.json
+  questions:
+  - 'Starting from minuka_mari''s announcement in #open-source about submitting the
+    TypedDict fix PR, find the Linear ticket that tracks the code review for this
+    implementation, extract the team assigned to that ticket, then determine: who
+    was originally assigned as lead for the first ticket created under the same milestone
+    as that review ticket?'
+  - 'Following douwe_m''s reference to ''issue around line 1400 or so'' in the backend-dev
+    channel, trace through Linear to find the bug report ticket he created, get its
+    external_reference URL, then check the repository commit history: what is the
+    exact 7-character commit hash mentioned in the Q3 2025 Pydantic Integration Enhancement
+    Initiative attached resources?'
+  - 'Trace the progression from the initial Q3 2025 Pydantic Integration Enhancement
+    Initiative through to the upstream fix completion: find the final status update
+    of the original bug report ticket, extract the PR number mentioned in its completion_notes,
+    then determine what specific schema method does this PR fix according to the original
+    issue description?'
+  - 'Starting from alex_chen''s message about prioritizing the TypedDict fix, find
+    the Linear ticket that was created the same day by douwe_m, identify its milestone
+    completion percentage when marked as done, then check: what was the priority level
+    of the most recent ticket created by the lead of the backend team before the TypedDict
+    issue was resolved?'
+  expected_answers:
+  - alex_chen
+  - 9b52422
+  - JsonSchemaGenerator.typed_dict_schema
+  - medium
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge

@@ -1,0 +1,30 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+[DEBUG] Loading skills from directories: managed=/etc/claude-code/.claude/skills, user=/root/.claude/skills, project=/workspace/logs/.claude/skills
+[DEBUG] >>>>> getPluginSkills CALLED <<<<<
+[DEBUG] Creating shell snapshot for bash (/bin/bash)
+[DEBUG] Looking for shell config file: /root/.bashrc
+[DEBUG] Snapshots directory: /root/.claude/shell-snapshots
+[DEBUG] Creating snapshot at: /root/.claude/shell-snapshots/snapshot-bash-1761669750270-seulus.sh
+[DEBUG] Shell binary exists: true
+[DEBUG] Execution timeout: 10000ms
+[DEBUG] Writing to temp file: /root/.claude/todos/a96a9fee-174a-4b9e-a978-423c71efcb7f-agent-a96a9fee-174a-4b9e-a978-423c71efcb7f.json.tmp.417.1761669750318
+[DEBUG] Temp file written successfully, size: 2 bytes
+[DEBUG] Renaming /root/.claude/todos/a96a9fee-174a-4b9e-a978-423c71efcb7f-agent-a96a9fee-174a-4b9e-a978-423c71efcb7f.json.tmp.417.1761669750318 to /root/.claude/todos/a96a9fee-174a-4b9e-a978-423c71efcb7f-agent-a96a9fee-174a-4b9e-a978-423c71efcb7f.json
+[DEBUG] File /root/.claude/todos/a96a9fee-174a-4b9e-a978-423c71efcb7f-agent-a96a9fee-174a-4b9e-a978-423c71efcb7f.json written atomically
+[DEBUG] getPluginSkills: Processing 0 enabled plugins
+[DEBUG] Total plugin skills loaded: 0
+[DEBUG] Total plugin commands loaded: 0
+[DEBUG] Registered 0 hooks from 0 plugins
+[DEBUG] Loaded 0 unique skills (managed: 0, user: 0, project: 0, duplicates removed: 0)
+[DEBUG] getSkillsIfEnabled returning: 0 skill dir commands, 0 plugin skills
+[DEBUG] Total plugin agents loaded: 0
+[DEBUG] Getting matching hook commands for SessionStart with query: startup
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "startup" (0 before deduplication)
+[DEBUG] Getting matching hook commands for SessionEnd with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] BigQuery metrics exporter flush complete
+[DEBUG] BigQuery metrics exporter flush complete
+[DEBUG] BigQuery metrics exporter shutdown complete

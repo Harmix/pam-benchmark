@@ -1,0 +1,7 @@
+**Root Cause Identified by Bob:**
+
+Charlie's v2.4.2 security patch introduced **database connection pooling changes** that automatically applied to ALL environments, including Goldman's v2.4.1 deployment. 
+
+The pooling overhead increased trading API latency from **50ms to 200ms** - a 4x degradation that was causing significant customer impact.
+
+*(Identified on 2024-12-11 at 12:00 UTC in #engineering channel)*

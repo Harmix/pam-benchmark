@@ -1,0 +1,19 @@
+Batch Range Run: Config 1 to 1
+Start Time: Mon Nov 10 17:00:27 CET 2025
+OpenMemory Services: Running
+
+config_1: ✓ SUCCESS (6m 15s)
+
+========================================
+BATCH COMPLETE
+========================================
+End Time: Mon Nov 10 17:06:42 CET 2025
+
+Results: 1/1 successful, 0 failed
+Success Rate: % Success Rate: %
+
+Batch directory: ./outputs/batch_range_1_to_1_20251110_165955
+Container logs: ./outputs/batch_range_1_to_1_20251110_165955/*_container.log
+
+OpenMemory API: Still running
+Qdrant: Still running

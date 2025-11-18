@@ -1,0 +1,10 @@
+Based on the ticket details, I can see creation timestamps and who created each ticket, but I don't have direct visibility into reassignment history from these responses. However, I notice that several tickets show different creators vs. current leads, which may indicate reassignments:
+
+- TICK-0000: Created by alice, currently assigned to charlie
+- TICK-0005: Created by grace, currently assigned to alice
+
+Since TICK-0000 was created first (2024-11-15 09:00:00) and shows a different creator (alice) than the current lead (charlie), this appears to be the oldest ticket that was reassigned.
+
+**Answer:** The oldest ticket that was once reassigned is **TICK-0000** (Legacy system migration planning), and its current status is **done**.
+
+This ticket was created on 2024-11-15 by alice and is now assigned to charlie, with completion on 2024-12-14.

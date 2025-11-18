@@ -1,0 +1,15 @@
+## Summary
+
+After investigating the NeMo-Run codebase and searching through all test files, I found **7 factory function definitions** with default numeric parameters:
+
+| File | Line | Function | Default Values |
+|------|------|----------|----------------|
+| test/dummy_factory.py | 67 | my_dummy_model | 2000 |
+| test/dummy_factory.py | 89 | dummy_plugin | 20 |
+| test/dummy_factory.py | 95 | plugin_list | 20 |
+| test/cli/test_lazy.py | 66 | some_factory | 1, 2 |
+| test/test_utils.py | 56 | my_dummy_model | 2000 |
+| test/dummy_type.py | 2 | __init__ | 42 |
+| test/core/execution/test_lepton.py | 38 | __init__ | 0, 0 |
+
+**The sum of all numeric default parameters in factory function definitions within test files is: 4085**

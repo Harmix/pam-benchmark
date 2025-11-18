@@ -1,0 +1,10 @@
+Based on the Linear tickets I've reviewed, I have clear information about the monitoring system rollback:
+
+From the tickets:
+- **TICK-0003**: Database performance degradation was detected, showing 300% increased query times since April 28th, with correlation to the new monitoring system deployment
+- **TICK-0004**: Analysis confirmed the root cause - the advanced monitoring system was generating **50x more database queries than anticipated**, causing severe database performance degradation
+- **TICK-0005**: Emergency rollback was executed by disabling the monitoring_v2_enabled feature flag
+
+The **platform team** led both the analysis (TICK-0004) and the rollback decision (TICK-0005), with **alex** as the lead on both tickets.
+
+[FINAL ANSWER] The advanced monitoring system generated 50x more database queries than anticipated causing severe database performance degradation, platform team led the rollback

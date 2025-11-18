@@ -1,0 +1,57 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5555-ca1c-7ce3-b479-eff1e85ea7d1
+--------
+user
+During the post-mortem analysis, what three specific systemic issues did the team identify that allowed this problem to go undetected for weeks? Be concise and answer in one or two continuous sentences then write a report with points kind of thing.
+codex
+I’m going to scan the repo for a post‑mortem document and search for mentions of “systemic issues” or similar phrasing to extract the three items.
+exec
+bash -lc 'rg -n "post-?mortem|retrospective|incident report|blameless" -S || true' in /workspace exited 101 in 26ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exec
+bash -lc "grep -RIn \"post-\\?mortem\\|retrospective\\|incident report\\|blameless\" . || true" in /workspace exited 101 in 51ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+tool codex.list_mcp_resources({"server":""})
+codex.list_mcp_resources({"server":""}) success in 45ms:
+{
+  "content": [
+    {
+      "text": "{\"resources\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+codex
+I’m unable to read your post‑mortem in this environment; if you share the doc or file path I’ll extract the exact three issues. As a placeholder, teams typically cite gaps in production monitoring/alerting, insufficient integration test coverage, and fragmented ownership/observability that slow triage.
+
+**Report (Template)**
+- Monitoring gaps: No end‑to‑end SLIs/alerting or thresholds too coarse to catch slow regressions; add SLIs/SLOs, anomaly alerts, and user‑journey probes.
+- Test coverage gaps: Missing integration/negative/edge‑case tests allowed silent failure modes; expand test matrix, add canary and shadow tests.
+- Fragmented ownership/observability: Siloed logs and unclear on‑call/runbooks delayed detection; centralize logs/traces/metrics, define service ownership and actionable runbooks.
+
+If you paste the relevant post‑mortem section, I’ll replace the placeholders with the three specific issues your team identified.
+tokens used
+10,659
+I’m unable to read your post‑mortem in this environment; if you share the doc or file path I’ll extract the exact three issues. As a placeholder, teams typically cite gaps in production monitoring/alerting, insufficient integration test coverage, and fragmented ownership/observability that slow triage.
+
+**Report (Template)**
+- Monitoring gaps: No end‑to‑end SLIs/alerting or thresholds too coarse to catch slow regressions; add SLIs/SLOs, anomaly alerts, and user‑journey probes.
+- Test coverage gaps: Missing integration/negative/edge‑case tests allowed silent failure modes; expand test matrix, add canary and shadow tests.
+- Fragmented ownership/observability: Siloed logs and unclear on‑call/runbooks delayed detection; centralize logs/traces/metrics, define service ownership and actionable runbooks.
+
+If you paste the relevant post‑mortem section, I’ll replace the placeholders with the three specific issues your team identified.

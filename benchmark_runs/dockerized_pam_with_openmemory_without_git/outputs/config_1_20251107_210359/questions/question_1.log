@@ -1,0 +1,15 @@
+Based on the available information from the ticket details, I can identify tickets where the creator differs from the current lead, which suggests reassignment:
+
+**Tickets with different creator vs. current lead (suggesting reassignment):**
+
+1. **TICK-0000** - Created by alice, Lead: charlie (Status: **done**)
+2. **TICK-0005** - Created by grace, Lead: alice (Status: **done**)
+
+The **oldest ticket that was once reassigned is TICK-0000** (created 2024-11-15 09:00:00), and its current status is **done**.
+
+**Summary:**
+- Ticket: TICK-0000
+- Title: Legacy system migration planning
+- Created by: alice (2024-11-15)
+- Current lead: charlie
+- Status: **done** (completed 2024-12-14)

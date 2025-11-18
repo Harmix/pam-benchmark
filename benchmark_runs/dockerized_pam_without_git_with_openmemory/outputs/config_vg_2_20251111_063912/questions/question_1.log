@@ -1,0 +1,10 @@
+Based on the log files, the single technical change that caused failures across report generation, API performance, and monitoring dashboards in December was:
+
+**The utils-common library update from v2.1.3 to v2.2.0**, which pulled in **fast-json-parse v3.0** that changed null-handling behavior.
+
+This dependency update introduced a breaking change in how null values were handled across the entire system, causing cascading failures in:
+- Report generation
+- API performance
+- Monitoring dashboards
+
+The root cause was the transitive dependency (fast-json-parse v3.0) that came with the utils-common library upgrade, which altered the expected behavior for null value parsing throughout the codebase.

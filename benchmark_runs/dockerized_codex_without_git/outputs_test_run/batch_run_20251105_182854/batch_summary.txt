@@ -1,0 +1,14 @@
+Isolated Batch Benchmark Run
+============================
+Start Time: Wed Nov  5 18:28:54 CET 2025
+Total Configs: 32
+Batch Directory: ./outputs/batch_run_20251105_182854
+
+Config 1: config_1
+  Status: SUCCESS
+  Duration: 21s (0m 21s)
+  Container Log: config_1_container.log
+  Config Logs: Check outputs/ for config_1_* directories
+  Started: Wed Nov  5 18:28:54 CET 2025
+  Completed: Wed Nov  5 18:29:15 CET 2025
+

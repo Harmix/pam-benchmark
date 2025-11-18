@@ -1,0 +1,46 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_22
+Timestamp: 20251106_141424
+Run Date: Thu Nov  6 14:20:56 UTC 2025
+Total Questions: 3
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+What was the root cause of the AnalyticsFlow integration failures that triggered the entire workaround cascade?
+
+Expected Answer:
+AnalyticsFlow was A/B testing new data centers causing 3-5% intermittent failures due to geographic routing changes
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+Which specific workaround implementation created the memory leak that caused customer data inconsistencies?
+
+Expected Answer:
+charlie's aggressive garbage collection combined with bob's exponential backoff retry logic created memory fragmentation during high-load periods
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+During the system archaeology investigation, what was eve's key insight that revealed the original problem could have been solved simply?
+
+Expected Answer:
+eve identified that a simple 30-second timeout adjustment would have handled the data center routing delays instead of building the entire workaround chain
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_22_20251106_141424/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

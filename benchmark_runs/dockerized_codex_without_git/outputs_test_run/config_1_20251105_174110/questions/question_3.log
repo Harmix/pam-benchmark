@@ -1,0 +1,34 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a551d-8856-7c12-ae15-b75a7da4405c
+--------
+user
+How many tickets are currently done?
+codex
+Checking the ticket system for "done" items now.
+tool linear.list_tickets({"status":"done"})
+linear.list_tickets({"status":"done"}) success in 23ms:
+{
+  "content": [
+    {
+      "text": "Found 5 ticket(s):\n\nTICK-0000 - Legacy system migration planning [engineering] [done] [urgent] (Lead: charlie)\nTICK-0001 - Database performance optimization [engineering] [done] [high] (Lead: bob)\nTICK-0002 - Machine learning model training pipeline [ml] [done] [high] (Lead: diana)\nTICK-0004 - API rate limiting implementation [engineering] [done] [medium] (Lead: frank)\nTICK-0005 - Security audit preparation [engineering] [done] [urgent] (Lead: alice)",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "result": "Found 5 ticket(s):\n\nTICK-0000 - Legacy system migration planning [engineering] [done] [urgent] (Lead: charlie)\nTICK-0001 - Database performance optimization [engineering] [done] [high] (Lead: bob)\nTICK-0002 - Machine learning model training pipeline [ml] [done] [high] (Lead: diana)\nTICK-0004 - API rate limiting implementation [engineering] [done] [medium] (Lead: frank)\nTICK-0005 - Security audit preparation [engineering] [done] [urgent] (Lead: alice)"
+  }
+}
+codex
+5
+tokens used
+8,379
+5

@@ -1,0 +1,10 @@
+**Charlie** first made the connection between the performance optimization and customer churn.
+
+**When:** January 7, 2025 at 14:00 UTC
+
+**Specific Evidence Provided:**
+1. **Exit interview analysis:** Charlie analyzed churned customer exit interviews and found that **67% mentioned "unreliable real-time data"** or "data doesn't update quickly enough" as a primary concern
+2. **Customer segment identified:** Particularly e-commerce clients running flash sales
+3. **Concrete example:** FlashRetail specifically mentioned that **sales data was 2+ hours behind during Black Friday flash sales**, causing them to lose money due to stale inventory counts
+
+This discovery directly linked the 2-hour cache TTL (implemented in the December performance optimization) to the Q4 renewal rate drop from 92% to 78%.

@@ -1,0 +1,45 @@
+{
+  "config": "config_1_20251110_193820",
+  "config_yaml": "config_1.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 2,
+    "accuracy": 0.6666666666666666,
+    "avg_score": 0.6666666666666666,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What is the status of the oldest ticket that was once reassigned?",
+    "Who is the lead of that oldest reassigned ticket?",
+    "How many tickets are currently done?"
+  ],
+  "expected_answers": [
+    "done",
+    "charlie",
+    "5"
+  ],
+  "results": {
+    "3": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's answer explicitly states there are 5 tickets marked as done, matching the expected answer of 5. The agent also lists the specific tickets, providing full supporting details. This is an exact match.",
+      "agent_answer": "There are currently **5 tickets** marked as done:\n\n1. **TICK-0000** - Legacy system migration planning (Engineering, Urgent, Lead: charlie)\n2. **TICK-0001** - Database performance optimization (Engineering, High, Lead: bob)\n3. **TICK-0002** - Machine learning model training pipeline (ML, High, Lead: diana)\n4. **TICK-0004** - API rate limiting implementation (Engineering, Medium, Lead: frank)\n5. **TICK-0005** - Security audit preparation (Engineering, Urgent, Lead: alice)"
+    },
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The expected answer is 'charlie', but the agent said 'Alice'. This is a specific incorrect answer, not a semantic equivalent or partial correctness. Therefore, the answer is completely wrong.",
+      "agent_answer": "The lead of the oldest reassigned ticket (TICK-0005) is **Alice**."
+    },
+    "1": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent provided the correct status ('done') for the oldest reassigned ticket. It even supplied extra supporting information about the ticket, but the main expected answer ('done') exactly matches. Therefore, the answer is fully correct.",
+      "agent_answer": "**The oldest ticket that was reassigned is TICK-0005 (Security audit preparation), and its status is: done**\n\nThis ticket was created by grace on December 1, 2024, and was assigned to alice. It was completed on December 10, 2024."
+    }
+  }
+}

@@ -1,0 +1,10 @@
+Based on the information I've gathered:
+
+1. **sarah_martinez** created TICK-0000 on 2022-12-01 announcing the "Q1 2023 UI/UX Modernization Initiative"
+2. **david_chen** created TICK-0001 on 2022-12-01 to research "Framework Theme Implementation Analysis" focusing on theme switching approaches
+3. **sarah_martinez** created TICK-0003 on 2022-12-03 to "Implement Theme Infrastructure Based on Research Findings" with an attribute-based system (marked as done)
+4. The Git repository shows a branch reference: `refs/remotes/origin/main-jd-proto-data-bs-theme`
+
+The specific data attribute name that Bootstrap used and that the team adopted is **`data-bs-theme`**.
+
+This attribute is Bootstrap's standard naming convention for their theme switching mechanism, where "bs" is the Bootstrap namespace prefix, and it's used to control color scheme/theme states (like light/dark mode) on HTML elements.

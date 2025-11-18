@@ -1,0 +1,7 @@
+Now I have all the information I need. Based on the ticket data:
+
+- **Alerts Dashboard (TICK-0001)**: The original project remained "in_progress" - it was 70% complete when the monitoring system was rolled back. The dependency impact assessment (TICK-0006) was "cancelled".
+
+- **Auto-scaling (TICK-0002)**: The original project also remained "in_progress" - it was 60% complete. However, according to the memory, it was split into a basic version (TICK-0011) which was completed on 2024-05-25, implementing basic auto-scaling using simple CPU and memory thresholds.
+
+[FINAL ANSWER] The alerts dashboard remained in_progress with its dependency assessment cancelled, while auto-scaling was split into a basic version that was completed using simple CPU/memory thresholds

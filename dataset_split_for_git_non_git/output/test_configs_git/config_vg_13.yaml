@@ -1,0 +1,77 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 100
+  system_prompt: You are a software development agent analyzing knowledge transfer
+    failures and institutional memory gaps in technical teams.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/enterprise_auth_service.git
+  name: enterprise_auth_service
+  branch: main
+  local_name: auth_service
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: engineering
+    members:
+    - CodeAgent
+    - alice
+    - bob
+    - diana
+  - name: security
+    members:
+    - CodeAgent
+    - alice
+    - diana
+  milestones:
+  - name: Q1 2025 Platform Scaling
+    description: Scale authentication system for enterprise growth
+    start_date: '2025-01-01'
+    end_date: '2025-03-31'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3003
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: documentation_debt_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_13.json
+  questions:
+  - What critical authentication behavior was undocumented when charlie left, and
+    how did the team discover it?
+  - Which specific design assumption in the original auth middleware caused the enterprise
+    client failures?
+  - What method did diana use to finally understand the token refresh logic, and what
+    did she discover?
+  expected_answers:
+  - charlie's session invalidation logic that bypassed standard logout for concurrent
+    logins, discovered through enterprise client timeout complaints
+  - assumption that enterprise tokens never exceed 24-hour lifetime, but enterprise
+    clients use 7-day tokens causing silent refresh failures
+  - diana traced through commit history and added debug logging to token_manager.py,
+    discovering the middleware cached stale refresh tokens
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o

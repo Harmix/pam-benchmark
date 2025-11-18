@@ -1,0 +1,9 @@
+Based on Bob's damage report from the engineering Slack channel:
+
+**February 1st Production Incident:**
+
+- **Root Cause:** Duplicate patient records merged incorrectly due to **missing transaction rollbacks**. Bob had removed all database transaction rollbacks on January 22nd to prevent timeouts during data imports and improve demo performance.
+
+- **Customer Accounts Affected:** **847 customer accounts**
+
+The data corruption pattern involved patient records merging incorrectly, creating duplicate entries with mixed medical histories - described by Bob as "a healthcare catastrophe."

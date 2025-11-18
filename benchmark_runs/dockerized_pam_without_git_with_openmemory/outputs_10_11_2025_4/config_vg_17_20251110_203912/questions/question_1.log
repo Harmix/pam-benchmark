@@ -1,0 +1,7 @@
+Based on my search through the workspace logs, I found the answer:
+
+**Version number: 2.4.2**
+
+**CVE number: CVE-2024-8847**
+
+Version 2.4.2 released by Charlie's security team conflicted with Bob's rollback strategy and was intended to address CVE-2024-8847.

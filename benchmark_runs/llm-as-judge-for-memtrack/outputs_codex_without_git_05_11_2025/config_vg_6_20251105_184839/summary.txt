@@ -1,0 +1,46 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_6
+Timestamp: 20251105_184839
+Run Date: Wed Nov  5 18:50:45 UTC 2025
+Total Questions: 3
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+The Q1 audit revealed $47K in inventory-payment mismatches. What specific technical integration pattern or mechanism caused these data discrepancies? Focus on the core technical issue, not secondary factors like UI problems or database migrations.
+
+Expected Answer:
+race condition in simultaneous inventory reservation and payment processing during 200ms overlap window with optimistic locking failure
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+During the post-mortem discussion, what specific prevention method or process improvement did alice propose to catch similar distributed system issues in future integrations? Provide the exact method name or description she suggested.
+
+Expected Answer:
+mandatory distributed transaction analysis for cross-system integrations
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Which team member first identified the connection between phantom customer charges and inventory discrepancies during the audit investigation? Answer with just the person's name who made this key discovery.
+
+Expected Answer:
+charlie
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_6_20251105_184839/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

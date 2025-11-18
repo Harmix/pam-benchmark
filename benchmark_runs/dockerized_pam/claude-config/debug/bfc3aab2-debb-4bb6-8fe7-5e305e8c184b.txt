@@ -1,0 +1,25 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[ERROR] Failed to save config with lock: Error: ENOENT: no such file or directory, lstat '/root/.claude.json'
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.132.1761740071713
+[DEBUG] Setting permissions for new file: 600
+[DEBUG] Temp file written successfully, size: 103 bytes
+[DEBUG] Renaming /root/.claude.json.tmp.132.1761740071713 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.132.1761740072097
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 183 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.132.1761740072097 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.132.1761740072247
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 220 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.132.1761740072247 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.132.1761740072384
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 963 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.132.1761740072384 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically

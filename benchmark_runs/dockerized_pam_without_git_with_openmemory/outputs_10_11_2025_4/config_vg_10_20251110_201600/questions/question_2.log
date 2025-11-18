@@ -1,0 +1,11 @@
+Based on the post-mortem discussion from January 27-28, 2025:
+
+**Over-engineering decision that created compliance violations:**
+Storing full request payloads in audit logs (comprehensive request/response logging with encryption and PII anonymization). This actually violated GDPR by unnecessarily capturing and storing customer PII (names, emails, addresses) in the logs themselves.
+
+**Basic approach that should have been used:**
+Simple user action logging with just metadata: timestamp, user ID, action type (create/read/update/delete), and affected customer ID. No request payloads or response data needed.
+
+As Bob acknowledged on 2025-01-27 14:15 UTC: "The root cause was storing full request payloads in logs when we only needed simple action metadata." Legal clarified they just wanted basic "who-did-what tracking" - essentially database audit trail breadcrumbs, not comprehensive application monitoring.
+
+The team's key takeaway was to get written requirements from legal BEFORE implementation and start with the minimal viable solution first.

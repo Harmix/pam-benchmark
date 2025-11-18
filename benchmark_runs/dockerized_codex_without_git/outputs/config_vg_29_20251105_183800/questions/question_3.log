@@ -1,0 +1,57 @@
+OpenAI Codex v0.55.0 (research preview)
+--------
+workdir: /workspace
+model: gpt-5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: auto
+session id: 019a5550-e44e-7883-a2e1-a1f42e0bf469
+--------
+user
+What was the exact performance metric threshold that triggered the decision to abandon pure sparse search, and which enterprise client's use case revealed this limitation?
+codex
+I’m going to search the repo for mentions of “sparse search” and related performance thresholds to find the exact quote and client name.
+exec
+bash -lc 'rg -n --hidden -S "sparse search|hybrid search|BM25|performance|threshold|latency|RPS|QPS|recall|abandon"' in /workspace exited 101 in 25ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exec
+bash -lc 'ls -la' in /workspace exited 101 in 52ms:
+
+thread 'main' panicked at linux-sandbox/src/linux_run_main.rs:30:9:
+error running landlock: Sandbox(SeccompInstall(Seccomp(Os { code: 38, kind: Unsupported, message: "Function not implemented" })))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+tool codex.list_mcp_resources({"server":""})
+codex.list_mcp_resources({"server":""}) success in 33ms:
+{
+  "content": [
+    {
+      "text": "{\"resources\":[]}",
+      "type": "text"
+    }
+  ],
+  "isError": false
+}
+codex
+I tried searching the repo, but every shell command fails due to the sandbox (Seccomp “Function not implemented”), so I can’t read files to locate the source.
+
+Options to proceed:
+- Relax the sandbox so I can run read-only commands (e.g., `rg`, `ls`) to find the passage.
+- Point me to the file/path containing this claim (likely `README.md`, `docs/`, `blog/`, or an ADR), or paste the relevant snippet.
+- Tell me the client/doc name and I’ll answer precisely if it’s in your notes.
+
+Once I can view the text, I’ll extract the exact performance threshold and the enterprise client whose use case exposed it.
+tokens used
+1,607
+I tried searching the repo, but every shell command fails due to the sandbox (Seccomp “Function not implemented”), so I can’t read files to locate the source.
+
+Options to proceed:
+- Relax the sandbox so I can run read-only commands (e.g., `rg`, `ls`) to find the passage.
+- Point me to the file/path containing this claim (likely `README.md`, `docs/`, `blog/`, or an ADR), or paste the relevant snippet.
+- Tell me the client/doc name and I’ll answer precisely if it’s in your notes.
+
+Once I can view the text, I’ll extract the exact performance threshold and the enterprise client whose use case exposed it.

@@ -1,0 +1,16 @@
+Creating dockerized_pam_claude-code_run ... 
+Creating dockerized_pam_claude-code_run ... done
+Git configured with GitHub token
+========================================
+Starting Benchmark: config_browser_use_timeout_crisis
+========================================
+Reading configuration from: /benchmark_data/test_configs/config_browser_use_timeout_crisis.yaml
+Logs directory: /workspace/logs/config_browser_use_timeout_crisis_20251029_153141
+
+Repository URL: https://github.com/browser-use/browser-use.git
+Repository Name: browser-use
+Branch: main
+Commit: a8f2b5d73c4e0f9ba7e1d3c8e5f9a2b1c4d6e8f0
+Event History: /benchmark_data/test_event_histories/event_history_browser_use_timeout_crisis.json
+
+Testing Slack MCP server...

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  claude-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude-code
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - USER_ID=default_user
+    volumes:
+      - ./claude-config:/root/.claude
+      - claude-npm-cache:/root/.npm
+      - ./outputs:/workspace/logs
+      - ./openmemory-data:/openmemory/mem0/openmemory/data
+      - ./openmemory-memories:/openmemory/memories
+    ports:
+      - "8765:8765"
+      - "3000:3000"
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+volumes:
+  claude-npm-cache:

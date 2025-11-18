@@ -1,0 +1,45 @@
+{
+  "config": "config_vg_29_20251111_073959",
+  "config_yaml": "config_vg_29.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 3,
+    "correct_count": 0,
+    "accuracy": 0.0,
+    "avg_score": 0.0,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "What specific technical limitation of the dense embedding system forced the team to implement hybrid sparse-dense retrieval instead of purely dense search?",
+    "During the post-mortem analysis, what was identified as the root cause of why matryoshka embeddings solved the memory scaling problem that standard dense embeddings couldn't handle?",
+    "What was the exact performance metric threshold that triggered the decision to abandon pure sparse search, and which enterprise client's use case revealed this limitation?"
+  ],
+  "expected_answers": [
+    "Dense embeddings failed on exact entity matching and technical terminology queries where customers needed precise keyword matches rather than semantic similarity",
+    "Matryoshka embeddings allow dynamic dimensionality reduction at query time, enabling 512-dimensional embeddings for simple queries and 2048-dimensional for complex ones, reducing memory usage by 75% while maintaining accuracy",
+    "Sparse search recall dropped below 40% on technical documentation queries, discovered when DataCorp's engineering team couldn't find specific API method names in their 500GB documentation corpus"
+  ],
+  "results": {
+    "3": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide any of the requested information: neither the exact performance metric threshold (recall dropped below 40%) nor the specific enterprise client and use case (DataCorp's engineering team and technical documentation). Instead, the agent stated it lacks the relevant information and asked clarifying questions. Therefore, the answer is entirely incomplete with respect to the requirements.",
+      "agent_answer": "I don't have any information about performance metric thresholds related to sparse search decisions or enterprise client use cases in the available context. \n\nTo help you find this information, I would need to search through relevant documentation, meeting notes, decision logs, or technical records. Could you provide more context about:\n\n1. Which project or system this refers to?\n2. Approximate timeframe when this decision was made?\n3. Any related document names or locations where this might be documented?\n\nThis will help me search the right sources to find the specific metrics and client information you're looking for."
+    },
+    "2": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not answer the question. Instead, it stated it had no information about the post-mortem analysis and did not provide any explanation regarding matryoshka embeddings or the memory scaling problem, nor any aspect of the expected answer. There is no partial correctness, as the agent did not address the technical details at all.",
+      "agent_answer": "I don't have any stored information about a post-mortem analysis regarding matryoshka embeddings and memory scaling problems. Without access to specific documentation, meeting notes, or analysis reports about this topic, I cannot provide details about the root cause that was identified.\n\nCould you help me by:\n1. Pointing me to where this post-mortem analysis is located (e.g., a document, email, or file)?\n2. Providing more context about when this analysis took place or what project/system it relates to?\n\nThis will allow me to retrieve the accurate information you're looking for."
+    },
+    "1": {
+      "score": 0.0,
+      "is_correct": false,
+      "confidence": 1.0,
+      "reasoning": "The agent did not provide an answer to the specific technical limitation of dense embedding systems. Instead, it only stated that it lacks the information and offered to search for it, rather than attempting an answer. There is neither an exact match nor a semantically equivalent statement to the expected answer, and no partial correctness.",
+      "agent_answer": "I don't have any information about a specific technical limitation of a dense embedding system or a team implementing hybrid sparse-dense retrieval in the current context.\n\nTo help you find this information, I would need to:\n\n1. Search through the codebase for relevant documentation or code comments\n2. Look for design documents or technical specifications\n3. Search through communication channels (Slack, Linear tickets, etc.)\n\nWould you like me to search for this information in any of these places? Please let me know:\n- Is this related to a specific project or codebase you're working on?\n- Should I search through Slack messages, Linear tickets, or code repositories?\n- Is there a particular timeframe or team I should focus on?"
+    }
+  }
+}

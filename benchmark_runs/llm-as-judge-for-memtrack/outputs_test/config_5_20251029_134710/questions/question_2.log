@@ -1,0 +1,7 @@
+Based on the Linear tickets, I have found the information about the monitoring system rollback:
+
+**Root Cause:** The advanced monitoring system was generating 50x more database queries than anticipated, causing severe database performance degradation (300% increased query times, CPU usage above 90%, and connection pool exhaustion).
+
+**Team that led the rollback:** The platform team led the rollback decision, with alex as the lead on the rollback ticket (TICK-0005).
+
+[FINAL ANSWER] 50x more database queries than anticipated from comprehensive metrics collection, platform team

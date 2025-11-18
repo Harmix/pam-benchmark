@@ -1,0 +1,12 @@
+Perfect! I have all the information needed. Based on my search of the entire mlebench/ directory (including all subdirectories), I found exactly **2 Python files** that contain import statements referencing the kaggle package:
+
+1. **`/workspace/mle_bench/mlebench/data.py`** - Contains 2 import statements:
+   - Line 191: `from kaggle.rest import ApiException` (inside the `is_api_exception` function - this is the exception handling code around lines 180-200 that sarah_chen likely mentioned)
+   - Line 218: `from kaggle.rest import ApiException` (inside the `download_dataset` function)
+
+2. **`/workspace/mle_bench/mlebench/utils.py`** - Contains 1 import statement:
+   - Line 29: `from kaggle.api.kaggle_api_extended import KaggleApi` (inside the `authenticate_kaggle_api` function)
+
+**Answer: 2 Python files** in the mlebench/ directory (including subdirectories) contain import statements that reference the kaggle package.
+
+Note: Both files use conditional imports (importing only when necessary inside functions) with comments explaining that "kaggle asks for API key on import", which is why the imports are deferred rather than placed at the top of the files.

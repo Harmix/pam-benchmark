@@ -1,0 +1,286 @@
+[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
+[DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+[DEBUG] Loading skills from directories: managed=/etc/claude-code/.claude/skills, user=/root/.claude/skills, project=/workspace/neurallm_app/.claude/skills
+[DEBUG] >>>>> getPluginSkills CALLED <<<<<
+[DEBUG] Creating shell snapshot for bash (/bin/bash)
+[DEBUG] Looking for shell config file: /root/.bashrc
+[DEBUG] Snapshots directory: /root/.claude/shell-snapshots
+[DEBUG] Creating snapshot at: /root/.claude/shell-snapshots/snapshot-bash-1761670159704-odf76k.sh
+[DEBUG] Shell binary exists: true
+[DEBUG] Execution timeout: 10000ms
+[DEBUG] Writing to temp file: /root/.claude/todos/cb400fdd-5872-478d-8077-7101cadd714c-agent-cb400fdd-5872-478d-8077-7101cadd714c.json.tmp.220.1761670159782
+[DEBUG] Temp file written successfully, size: 2 bytes
+[DEBUG] Renaming /root/.claude/todos/cb400fdd-5872-478d-8077-7101cadd714c-agent-cb400fdd-5872-478d-8077-7101cadd714c.json.tmp.220.1761670159782 to /root/.claude/todos/cb400fdd-5872-478d-8077-7101cadd714c-agent-cb400fdd-5872-478d-8077-7101cadd714c.json
+[DEBUG] File /root/.claude/todos/cb400fdd-5872-478d-8077-7101cadd714c-agent-cb400fdd-5872-478d-8077-7101cadd714c.json written atomically
+[DEBUG] getPluginSkills: Processing 0 enabled plugins
+[DEBUG] Total plugin skills loaded: 0
+[DEBUG] Total plugin commands loaded: 0
+[DEBUG] Registered 0 hooks from 0 plugins
+[DEBUG] Loaded 0 unique skills (managed: 0, user: 0, project: 0, duplicates removed: 0)
+[DEBUG] getSkillsIfEnabled returning: 0 skill dir commands, 0 plugin skills
+[DEBUG] Total plugin agents loaded: 0
+[DEBUG] Getting matching hook commands for SessionStart with query: startup
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "startup" (0 before deduplication)
+[DEBUG] Ripgrep first use test: PASSED (mode=builtin, path=/usr/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg)
+[DEBUG] Shell snapshot created successfully (1596 bytes)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Getting matching hook commands for UserPromptSubmit with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.220.1761670161840
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 1390 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.220.1761670161840 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Writing to temp file: /root/.claude.json.tmp.220.1761670161879
+[DEBUG] Preserving file permissions: 100600
+[DEBUG] Temp file written successfully, size: 1390 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming /root/.claude.json.tmp.220.1761670161879 to /root/.claude.json
+[DEBUG] File /root/.claude.json written atomically
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"api_error","message":"Internal server error"},"request_id":"req_011CUZwT3EHB9k1hUdmHwmTn"}
+[DEBUG] Stream started - received first chunk
+[DEBUG] Stream started - received first chunk
+[ERROR] Error in non-streaming fallback: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+[ERROR] Error: Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+    at D4.generate (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:203:83308)
+    at uy.makeStatusError (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:2117)
+    at uy.makeRequest (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:5330)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async OtA.model (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:18888)
+    at async OtA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2692:39781)
+    at async ib2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:19040)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:13007
+    at async Wo1 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:4492)
+    at async p4A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12977)
+[DEBUG] Getting matching hook commands for SubagentStop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"api_error","message":"Internal server error"},"request_id":"req_011CUZwT3XtG3MG4YWxjr6nx"}
+[DEBUG] Getting matching hook commands for SubagentStop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[ERROR] Error in non-streaming fallback: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+[ERROR] Error: Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+    at D4.generate (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:203:83308)
+    at uy.makeStatusError (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:2117)
+    at uy.makeRequest (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:5330)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async OtA.model (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:18888)
+    at async OtA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2692:39781)
+    at async ib2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:19040)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12775
+    at async Wo1 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:4492)
+    at async wd (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12746)
+[DEBUG] executePreToolHooks called for tool: Task
+[DEBUG] Getting matching hook commands for PreToolUse with query: Task
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Task" (0 before deduplication)
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"api_error","message":"Internal server error"},"request_id":"req_011CUZwTeY3zofPG7ZwJYFJ4"}
+[ERROR] Error in non-streaming fallback: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+[ERROR] Error: Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+    at D4.generate (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:203:83308)
+    at uy.makeStatusError (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:2117)
+    at uy.makeRequest (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:5330)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async OtA.model (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:18888)
+    at async OtA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2692:39781)
+    at async ib2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:19040)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:13007
+    at async Wo1 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:4492)
+    at async p4A (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12977)
+[DEBUG] Getting matching hook commands for SubagentStop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Task
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Task" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Glob
+[DEBUG] Getting matching hook commands for PreToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] executePreToolHooks called for tool: Glob
+[DEBUG] Getting matching hook commands for PreToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] executePreToolHooks called for tool: Glob
+[DEBUG] Getting matching hook commands for PreToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] executePreToolHooks called for tool: Glob
+[DEBUG] Getting matching hook commands for PreToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Glob
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Glob" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Bash
+[DEBUG] Getting matching hook commands for PreToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] No hook environment files found
+[DEBUG] Getting matching hook commands for PostToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"api_error","message":"Internal server error"},"request_id":"req_011CUZwUkk99JN4zSm5Do4iN"}
+[DEBUG] Stream started - received first chunk
+[ERROR] Error in non-streaming fallback: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+[ERROR] Error: Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+    at D4.generate (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:203:83308)
+    at uy.makeStatusError (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:2117)
+    at uy.makeRequest (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:5330)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async OtA.model (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:18888)
+    at async OtA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2692:39781)
+    at async ib2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:19040)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12775
+    at async Wo1 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:4492)
+    at async wd (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12746)
+[DEBUG] executePreToolHooks called for tool: Bash
+[DEBUG] Getting matching hook commands for PreToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"api_error","message":"Internal server error"},"request_id":"req_011CUZwV4bvuCECEjFYqsff7"}
+[ERROR] Error in non-streaming fallback: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+[ERROR] Error: Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":null}
+    at D4.generate (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:203:83308)
+    at uy.makeStatusError (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:2117)
+    at uy.makeRequest (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:357:5330)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async OtA.model (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:18888)
+    at async OtA (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:2692:39781)
+    at async ib2 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:19040)
+    at async file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12775
+    at async Wo1 (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:4492)
+    at async wd (file:///usr/lib/node_modules/@anthropic-ai/claude-code/cli.js:3354:12746)
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Bash
+[DEBUG] Getting matching hook commands for PreToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[ERROR] Error streaming, falling back to non-streaming mode: {"type":"error","error":{"details":null,"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CUZwVNWCgkfpwUPnYRmJM"}
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Grep
+[DEBUG] Getting matching hook commands for PreToolUse with query: Grep
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Grep" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Grep
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Grep" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Read
+[DEBUG] Getting matching hook commands for PreToolUse with query: Read
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Read" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Read
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Read" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Bash
+[DEBUG] Getting matching hook commands for PreToolUse with query: Bash
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Bash" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] executePreToolHooks called for tool: Grep
+[DEBUG] Getting matching hook commands for PreToolUse with query: Grep
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Grep" (0 before deduplication)
+[DEBUG] Getting matching hook commands for PostToolUse with query: Grep
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "Grep" (0 before deduplication)
+[DEBUG] Hooks: getAsyncHookResponseAttachments called
+[DEBUG] Hooks: checkForNewResponses called
+[DEBUG] Hooks: Found 0 total hooks in registry
+[DEBUG] Hooks: checkForNewResponses returning 0 responses
+[DEBUG] Skills and commands included in Skill tool:
+[DEBUG] Slash commands included in SlashCommand tool:
+[DEBUG] Stream started - received first chunk
+[DEBUG] Getting matching hook commands for Stop with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Getting matching hook commands for SessionEnd with query: undefined
+[DEBUG] Found 0 hook matchers in settings
+[DEBUG] Matched 0 unique hooks for query "no match query" (0 before deduplication)
+[DEBUG] Cleaned up session snapshot: /root/.claude/shell-snapshots/snapshot-bash-1761670159704-odf76k.sh
+[ERROR] OpenTelemetry telemetry flush timed out after 1000ms
+
+To resolve this issue, you can:
+1. Increase the timeout by setting CLAUDE_CODE_OTEL_SHUTDOWN_TIMEOUT_MS env var (e.g., 5000 for 5 seconds)
+2. Check if your OpenTelemetry backend is experiencing scalability issues
+3. Disable OpenTelemetry by unsetting CLAUDE_CODE_ENABLE_TELEMETRY env var
+
+Current timeout: 1000ms

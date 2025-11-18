@@ -1,0 +1,19 @@
+Based on my search of the codebase, I found the answer:
+
+## The Production Incident
+
+**Customer-Specific Flag Configuration:** The combination of `compliance_mode` + `enterprise_dashboard` + `custom_reporting` flags created a production incident that **disabled audit logging in production**.
+
+## The Fundamental Complexity Problem Revealed
+
+The incident exposed that the system had evolved from simple feature toggles into an **unmanageable distributed state machine** with these critical issues:
+
+1. **Exponential State Space**: With 21 flags and conditional dependencies (where flags could reference other flags conditionally, like `advanced_filters_enabled = new_dashboard && advanced_filters`), the system created a dependency graph with exponential branching paths far beyond the 2^21 = 2.1M simple combinations.
+
+2. **Untestable System**: QA member Henry noted on January 13th: "With conditional flags, we're not looking at 2^21 states. We're looking at a dependency graph with exponential branching paths."
+
+3. **Implicit Business Logic**: Business logic lived in flag interactions rather than explicit code, causing behavior to emerge from combinations that were never explicitly designed or tested.
+
+The root cause was Bob's implementation of **nested conditional flag dependencies** on December 9, 2024, which allowed flags to depend on other flags conditionally. As the system expanded to include customer-specific features, security/compliance flags, user segmentation, time-based flags, and ML-driven personalization, the conditional dependencies created a complexity explosion that made the system fundamentally untestable.
+
+**Source**: /workspace/logs/config_vg_23_20251106_142103/questions/question_1.log

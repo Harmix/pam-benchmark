@@ -1,0 +1,32 @@
+Perfect! I now have all the information needed. Based on the Linear ticket and the Slack engineering channel discussions, I can provide a comprehensive answer about the technical root cause.
+
+---
+
+## Core Technical Issue: Race Condition with Optimistic Locking Failure
+
+The **$47K inventory-payment mismatch** was caused by a **race condition occurring during a ~200ms overlap window** when payment processing and inventory reservation operations ran simultaneously during high-concurrency periods.
+
+### Technical Root Cause:
+
+**Optimistic locking failure in distributed transactions** - The system used optimistic locking within each individual system (payment and inventory), but failed to implement proper distributed transaction coordination between the two systems.
+
+### The Mechanism:
+
+1. **200ms Timing Window**: During high-traffic events (Black Friday, Cyber Monday, flash sales), payment processing and inventory reservation could overlap within approximately 200 milliseconds
+
+2. **Distributed Transaction Gap**: Each system (payment and inventory) used optimistic locking that assumed sequential access, but operations were actually running simultaneously across distributed systems
+
+3. **Data Corruption Pattern**: When operations overlapped in the 200ms window:
+   - Payment could succeed while inventory reservation failed, OR
+   - Inventory could be reserved while payment failed
+   - This created orphaned transactions where one side succeeded and the other failed
+
+### Key Evidence from the Investigation:
+
+- **Pattern**: Discrepancies only occurred during high-concurrency periods, never during low-traffic times (per charlie's audit findings)
+- **Reproduction**: Diana successfully reproduced the issue by simulating high concurrency scenarios
+- **Technical Gap**: Bob confirmed his optimistic locking strategy assumed sequential access but couldn't handle simultaneous distributed operations
+
+The integration passed all individual system tests and integration tests because testing didn't cover the timing overlap scenarios that occurred under production load.
+
+**Reference**: TICK-0007 (Linear), #engineering channel discussions from 2025-02-03 to 2025-02-05

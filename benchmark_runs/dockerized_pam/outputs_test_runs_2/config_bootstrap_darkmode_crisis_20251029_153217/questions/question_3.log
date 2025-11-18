@@ -1,0 +1,5 @@
+Perfect! Now I have found the answer. Based on the git history of the Bootstrap codebase, specifically in commit `fc3f4b67d` which added dark mode support, the CSS variable for the secondary background that Bootstrap introduced for their dark mode system is:
+
+**`--bs-secondary-bg`**
+
+This variable is defined in the `_root.scss` file and is used for both light and dark modes. In the context provided by the commit, this variable was introduced alongside `--bs-tertiary-bg` as part of Bootstrap's comprehensive dark mode support system. The variable maps to `$body-secondary-bg` in light mode and `$body-secondary-bg-dark` in dark mode.

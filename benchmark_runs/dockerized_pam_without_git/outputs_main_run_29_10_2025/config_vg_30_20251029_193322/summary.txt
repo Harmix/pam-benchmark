@@ -1,0 +1,53 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_30
+Timestamp: 20251029_193322
+Run Date: Wed Oct 29 19:37:16 UTC 2025
+Total Questions: 3
+
+Repository Information:
+----------------------
+Name: graphql_platform
+URL: https://github.com/testrldd/graphql_platform.git
+Branch: main
+Available: false
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+Bob performed git archaeology to find when OpenGraphQL was first tightly coupled to the auth system. What specific file path did he identify as containing the problematic integration pattern?
+
+Expected Answer:
+src/auth/validators/GraphQLUserValidator.js
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+During the dependency audit, charlie discovered a circular import issue. What was the exact reason diana's initial migration approach failed according to the build system analysis?
+
+Expected Answer:
+OpenGraphQL schema validation called before GraphQL types were initialized causing undefined reference errors
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+Alice's historical investigation revealed the original design constraint. What specific performance requirement from 2022 led to the tight coupling that now prevents easy migration?
+
+Expected Answer:
+sub-100ms API response requirement forced direct schema object sharing instead of API calls
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_30_20251029_193322/
+├── summary.txt (this file)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

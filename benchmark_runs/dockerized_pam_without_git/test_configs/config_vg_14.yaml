@@ -1,0 +1,82 @@
+agent:
+  model: openai:gpt-5
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 120
+  system_prompt: You are a software development agent analyzing complex organizational
+    crisis situations involving market disruption, competing product strategies, team
+    fragmentation, and technical decision-making under extreme pressure.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/workflow_automation_platform.git
+  name: workflow_automation_platform
+  branch: main
+  local_name: workflow_automation_platform
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: product
+    members:
+    - CodeAgent
+    - alice
+    - diana
+  - name: engineering
+    members:
+    - CodeAgent
+    - bob
+    - charlie
+  - name: research
+    members:
+    - CodeAgent
+    - diana
+    - charlie
+  milestones:
+  - name: Market Response Q1 2025
+    description: Strategic response to competitive market disruption
+    start_date: '2025-01-01'
+    end_date: '2025-03-31'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3002
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: pivot_spiral_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_14.json
+  questions:
+  - What were the three competing pivot strategies that emerged after the competitive
+    disruption, and which team member championed each approach?
+  - What specific enterprise customer complaint pattern led to the realization that
+    the multi-directional pivot was failing?
+  - During the week 8 technical debt crisis, what was the root cause of the system
+    integration failures across all three pivot codebases?
+  expected_answers:
+  - AI integration championed by alice, performance doubling championed by bob, enterprise
+    security focus championed by diana
+  - TechCorp and DataFlow complained about feature inconsistencies and broken integrations
+    during their pilot deployments
+  - Shared database schema conflicts when bob tried to merge incompatible data models
+    from all three pivot directions
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o

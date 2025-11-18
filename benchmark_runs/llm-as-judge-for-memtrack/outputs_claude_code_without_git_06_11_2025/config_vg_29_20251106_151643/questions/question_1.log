@@ -1,0 +1,31 @@
+Based on my search through the workspace, I found the answer to your question about the technical limitation of the dense embedding system:
+
+## Technical Limitation
+
+**Dense embeddings failed on exact entity matching and technical terminology queries where customers needed precise keyword matches rather than semantic similarity.**
+
+### What This Means
+
+The specific problem was that dense embeddings (which use semantic similarity for search) couldn't reliably:
+
+1. **Match exact entities** - When users searched for specific entities (like company names, product codes, or identifiers), the semantic approach would sometimes return conceptually similar but wrong results
+
+2. **Handle technical terminology** - Technical terms and jargon needed exact matching rather than semantic approximation
+
+3. **Provide precise keyword matches** - Customers expected traditional keyword-based search behavior for certain queries
+
+### Why This Forced Hybrid Implementation
+
+Pure dense search relies on semantic similarity - finding documents that are conceptually related to the query. However, this approach breaks down when users need:
+- **Exact string matches** (e.g., searching for "API-2341" should return that specific API, not semantically similar APIs)
+- **Technical term precision** (e.g., "PostgreSQL" shouldn't match "MySQL" even though they're semantically similar databases)
+
+The hybrid sparse-dense retrieval system combines:
+- **Sparse retrieval** (traditional keyword/BM25) for exact matches and technical terms
+- **Dense retrieval** (embeddings) for semantic similarity and conceptual queries
+
+This limitation is fundamental to how dense embeddings work - they optimize for semantic meaning but lose the ability to guarantee exact lexical matches.
+
+---
+
+*Note: This information comes from test data for an "enterprise_search_platform" project under a "Search Infrastructure Modernization" milestone.*

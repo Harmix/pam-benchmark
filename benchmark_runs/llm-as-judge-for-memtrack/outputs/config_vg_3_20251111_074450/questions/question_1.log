@@ -1,0 +1,15 @@
+## Root Cause Found
+
+The contradictory search behavior reports were caused by a **feature flag A/B test split**:
+
+- **30% of users** were served the **new ML-based search algorithm**
+- **70% of users** continued using the **old/legacy search algorithm**
+
+This created two completely different search experiences, causing:
+- Team members to unknowingly test different implementations
+- Some users experiencing issues with the new algorithm while others had no problems with the old one
+- Conflicting bug reports where reproduction was impossible because reporters were in different feature flag groups
+
+This is a classic example of how feature flags can create confusing situations where the same feature behaves differently for different users, leading to contradictory reports that seem impossible to reconcile until the underlying A/B test configuration is discovered.
+
+Would you like me to store this finding in memory for future reference?

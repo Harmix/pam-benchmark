@@ -1,0 +1,27 @@
+{
+  "config": "config_3_20251111_053820",
+  "config_yaml": "config_3.yaml",
+  "model": "gpt-4.1",
+  "summary": {
+    "total_questions": 1,
+    "correct_count": 1,
+    "accuracy": 1.0,
+    "avg_score": 1.0,
+    "avg_confidence": 1.0
+  },
+  "questions": [
+    "Analyzing the tickets and other pertinent context, answer the following question: What was the original authentication feature that got cancelled, why was it cancelled, and what alternative solution was implemented instead? Provide your answer in the format: [FINAL ANSWER] <original feature>, <cancellation reason>, <alternative solution>"
+  ],
+  "expected_answers": [
+    "social login integration, security vulnerability in OAuth implementation, multi-factor authentication with email verification"
+  ],
+  "results": {
+    "1": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent's extracted answer correctly identifies the original feature ('Social login integration (OAuth...)'), mentions specific security vulnerabilities in OAuth implementation (expanding on 'security vulnerability in OAuth implementation' with more details), and states the alternative solution as 'Multi-factor authentication system with email verification as the primary method,' which matches the expected answer. The answer is precise, factually correct, and includes extra detail without contradicting or omitting any part of the expected answer.",
+      "agent_answer": "Based on my analysis of the Linear tickets, I can provide you with the complete answer:\n\n[FINAL ANSWER] Social login integration (OAuth with Google, Facebook, and GitHub), Security vulnerabilities including token storage in localStorage vulnerable to XSS, insufficient redirect URI validation, missing state parameter validation, and no PKCE implementation for public clients, Multi-factor authentication system with email verification as the primary method"
+    }
+  }
+}
