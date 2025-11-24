@@ -1,0 +1,20 @@
+Based on the processed event history data, here is the answer to your question:
+
+**Root Cause of Context Window Exhaustion:**
+
+Complex reasoning chains were **exceeding the 32k context window** during evaluation, causing evaluation truncation mid-reasoning. Specifically:
+
+1. **Technical Issue**: SWE-bench and GPQA tasks could not complete full evaluation because the reasoning chains were too long to fit within the 32k token limit
+
+2. **Critical Impact**: This truncation was **corrupting task completion reward signals**, which was a showstopper for the multi-turn evaluation approach
+
+3. **Severity**: Eve described it as blocking the entire multi-turn approach: "If we can't evaluate full reasoning chains, the whole multi-turn approach falls apart"
+
+**Architectural Solution Implemented:**
+
+The team redesigned the system with a **hierarchical reasoning chunk evaluation architecture** that:
+- Breaks long reasoning chains into 8k token chunks
+- Evaluates each chunk independently with intermediate verification
+- Combines chunk evaluations for the final task completion score
+
+This issue was resolved by November 24, 2024, as part of the three critical fixes (conversation state persistence, API reward corruption, and context window exhaustion) that stabilized the multi-turn evaluation system for production deployment.

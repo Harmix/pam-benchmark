@@ -1,0 +1,68 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_15
+Timestamp: 20251124_170727
+Run Date: Mon Nov 24 17:13:55 UTC 2025
+Total Questions: 3
+
+Processing Phases:
+1. PAM Structure Creation: init.py
+2. Event History Processing: processing.log
+3. Question Answering: questions/question_*.log
+
+Workspace Structure:
+/workspace/
+├── INIT.md (PAM Guide)
+├── init.py (Structure generator)
+├── INTRO_TEMPLATE.md (Company template)
+├── CLAUDE.md (System context)
+├── config_vg_15_company_context/ (PAM folder structure)
+│   ├── 01_company/
+│   ├── 02_people/
+│   ├── 06_projects/
+│   ├── 09_activity_streams/
+│   └── ...
+└── unsorted/
+    ├── event_history.json (Config-specific data)
+    └── linear_config.yaml (Config-specific Linear setup)
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+What were the three specific technical shortcuts bob implemented between January 20-22 that directly caused the HealthSystem Corp demo failure on January 28?
+
+Expected Answer:
+disabled input validation, hardcoded API credentials, removed transaction rollbacks
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+On January 15th, diana flagged a patient data encryption vulnerability that charlie supported but alice overruled. What was alice's exact three-word reasoning for the override decision?
+
+Expected Answer:
+ship or die
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+During the February 1st production incident, what was the root cause data corruption pattern and exactly how many customer accounts were affected according to bob's damage report?
+
+Expected Answer:
+duplicate patient records merged incorrectly, 847 customer accounts
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_15_20251124_170727/
+├── summary.txt (this file)
+├── processing.log (initial data processing)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

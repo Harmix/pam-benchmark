@@ -1,0 +1,25 @@
+Based on the event history data, I can now provide you with the answer:
+
+## Answer
+
+**Technical Change:** Implementation of Redis caching with a 2-hour TTL (Time To Live) for dashboard metrics aggregation (deployed Dec 3-4, 2024, commits a7f8b23 and c2d9e4f).
+
+**Business Impact:** Customer renewal rates dropped from 92% to 78% between Q4 2024 and early Q1 2025.
+
+**Root Cause Mechanism:**
+The 2-hour cache TTL made dashboard data up to 2 hours stale, which broke critical real-time use cases for e-commerce clients. Specifically:
+
+1. **Performance vs. Freshness Trade-off**: While the caching reduced dashboard load times from 15+ seconds to ~2 seconds (87% cache hit rate), it made all aggregated metrics potentially 2 hours out of date.
+
+2. **Use Case Mismatch**: E-commerce clients (like FlashRetail, QuickMart, InstaBuy) relied on real-time dashboard data for:
+   - Flash sales inventory management
+   - Live conversion tracking during campaigns
+   - Up-to-the-minute sales decisions
+
+3. **Critical Failure Point**: During Black Friday and December flash sales, stale inventory counts and sales data (2+ hours behind) caused operational losses for clients who needed second-by-second accuracy.
+
+**Exit Interview Evidence**: 67% of churned customers cited "unreliable real-time data" or "data doesn't update quickly enough" as their primary concern.
+
+The team optimized for performance but didn't analyze real-time freshness requirements, treating all dashboard metrics with the same 2-hour TTL regardless of use case sensitivity.
+
+**Reference:** /workspace/unsorted/event_history.json (events from Dec 2, 2024 - Jan 9, 2025)

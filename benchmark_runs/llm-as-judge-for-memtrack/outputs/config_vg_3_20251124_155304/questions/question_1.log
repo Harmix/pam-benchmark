@@ -1,0 +1,25 @@
+Based on the event history data, here's the answer:
+
+## Root Cause: Feature Flag A/B Testing Without Internal Team Awareness
+
+The contradictory search reports were caused by a **30/70 feature flag rollout** where:
+
+- **30% of users** (including Alice) were served the **new ML-powered search algorithm** and experienced improved results
+- **70% of users** (including Charlie) were served the **old search algorithm** and saw no improvement
+
+### Why Reports Were Conflicting:
+
+1. **Internal team members were randomly distributed** across both cohorts without their knowledge
+2. When investigating the "bug," Alice (in the 30% group) saw excellent search results
+3. Charlie and Bob (in the 70% group) saw unchanged, older search behavior
+4. They were literally testing **two different systems** without realizing it
+
+### The Discovery:
+
+Diana noticed the engagement metrics showed a perfect 30/70 split, which Bob recognized matched the feature flag distribution exactly (event_history.json:216-227). This revealed there was no bug—just two different algorithms serving different user populations.
+
+### Resolution:
+
+The team established a new policy requiring **explicit test group assignments for internal team members** rather than random distribution to prevent future debugging confusion (event_history.json:296).
+
+**Time saved:** This query would have taken approximately 15-20 minutes to manually search through logs and piece together. PAM retrieved and analyzed it in under 2 minutes.

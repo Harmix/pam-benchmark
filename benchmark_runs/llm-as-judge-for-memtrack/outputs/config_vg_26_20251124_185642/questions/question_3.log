@@ -1,0 +1,27 @@
+Perfect! Now I have all the information needed to answer your question. Let me provide a clear, concise answer:
+
+---
+
+## Answer
+
+**Memory Requirement Explosion:** The exact memory requirement explosion was **2GB → 32GB per batch (16x increase)**.
+
+**Triggering Feature:** The **isolated conversation context feature** (also called "conversation threading" or "context isolation") triggered this memory explosion.
+
+### Details:
+
+- **Before context isolation:** Evaluation batches required ~2GB total memory
+- **After context isolation:** Each evaluation batch required 32GB RAM
+- **Root cause:** Each multi-turn dialogue thread required separate, isolated memory space to prevent context bleeding between conversations
+- **Infrastructure impact:** The 64GB Kubernetes cluster could only handle 2 concurrent evaluation batches (instead of the needed production scale)
+- **Cascading effect:** When 500+ containers spawned simultaneously during stress testing, they exceeded the 64GB cluster limit, causing a complete infrastructure crash
+
+### The Cascade Failure Pattern:
+1. Multi-turn evaluation → 10x runtime slowdown (3 sec → 35 sec)
+2. Dockerization → Resource contention & non-deterministic results
+3. **Context isolation → 32GB memory explosion (16x increase from 2GB)**
+4. Infrastructure collapse → Kubernetes cluster crash
+
+The evaluation sharding approach was proposed by Diana on January 27, 2025, as a solution to distribute conversation threads across multiple machines and aggregate results, though this would introduce significant distributed systems complexity.
+
+**Source evidence:** Event timestamp 20250201T1100 - Alice's Slack message explicitly states: *"the isolated conversation context feature alone caused memory requirements to go from 2GB total to 32GB per batch. That's a 16x explosion from a single threading feature."*

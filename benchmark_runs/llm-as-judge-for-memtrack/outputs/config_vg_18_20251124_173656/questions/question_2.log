@@ -1,0 +1,15 @@
+Based on the event history data processed in `/workspace/unsorted/event_history.json`, here's the answer:
+
+## Fundamental Technical Reason for Integration Failure
+
+**GPU memory allocation conflicts at the kernel level caused by incompatible tensor shape optimizations.**
+
+Each attention mechanism optimized for fundamentally different computational patterns:
+
+1. **Sparse attention** - Used irregular memory access patterns to minimize memory footprint
+2. **Hierarchical attention** - Required nested structure allocations to maximize cache locality  
+3. **Multi-head attention** - Assumed uniform parallel processing blocks
+
+When attempting to run all three approaches together in parallel, their different tensor shape optimizations created memory allocation conflicts that prevented integration, despite each showing strong individual performance (40% compute reduction for sparse, 15% accuracy improvement for hierarchical, and baseline reliability for multi-head).
+
+The solution that ultimately worked was **architectural decomposition** - using each attention mechanism sequentially for different processing stages (sparse for preprocessing, hierarchical for main inference, multi-head for output), which eliminated the parallel memory conflicts and allowed the memory allocation to happen in sequence rather than concurrently.

@@ -1,0 +1,11 @@
+## Answer
+
+**Specific Technical Change:**
+The **dockerized evaluation environment implementation** (January 15-18, 2025) introduced non-deterministic evaluation results. The containerization of the multi-turn evaluation system using Docker and Kubernetes orchestration caused the same test suite to produce different scores on repeat runs.
+
+**Underlying Infrastructure Cause:**
+**CPU resource contention in the Kubernetes cluster**. When spawning 200+ containers simultaneously, the cluster became CPU-bound, causing containers to receive inconsistent CPU scheduling. This timing variation in CPU allocation led to different execution patterns in multi-turn conversations, producing non-deterministic evaluation results.
+
+The issue was identified on January 21, 2025, with Bob discovering that resource contention meant "containers get different CPU scheduling, causing timing variations in multi-turn conversations."
+
+**Source:** Event history data at `/workspace/unsorted/event_history.json` (events from January 19-21, 2025)

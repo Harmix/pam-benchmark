@@ -1,0 +1,18 @@
+Based on the processed data, I can provide you with a clear answer:
+
+## Answer:
+
+**Bob** (Infrastructure Engineer) connected the conflicting user reports to the actual technical implementation.
+
+### Evidence Provided:
+
+Diana (Data Analyst) first identified that engagement metrics showed a **30/70 split**, which was unusual. Bob then recognized that this exact split matched the **feature flag distribution** being used for the A/B test of the new ML-powered search algorithm.
+
+This connection revealed the root cause:
+- **30% of users** (including Alice) were served the new ML-powered search algorithm and saw improved results
+- **70% of users** (including Charlie and Bob himself) were served the old search algorithm and saw no improvements
+- Internal team members were **randomly distributed** across both test groups without their knowledge
+
+The conflicting reports weren't due to a bug—team members were literally using two different systems without realizing it, which made debugging impossible.
+
+This discovery led to Alice mandating a new policy on 2025-01-19 requiring explicit test group assignments for internal team members rather than random distribution.

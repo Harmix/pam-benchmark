@@ -1,0 +1,27 @@
+Based on the event history data, I can now provide a clear answer about the technical integration issue:
+
+## Answer
+
+The core technical issue causing the $47K inventory-payment mismatches was **race conditions in distributed transactions due to simultaneous operations without proper distributed locking**.
+
+### Specific Technical Pattern:
+
+**Optimistic locking within individual systems without distributed transaction coordination**
+
+The integration used:
+- **Payment system**: 5-second timeout with 3 retries and exponential backoff
+- **Inventory system**: Optimistic locking with version numbers and 10-minute reservation expiration
+
+### The Fatal Flaw:
+
+During high-concurrency periods (Black Friday, Cyber Monday, flash sales), when payment processing and inventory reservation operations occurred **within a ~200ms overlap window**, they ran simultaneously as independent transactions. The optimistic locking mechanism assumed sequential access but the operations were actually concurrent across distributed systems.
+
+**Result**: Payment would succeed while inventory reservation failed (or vice versa), causing data inconsistency. During low traffic, operations remained sequential so the issue didn't manifest—only appearing under high load when timing overlaps occurred.
+
+### What Was Missing:
+
+- **Distributed transaction coordination** (two-phase commit or saga pattern)
+- **Cross-system locking** instead of just per-system optimistic locking  
+- **Testing of timing overlap scenarios** (both systems tested perfectly in isolation but never under simultaneous execution)
+
+The systems appeared to work flawlessly because individual component testing passed, but the distributed transaction semantics were never validated under concurrent load conditions.

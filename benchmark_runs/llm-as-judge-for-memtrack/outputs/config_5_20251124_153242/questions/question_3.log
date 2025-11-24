@@ -1,0 +1,3 @@
+Based on the event history data, I can now answer your question about how the alerts dashboard and auto-scaling projects were handled differently after the rollback.
+
+**[FINAL ANSWER]** The alerts dashboard was cancelled (70% complete work abandoned), the auto-scaling project was simplified and completed as basic rule-based auto-scaling using simple CPU/memory thresholds instead of intelligent performance metrics.

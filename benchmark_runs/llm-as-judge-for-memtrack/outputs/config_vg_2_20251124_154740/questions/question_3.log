@@ -1,0 +1,17 @@
+Perfect! I found the answer in the processed data. Based on the event history analysis:
+
+## Answer
+
+**The specific behavioral change was:** The `fast-json-parse` library changed its **null-handling behavior** when it was updated from v2.8.1 to v3.0.0.
+
+Specifically: **v3.0 changed to return `undefined` instead of `null` for empty fields.**
+
+This single behavioral change in how the dependency handled null/empty values caused three different failure modes:
+
+1. **Report generation failures** - Templates expected `null` but received `undefined`, causing JSON serialization errors
+
+2. **API performance degradation** - Response validation checks using `=== null` missed the `undefined` values, forcing the system into slow validation paths (latency increased from 150ms to 400ms+)
+
+3. **Monitoring dashboard data gaps** - Metric parsing filtered out `undefined` values as invalid, creating gaps in the dashboard data
+
+The behavioral change propagated through the system when `utils-common` was upgraded from v2.1.3 to v2.2.0 on December 2, 2024, which inadvertently pulled in `fast-json-parse` v3.0.0 as a transitive dependency.

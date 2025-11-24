@@ -1,0 +1,22 @@
+Based on the event history data, I can now provide you with a clear answer:
+
+## Answer
+
+**Bob** first discovered the connection between the database optimization and external integration failures.
+
+**Specific customer workflow evidence:**
+
+On **April 18, 2025 at 15:00 UTC** (timestamp: 20250418T1500), Bob reported:
+
+> "🚨 Found something critical! Webhook deliveries to external services are failing silently. Stripe payment confirmations, email campaign triggers, Slack notification webhooks - they're all timing out. But our internal logs show no errors!"
+
+**Discovery process:**
+
+Bob had been investigating customer workflows since April 17 to understand the customer satisfaction drop. He specifically examined:
+- Payment flows
+- Notification systems  
+- Email campaigns
+
+These customer-facing workflows revealed that external webhooks to services like Stripe, email providers, and Slack were failing/timing out - despite internal monitoring showing no errors. This discovery led Diana to realize (on April 18 at 16:00) that the database optimization's aggressive timeout settings (optimized for internal microservices with sub-second responses) were killing external integrations that needed 5-10 second response windows.
+
+**Customer impact:** This caused a 15% drop in customer satisfaction scores starting in March 2025, affecting payment confirmations, email campaigns, and notification deliveries.

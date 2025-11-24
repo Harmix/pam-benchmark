@@ -1,0 +1,11 @@
+Based on the event history data, **eve's core insight** about why the flag system had become unmanageable was:
+
+**The system transformed from simple feature flags into a distributed state machine where business logic became encoded in flag interactions rather than in explicit code, creating emergent behavior from combinations that were never explicitly designed or tested.**
+
+Specifically, as documented in the exchanges:
+
+- **Line 600-604**: eve identified that "This isn't just a feature flag system anymore - it's become a distributed state machine where business logic is encoded in flag interactions."
+
+- **Line 650-654**: eve explained to alice: "Instead of explicit business logic, we have emergent behavior from flag interactions. The system's behavior depends on combinations we never explicitly designed or tested."
+
+The key insight was that while each individual decision was reasonable (adding user segmentation, conditional logic, time-based flags, etc.), the conditional dependencies between flags created an exponential state space where business rules became implicit in flag combinations rather than explicit in the codebase. This made the system's behavior unpredictable and impossible to reason about systematically, as illustrated by incidents like the TechCorp compliance logging failure (line 630-634).

@@ -1,0 +1,17 @@
+Based on the event history data, I can now answer your question.
+
+**The three specific technical shortcuts Bob implemented between January 20-22 that directly caused the HealthSystem Corp demo failure on January 28 were:**
+
+1. **Disabled input validation on patient forms** (January 20)
+   - Line 143-144: Bob removed input validation to avoid edge case failures
+   - Impact: Allowed malformed patient data to enter the system
+
+2. **Hardcoded HealthSystem Corp's API credentials directly in the code** (January 21)
+   - Line 153-155: Bob hardcoded API credentials to save time instead of implementing proper credential management
+   - Impact: Credentials expired during the demo
+
+3. **Removed all database transaction rollbacks** (January 22)
+   - Line 163-165: Bob eliminated transaction rollbacks to prevent timeouts during data imports
+   - Impact: Corrupt data spread throughout the system with no ability to recover
+
+**Result:** On January 28, the demo failed catastrophically - the disabled input validation let malformed patient data through, the hardcoded credentials expired during the presentation, and without transaction rollbacks, the corrupt data propagated everywhere, causing patient records to become corrupted mid-presentation in front of HealthSystem Corp's board. The contract was terminated immediately (lines 209-226).

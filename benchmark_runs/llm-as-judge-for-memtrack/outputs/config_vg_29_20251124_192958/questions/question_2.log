@@ -1,0 +1,27 @@
+Based on the event history data I've reviewed, I can now provide you with the answer to your question:
+
+## Answer
+
+During the post-mortem analysis, the root cause identified for why matryoshka embeddings solved the memory scaling problem that standard dense embeddings couldn't handle was:
+
+**Standard dense embeddings used a fixed dimensionality for all queries, causing linear memory scaling that became economically prohibitive at enterprise scale.**
+
+### The Core Problem:
+
+Standard dense embeddings (768-dimensional) required storing the full embedding vector for every document, and memory usage scaled linearly with both document count and embedding dimensions. As documented at timestamp `20241201T1000`:
+
+> "As client document corpora grow beyond 1TB, dense embedding memory requirements becoming prohibitive. 768-dim embeddings for millions of documents consuming 50+ GB RAM per client instance."
+
+Diana further clarified at `20241208T1400`:
+
+> "The memory scaling is linear with document count and embedding dimensions. At current growth rates, we'll need 200+ GB RAM per large client. This architecture won't scale economically."
+
+### The Matryoshka Solution:
+
+Matryoshka embeddings solved this through **dynamic dimensionality** - allowing variable-dimension embeddings that could be truncated at query time based on query complexity. As Charlie explained at `20241215T1100`:
+
+> "Matryoshka embeddings are brilliant: train once at 2048 dims, but can use 512 dims for simple queries, 1024 for medium complexity, 2048 for complex ones. Dynamic dimensionality based on query needs!"
+
+The post-mortem analysis (completed `20250201T1500`) concluded that matryoshka provided **intelligent resource allocation** - simple queries didn't need all 2048 dimensions and could use 512 dimensions with the same accuracy, reducing memory usage by 75% (from 80GB to 20GB) while maintaining search quality.
+
+The fundamental insight: standard dense embeddings wasted resources by using maximum dimensionality for all queries, while matryoshka matched resource allocation to actual query complexity.

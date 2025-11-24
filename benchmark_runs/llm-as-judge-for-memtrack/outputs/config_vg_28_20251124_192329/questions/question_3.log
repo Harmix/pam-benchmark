@@ -1,0 +1,1 @@
+The root technical cause of the audit trail corruption that TechFlow discovered was a conversation state serialization bug where tool call dependency graphs referenced stale conversation IDs when context windows exceeded 32k tokens.

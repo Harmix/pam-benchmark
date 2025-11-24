@@ -1,0 +1,17 @@
+Based on the event history data I've found, here's the answer to your question:
+
+## Alice's Resolution of Resource Wars
+
+Alice resolved the resource wars by implementing a **tiered experimentation framework** that balanced both resource allocation and research velocity. This came after a crisis meeting on January 17, 2025, when conflicts between team members (Bob, Charlie, and Diana) over GPU resources and research methodology had reached a critical point.
+
+### The Three Components of the Tiered Experimentation Framework:
+
+1. **Tier 1 (Core Ablations)**: Dedicated GPU clusters with exclusive compute access for critical experiments
+
+2. **Tier 2 (Exploratory)**: Shared GPU pools with intelligent queuing system for exploratory research
+
+3. **Tier 3 (Speculative)**: Weekend-only access for speculative experiments
+
+Additionally, the framework included **mandatory 48-hour coordination checkpoints** to prevent methodology drift, which was a key concern that had caused friction between the systematic approach Bob advocated for and Diana's focus on speed.
+
+This solution was implemented by January 19, 2025, and successfully balanced Diana's need for research velocity with Bob's concerns about systematic methodology, while efficiently allocating the limited GPU resources that Charlie was managing.
