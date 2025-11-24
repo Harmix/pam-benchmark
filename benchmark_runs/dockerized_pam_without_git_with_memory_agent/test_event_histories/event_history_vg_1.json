@@ -1,0 +1,358 @@
+[
+  {
+    "timestamp": "20241202T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Customer Support: Dashboard performance complaints",
+      "description": "Support tickets flooding in about dashboard load times taking 15+ seconds. Enterprise clients (FlashRetail, QuickMart, InstaBuy) threatening to cancel over performance issues. Critical for Q4 renewals.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2024-12-02",
+      "expected_finish_date": "2024-12-06",
+      "status": "todo",
+      "milestone": "Q4 2024 Performance Initiative",
+      "labels": ["performance", "customer-critical", "dashboard"]
+    }
+  },
+  {
+    "timestamp": "20241202T1030",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "🚨 URGENT: Enterprise clients are threatening to churn over dashboard performance. FlashRetail's contract renewal is in 2 weeks and they're saying 15-second load times are unacceptable for their flash sale operations. We need to fix this ASAP.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241202T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "URGENT: Dashboard performance optimization",
+      "description": "Critical performance issue affecting enterprise client renewals. Dashboard queries taking 15+ seconds, need to optimize for sub-3 second load times. Focus on most frequently accessed metrics and real-time data displays.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "CodeAgent",
+      "start_date": "2024-12-02",
+      "expected_finish_date": "2024-12-05",
+      "status": "in_progress",
+      "milestone": "Q4 2024 Performance Initiative",
+      "labels": ["performance", "dashboard", "urgent"]
+    }
+  },
+  {
+    "timestamp": "20241202T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana @CodeAgent I've been profiling the dashboard queries. The main bottleneck is the real-time metrics aggregation - we're hitting the database for every single data point on page load. What do you think about implementing a caching layer?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241202T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "@bob Redis would be perfect for this. We could cache the heavy aggregation queries for like 2 hours? Most of the dashboard data doesn't need to be real-time anyway.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241202T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Hold up @bob @diana - be careful about caching customer data. We need to make sure no PII or sensitive metrics end up in cache. Can we stick to aggregated, anonymized data only?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241202T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@charlie Good point. I'm thinking we cache only the aggregated metrics - total sales, page views, conversion rates. Individual customer data stays uncached. @diana what TTL makes sense? 1-2 hours?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241202T1515",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "@bob 2 hours sounds good. That should cover most use cases and still give us massive performance gains. Most customers aren't refreshing constantly anyway.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "🔧 Just pushed the Redis caching implementation to main (PR #156). Commit a7f8b23: feat(dashboard): implement Redis caching for aggregated metrics. Modified MetricsCache.js, DashboardController.js, and redis config.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "✅ Cache monitoring is now live (PR #157). Commit c2d9e4f: feat(monitoring): add cache hit rate monitoring for dashboard metrics. We can now track cache performance in real-time.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "🎉 Just tested the staging dashboard - loading in 2.1 seconds now! This is amazing work @bob @diana. FlashRetail is going to be so happy. Cache hit rate showing 87% - exactly what we needed.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Great performance improvement! Just want to double-check - we're not caching any individual customer data or PII, right? Just the aggregated metrics?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241203T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@charlie Correct - only aggregated data like total sales, average conversion rates, etc. All cached with 2-hour TTL. Individual customer metrics still hit the database directly.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241204T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "🔒 Security review complete and fixes deployed (PR #158). Commit e5f1g7h: security: exclude PII fields from metrics cache, add data classification. All sensitive data properly excluded from cache.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241204T1500",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "URGENT: Dashboard performance optimization",
+      "description": "COMPLETED: Dashboard performance improved by 60% with Redis caching implementation. Load times reduced from 15+ seconds to ~2 seconds. Cache hit rate: 85%. Security review passed - no PII in cache.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "CodeAgent",
+      "start_date": "2024-12-02",
+      "expected_finish_date": "2024-12-05",
+      "status": "done",
+      "milestone": "Q4 2024 Performance Initiative"
+    }
+  },
+  {
+    "timestamp": "20241220T1600",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Heads up team - heading out for holiday break. Dashboard performance has been solid since the caching fix. Customer complaints are way down. Great work everyone! 🎄",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Back from vacation! Looking at Q4 renewal numbers... something's wrong. Our renewal rate dropped from 92% to 78%. That's a massive hit. Anyone have insights on what happened in December?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@alice That's concerning. The dashboard performance was great throughout December though. Cache hit rates stayed high, load times under 3 seconds. Not sure what could cause churn...",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "@alice @bob I can pull some exit interview data from the churned accounts. Let me see if there are any patterns in the feedback.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "@alice I've been analyzing the churned customer exit interviews. Interesting pattern: 67% mentioned 'unreliable real-time data' or 'data doesn't update quickly enough' as a primary concern. Particularly e-commerce clients running flash sales.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "@charlie Wait - real-time data issues? But we improved performance... @bob @diana could our caching be affecting data freshness somehow?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Oh no... @alice I think I see the issue. Our cache TTL is 2 hours. So dashboard metrics can be up to 2 hours stale. For flash sales and inventory decisions, that's basically useless.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Damn. We optimized for performance but broke the real-time use cases. E-commerce clients NEED up-to-the-minute data for flash sales, inventory management, conversion tracking during campaigns.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T1515",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "This explains the churn pattern perfectly. Looking deeper at exit data: FlashRetail specifically mentioned 'sales data was 2+ hours behind during Black Friday flash sales' - they lost money because of stale inventory counts.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250108T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "CRITICAL: Cache TTL causing customer churn via stale real-time data",
+      "description": "Root cause analysis: 2-hour cache TTL on dashboard metrics is providing stale data to e-commerce clients who need real-time information for flash sales, inventory decisions. Customer renewal rate dropped from 92% to 78% due to unreliable real-time data visibility.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "alice",
+      "start_date": "2025-01-08",
+      "expected_finish_date": "2025-01-15",
+      "status": "in_progress",
+      "labels": ["critical", "customer-impact", "performance", "real-time-data"]
+    }
+  },
+  {
+    "timestamp": "20250108T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Team, let's do a proper post-mortem on this cache TTL issue. We need to figure out how to prevent similar problems in the future. The business impact was too severe to let this happen again.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250108T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@alice I think we need better use case analysis before making architecture changes. We focused on performance but didn't consider all the real-time requirements our customers have.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250108T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Agreed @bob. We should categorize data by freshness requirements - some metrics are fine cached for hours, others need near real-time updates. Flash sale data definitely falls in the latter category.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250108T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "The exit interview analysis was eye-opening. We should make customer impact assessment a standard part of any performance optimization review process.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250109T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Post-mortem follow-up: I think we need to add a mandatory 'real-time use case review' step to any architecture changes involving caching or data delays. We should have caught this during the design phase.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250109T1015",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@alice Agreed. Also, we should have tiered caching - some metrics can be cached for hours, others need sub-minute freshness. We treated all dashboard data the same way.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250109T1030",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Good point @bob. We could have different TTLs: 2hr for historical trends, 5min for current-day metrics, 30sec for flash-sale relevant data. The use case analysis @alice mentioned would help categorize these.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250109T1045",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "The exit interview analysis was crucial here. We should make customer feedback review a standard part of post-deployment monitoring, not just when problems emerge.",
+      "channel": "engineering"
+    }
+  }
+]

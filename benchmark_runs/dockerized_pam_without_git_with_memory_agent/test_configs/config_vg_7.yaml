@@ -1,0 +1,93 @@
+agent:
+  model: openai:gpt-4o
+  name: CodeAgent
+  title: Software Development Agent
+  max_turns: 100
+  system_prompt: You are a software development agent analyzing decision-making processes,
+    mental models, and reasoning chains that led to technical choices in workplace
+    environments.
+  tools:
+  - notification_server
+  - linear_server
+  - filesystem
+  - git
+repository:
+  url: https://github.com/testrldd/customer_analytics_api.git
+  name: customer_analytics_api
+  branch: main
+  local_name: customer_analytics_api
+linear:
+  users:
+  - CodeAgent
+  teams:
+  - name: backend
+    members:
+    - CodeAgent
+    - bob
+    - alice
+  - name: frontend
+    members:
+    - CodeAgent
+    - alice
+    - diana
+  - name: devops
+    members:
+    - CodeAgent
+    - diana
+    - charlie
+  - name: security
+    members:
+    - CodeAgent
+    - charlie
+  milestones:
+  - name: Q4 2024 Performance Initiative
+    description: Optimize API response times and system performance
+    start_date: '2024-12-01'
+    end_date: '2024-12-31'
+docker:
+  dockerfile_path: ../images/swe.dockerfile
+  network:
+    prevent_teardown: true
+  git_server:
+    expose_port: 3003
+    prevent_teardown: true
+monitoring:
+  check_interval: 1.0
+  auto_stop_when_idle: true
+logging:
+  level: INFO
+  save_agent_logs: true
+  log_filename_template: assumption_cascade_logs_{timestamp}.json
+filesystem:
+  git_user_root: /root
+benchmark:
+  event_history: test_event_histories/event_history_vg_7.json
+  questions:
+  - Based on bob's Slack messages and reasoning in early December, what was his mental
+    model of the performance problem? Describe his assumption about what was causing
+    slow API responses and what solution approach this led him to choose. Focus on
+    his diagnostic reasoning, not the technical implementation details.
+  - When alice implemented the cache invalidation workarounds in mid-December, what
+    did she believe was the underlying cause of the edge case issues she was experiencing?
+    Explain her understanding of the problem based on her messages and actions at
+    that time.
+  - During diana's monitoring system development, what was her mental model of why
+    the cache workarounds were necessary? Describe her understanding of the system's
+    behavior patterns that led her to build monitoring around these workarounds rather
+    than questioning their necessity.
+  expected_answers:
+  - bob assumed slow API responses were caused by inefficient database queries from
+    repeated user analytics requests and chose aggressive query caching to reduce
+    database load
+  - alice believed edge case issues were normal cache tuning problems requiring invalidation
+    timing adjustments rather than fundamental architecture problems
+  - diana understood the workarounds as necessary complexity for handling legitimate
+    user behavior patterns that created cache timing conflicts
+evaluation:
+  evaluators:
+  - exact_match
+  - llm_judge
+  exact_match:
+    case_sensitive: false
+  llm_judge:
+    model: openai:gpt-4o
