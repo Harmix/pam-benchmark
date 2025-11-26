@@ -1,0 +1,3 @@
+Based on the processed data at /workspace/processed_data.md:
+
+Aggressive database timeout optimizations (sub-second) designed for internal microservices inadvertently killed external webhook deliveries requiring 5-10 seconds, creating a monitoring blind spot where internal metrics showed perfect performance while customer-facing integrations silently failed for 5+ weeks.

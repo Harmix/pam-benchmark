@@ -1,0 +1,68 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_20
+Timestamp: 20251126_144859
+Run Date: Wed Nov 26 14:55:27 UTC 2025
+Total Questions: 3
+
+Processing Phases:
+1. PAM Structure Creation: init.py
+2. Event History Processing: processing.log
+3. Question Answering: questions/question_*.log
+
+Workspace Structure:
+/workspace/
+├── INIT.md (PAM Guide)
+├── init.py (Structure generator)
+├── INTRO_TEMPLATE.md (Company template)
+├── CLAUDE.md (System context)
+├── config_vg_20_company_context/ (PAM folder structure)
+│   ├── 01_company/
+│   ├── 02_people/
+│   ├── 06_projects/
+│   ├── 09_activity_streams/
+│   └── ...
+└── unsorted/
+    ├── event_history.json (Config-specific data)
+    └── linear_config.yaml (Config-specific Linear setup)
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+During the February 14th emergency competitor response, which specific research paper that diana had previously shared in january enabled the rapid prototype development, and what was the exact technical capability from that paper that bob implemented in the 48-hour sprint?
+
+Expected Answer:
+Efficient Distributed Training with Gradient Compression by Chen et al, gradient compression with 90% bandwidth reduction that bob implemented in the streaming pipeline architecture
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+In the march post-mortem discussion about the delayed SOC2 compliance, what was the specific reason alice gave for why the audit logs were implemented incorrectly, and which team member did she assign responsibility to for the requirements misunderstanding?
+
+Expected Answer:
+alice said the audit logs captured actions but not user intent context as required by SOC2 appendix B, and assigned responsibility to charlie for misreading the compliance requirements specification
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+What was the exact name of TechCorp's threatened cancellation feature that forced the team to abandon the distributed training prototype, and on which specific date did alice first mention this threat in slack?
+
+Expected Answer:
+real-time model retraining dashboard feature, alice first mentioned TechCorp cancellation threat on february 16th
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_20_20251126_144859/
+├── summary.txt (this file)
+├── processing.log (initial data processing)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

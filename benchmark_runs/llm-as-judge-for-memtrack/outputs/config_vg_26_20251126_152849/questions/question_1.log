@@ -1,0 +1,27 @@
+Based on the processed data, here's the answer to your question:
+
+## Technical Change and Infrastructure Cause
+
+**Specific Technical Change:** 
+**Dockerization of the evaluation environment** (implemented on 2025-01-18) introduced non-deterministic evaluation results.
+
+**Underlying Infrastructure Cause:**
+**CPU contention and resource scheduling variability** in the Kubernetes cluster. 
+
+### The Detailed Chain of Events:
+
+1. **Initial Symptom** (2025-01-19): Same test suites produced different scores on repeat runs despite running in "identical" Docker containers.
+
+2. **Root Cause Discovery** (2025-01-21): Charlie identified that when the Kubernetes cluster spawned 200+ containers simultaneously, it became CPU-bound. This caused:
+   - Containers competing for CPU resources
+   - Variable CPU scheduling across container instances  
+   - Timing variations in multi-turn conversations
+   - Non-deterministic evaluation outcomes
+
+3. **Charlie's Finding** (infrastructure.md:2025-01-21): 
+   > "Resource contention means containers get different CPU scheduling, causing timing variations in multi-turn conversations."
+
+4. **Final Analysis** (infrastructure.md:2025-01-30):
+   > "Dockerized context isolation introduced non-deterministic results because container instances compete for CPU scheduling."
+
+**Summary**: The dockerization itself created the non-determinism due to the Kubernetes cluster's inability to provide consistent CPU scheduling across hundreds of simultaneously-spawned containers, causing evaluation timing variations that affected multi-turn conversation outcomes.

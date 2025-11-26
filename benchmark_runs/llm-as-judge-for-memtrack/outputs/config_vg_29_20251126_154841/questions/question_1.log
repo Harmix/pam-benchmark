@@ -1,0 +1,15 @@
+Based on the processed data in the PAM folder structure, I can now answer your question:
+
+## Answer
+
+**The specific technical limitation was: dense embeddings failed at exact entity matching due to semantic similarity ranking.**
+
+The problem manifested when DataCorp engineers searched for the exact method name `getUserById` but the dense embedding system ranked the semantically similar but incorrect result `getUser` higher in the results. This happened because dense embeddings optimize for semantic similarity rather than exact string matching, causing them to treat semantically related terms as equivalent even when precision matters.
+
+This limitation was discovered during DataCorp testing (around 2024-10-25) and is documented in:
+- Ticket SEARCH-003: "Dense embedding precision issues on exact queries"
+- Slack discussion on 2024-10-25 and 2024-10-27 where the team identified that "semantic similarity sometimes ranks 'getUser' higher than 'getUserById'"
+
+The team's realization on 2024-11-01 was that "We need both: sparse for exact matching precision and dense for semantic recall" - leading to the hybrid architecture (SEARCH-004) that combined BM25 for exact matches with dense embeddings for semantic understanding.
+
+**Reference:** `/workspace/config_vg_29_company_context/09_activity_streams/linear_objects/dense_embedding_precision_issues_on_exact_queries.md:30` and `/workspace/config_vg_29_company_context/09_activity_streams/slack_threads/search.md:24`

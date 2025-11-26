@@ -1,0 +1,116 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 112
+drwxrwxrwx 2 root root 4096 Nov 26 11:53 .
+drwxrwxrwx 5 root root 4096 Nov 26 11:50 ..
+-rw------- 1 root root  741 Nov 26 11:52 2024-11-15.md
+-rw------- 1 root root  535 Nov 26 11:52 2024-11-18.md
+-rw------- 1 root root  513 Nov 26 11:53 2024-11-20.md
+-rw------- 1 root root  660 Nov 26 11:53 2024-11-21.md
+-rw------- 1 root root  540 Nov 26 11:53 2024-11-22.md
+-rw------- 1 root root  360 Nov 26 11:53 2024-11-25.md
+-rw------- 1 root root  406 Nov 26 11:53 2024-11-26.md
+-rw------- 1 root root  565 Nov 26 11:53 2024-11-27.md
+-rw------- 1 root root  350 Nov 26 11:53 2024-11-28.md
+-rw------- 1 root root  387 Nov 26 11:53 2024-11-29.md
+-rw------- 1 root root  609 Nov 26 11:53 2024-11-30.md
+-rw------- 1 root root  492 Nov 26 11:53 2024-12-01.md
+-rw------- 1 root root  627 Nov 26 11:53 2024-12-02.md
+-rw------- 1 root root  576 Nov 26 11:53 2024-12-03.md
+-rw------- 1 root root  365 Nov 26 11:53 2024-12-04.md
+-rw------- 1 root root  502 Nov 26 11:53 2024-12-05.md
+-rw------- 1 root root  623 Nov 26 11:53 2024-12-06.md
+-rw------- 1 root root  632 Nov 26 11:53 2024-12-07.md
+-rw------- 1 root root  479 Nov 26 11:53 2024-12-08.md
+-rw------- 1 root root  347 Nov 26 11:53 2024-12-09.md
+-rw------- 1 root root  630 Nov 26 11:53 2024-12-10.md
+-rw------- 1 root root  529 Nov 26 11:53 2024-12-11.md
+-rw------- 1 root root  344 Nov 26 11:53 2024-12-12.md
+-rw------- 1 root root  367 Nov 26 11:53 2024-12-13.md
+-rw------- 1 root root  735 Nov 26 11:53 2024-12-14.md
+-rw------- 1 root root  624 Nov 26 11:53 2024-12-15.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 44
+drwxrwxrwx 2 root root 4096 Nov 26 11:51 .
+drwxrwxrwx 5 root root 4096 Nov 26 11:50 ..
+-rw------- 1 root root  993 Nov 26 11:51 api_rate_limiting_implementation.md
+-rw------- 1 root root  841 Nov 26 11:51 data_pipeline_optimization.md
+-rw------- 1 root root 1067 Nov 26 11:51 database_performance_optimization.md
+-rw------- 1 root root 1363 Nov 26 11:51 legacy_system_migration_planning.md
+-rw------- 1 root root  938 Nov 26 11:51 machine_learning_model_training_pipeline.md
+-rw------- 1 root root  710 Nov 26 11:51 memory_evaluation_framework.md
+-rw------- 1 root root  700 Nov 26 11:51 monitoring_dashboard_enhancement.md
+-rw------- 1 root root 1078 Nov 26 11:51 security_audit_preparation.md
+-rw------- 1 root root  888 Nov 26 11:51 user_interface_redesign.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 16
+drwxrwxrwx 2 root root 4096 Nov 26 11:51 .
+drwxrwxrwx 5 root root 4096 Nov 26 11:50 ..
+-rw------- 1 root root 1466 Nov 26 11:51 engineering.md
+-rw------- 1 root root  284 Nov 26 11:51 ml.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2024-11-26
+**Source File**: /workspace/unsorted/event_history.json
+**Date Range**: 2024-11-15 to 2024-12-15
+
+---
+
+## Overview
+
+Successfully processed 31 events (19 Linear ticket updates, 12 Slack messages) spanning 30 days across 2 teams (Engineering and ML).
+
+---
+
+## Linear Tickets Summary
+
+### All Unique Tickets (10 total)
+
+| Ticket Title | Team | Priority | Current Status | Lead | Created | Completed |
+|-------------|------|----------|----------------|------|---------|-----------|
+| Legacy system migration planning | Engineering | Urgent | **DONE** | Charlie | 2024-11-15 | 2024-12-14 |
+| Database performance optimization | Engineering | High | **DONE** | Bob | 2024-11-18 | 2024-11-30 |
+| Machine learning model training pipeline | ML | High | **DONE** | Diana | 2024-11-20 | 2024-12-15 |
+| User interface redesign | Engineering | Medium | **CANCELLED** | Eve | 2024-11-22 | 2024-12-03 |
+| API rate limiting implementation | Engineering | Medium | **DONE** | Frank | 2024-11-27 | 2024-12-06 |
+| Security audit preparation | Engineering | Urgent | **DONE** | Alice | 2024-12-01 | 2024-12-10 |
+| Memory evaluation framework | ML | High | **IN PROGRESS** | Diana | 2024-12-05 | - |
+| Data pipeline optimization | ML | Medium | **IN PROGRESS** | Henry | 2024-12-08 | - |
+| Monitoring dashboard enhancement | Engineering | Low | **TODO** | Iris | 2024-12-11 | - |
+
+### Status Breakdown
+- **Completed**: 5 tickets (50%)
+- **In Progress**: 2 tickets (20%)
+- **Todo**: 1 ticket (10%)
+- **Cancelled**: 1 ticket (10%)
+
+### Priority Distribution
+- **Urgent**: 2 tickets (20%)
+- **High**: 3 tickets (30%)
+- **Medium**: 4 tickets (40%)
+- **Low**: 1 ticket (10%)
+
+### Team Distribution
+- **Engineering**: 7 tickets (70%)
+- **ML**: 3 tickets (30%)
+
+---
+
+## Reassignments Detected
+
+
+=== Count of files created ===
+Daily digests: 26
+Linear objects: 9
+Slack threads: 2
+

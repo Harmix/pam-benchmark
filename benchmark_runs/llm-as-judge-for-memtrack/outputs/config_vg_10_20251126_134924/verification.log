@@ -1,0 +1,100 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 72
+drwxrwxrwx 2 root root 4096 Nov 26 13:53 .
+drwxrwxrwx 5 root root 4096 Nov 26 13:49 ..
+-rw------- 1 root root 1553 Nov 26 13:53 2025-01-10.md
+-rw------- 1 root root  988 Nov 26 13:53 2025-01-11.md
+-rw------- 1 root root 1192 Nov 26 13:53 2025-01-13.md
+-rw------- 1 root root  842 Nov 26 13:53 2025-01-14.md
+-rw------- 1 root root  853 Nov 26 13:53 2025-01-15.md
+-rw------- 1 root root  804 Nov 26 13:53 2025-01-16.md
+-rw------- 1 root root 1441 Nov 26 13:53 2025-01-17.md
+-rw------- 1 root root 1651 Nov 26 13:53 2025-01-20.md
+-rw------- 1 root root  668 Nov 26 13:53 2025-01-21.md
+-rw------- 1 root root  907 Nov 26 13:53 2025-01-22.md
+-rw------- 1 root root  972 Nov 26 13:53 2025-01-23.md
+-rw------- 1 root root 1303 Nov 26 13:53 2025-01-24.md
+-rw------- 1 root root 2226 Nov 26 13:53 2025-01-25.md
+-rw------- 1 root root 1448 Nov 26 13:53 2025-01-26.md
+-rw------- 1 root root 2658 Nov 26 13:53 2025-01-27.md
+-rw------- 1 root root 2008 Nov 26 13:53 2025-01-28.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 24
+drwxrwxrwx 2 root root 4096 Nov 26 13:50 .
+drwxrwxrwx 5 root root 4096 Nov 26 13:49 ..
+-rw------- 1 root root 1608 Nov 26 13:50 critical_audit_logs_contain_pii_violating_gdpr.md
+-rw------- 1 root root 1368 Nov 26 13:50 database_migration_mysql_to_postgresql.md
+-rw------- 1 root root 1017 Nov 26 13:50 gdpr_compliance_implement_audit_trails_for_customer_data_access.md
+-rw------- 1 root root 2569 Nov 26 13:50 post_mortem_gdpr_compliance_over_engineering.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 16
+drwxrwxrwx 2 root root 4096 Nov 26 13:51 .
+drwxrwxrwx 5 root root 4096 Nov 26 13:49 ..
+-rw------- 1 root root 7387 Nov 26 13:51 engineering.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2025-11-26
+**Source File**: /workspace/unsorted/event_history.json
+**Total Events**: 59 events (15 Linear, 44 Slack)
+**Date Range**: 2025-01-10 to 2025-01-28 (18 days)
+
+---
+
+## Linear Tickets Summary
+
+### All Tickets and Current Status
+
+| Ticket ID | Title | Priority | Lead | Status | Created | Expected Finish |
+|-----------|-------|----------|------|--------|---------|-----------------|
+| ENG-001 | GDPR Compliance: Implement audit trails for customer data access | High | CodeAgent | Todo | 2025-01-10 | 2025-03-15 |
+| ENG-002 | Database Migration: MySQL to PostgreSQL | High | diana | Todo | 2025-01-11 | 2025-03-20 |
+| ENG-003 | CRITICAL: Audit logs contain PII violating GDPR | Urgent | bob | Todo | 2025-01-21 | 2025-01-25 |
+| ENG-004 | Post-mortem: GDPR compliance over-engineering | Medium | alice | Todo | 2025-01-27 | 2025-01-30 |
+
+### Ticket Files Created
+- `gdpr_compliance_implement_audit_trails_for_customer_data_access.md`
+- `database_migration_mysql_to_postgresql.md`
+- `critical_audit_logs_contain_pii_violating_gdpr.md`
+- `post_mortem_gdpr_compliance_over_engineering.md`
+
+### Lead Assignment Tracking
+No reassignments detected. All tickets maintained original leads throughout the event history.
+
+---
+
+## Slack Channels Summary
+
+### Channels Found
+- **engineering** (1 channel)
+
+### Message Count by Channel
+- **#engineering**: 44 messages
+
+### Channel File Created
+- `engineering.md`
+
+### Active Participants
+- alice (9 messages)
+- bob (9 messages)
+- charlie (5 messages)
+- diana (7 messages)
+- eve (4 messages)
+
+---
+
+=== Count of files created ===
+Daily digests: 16
+Linear objects: 4
+Slack threads: 1
+

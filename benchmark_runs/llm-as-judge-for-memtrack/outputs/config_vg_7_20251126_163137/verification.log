@@ -1,0 +1,100 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 68
+drwxrwxrwx 2 root root 4096 Nov 26 16:34 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:31 ..
+-rw------- 1 root root 1410 Nov 26 16:34 2024-12-01.md
+-rw------- 1 root root  472 Nov 26 16:34 2024-12-02.md
+-rw------- 1 root root  673 Nov 26 16:34 2024-12-03.md
+-rw------- 1 root root  437 Nov 26 16:34 2024-12-04.md
+-rw------- 1 root root  459 Nov 26 16:34 2024-12-05.md
+-rw------- 1 root root  880 Nov 26 16:34 2024-12-10.md
+-rw------- 1 root root  428 Nov 26 16:34 2024-12-12.md
+-rw------- 1 root root  434 Nov 26 16:34 2024-12-15.md
+-rw------- 1 root root  648 Nov 26 16:34 2024-12-16.md
+-rw------- 1 root root  495 Nov 26 16:34 2024-12-18.md
+-rw------- 1 root root  543 Nov 26 16:34 2024-12-20.md
+-rw------- 1 root root 1085 Nov 26 16:34 2025-01-08.md
+-rw------- 1 root root 1829 Nov 26 16:34 2025-01-09.md
+-rw------- 1 root root  647 Nov 26 16:34 2025-01-10.md
+-rw------- 1 root root 1009 Nov 26 16:34 2025-01-11.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 28
+drwxrwxrwx 2 root root 4096 Nov 26 16:32 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:31 ..
+-rw------- 1 root root 1165 Nov 26 16:32 critical_network_routing_causing_false_performance_diagnosis.md
+-rw------- 1 root root 1176 Nov 26 16:32 customer_analytics_api_performance_degradation.md
+-rw------- 1 root root  751 Nov 26 16:32 email_server_bounce_rate_optimization_for_marketing_campaigns.md
+-rw------- 1 root root  727 Nov 26 16:32 frontend_mobile_responsive_design_issues_on_product_catalog.md
+-rw------- 1 root root  716 Nov 26 16:32 security_ssl_certificate_renewal_automation.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 16
+drwxrwxrwx 2 root root 4096 Nov 26 16:33 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:31 ..
+-rw------- 1 root root 6436 Nov 26 16:33 backend.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2025-11-26
+**Source File**: /workspace/unsorted/event_history.json
+**Total Events Processed**: 30 (5 Linear + 25 Slack)
+
+---
+
+## Linear Tickets Summary
+
+### All Unique Tickets (5 Total)
+
+1. **Customer Analytics API performance degradation**
+   - **Current Status**: DONE ✅
+   - **Team**: backend
+   - **Priority**: High
+   - **Lead**: bob
+   - **Created**: 2024-12-01
+   - **Completed**: 2024-12-20
+   - **Resolution**: Implemented caching solution (5s → 800ms response time, 70% database load reduction)
+   - **Note**: Later discovered to be solving the wrong problem (network routing was root cause)
+
+2. **EMAIL SERVER: Bounce rate optimization for marketing campaigns**
+   - **Current Status**: TODO ⏳
+   - **Team**: devops
+   - **Priority**: Medium
+   - **Lead**: diana
+   - **Created**: 2024-12-02
+   - **Expected Completion**: 2024-12-06
+
+3. **FRONTEND: Mobile responsive design issues on product catalog**
+   - **Current Status**: TODO ⏳
+   - **Team**: frontend
+   - **Priority**: Medium
+   - **Lead**: alice
+   - **Created**: 2024-12-05
+   - **Expected Completion**: 2024-12-08
+
+4. **SECURITY: SSL certificate renewal automation**
+   - **Current Status**: TODO ⏳
+   - **Team**: security
+   - **Priority**: High
+   - **Lead**: charlie
+   - **Created**: 2024-12-15
+   - **Expected Completion**: 2024-12-20
+
+5. **CRITICAL: Network routing causing false performance diagnosis**
+   - **Current Status**: IN PROGRESS 🔄
+   - **Team**: backend
+   - **Priority**: Urgent
+
+=== Count of files created ===
+Daily digests: 15
+Linear objects: 5
+Slack threads: 1
+

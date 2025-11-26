@@ -1,0 +1,96 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 36
+drwxrwxrwx 2 root root 4096 Nov 26 14:32 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:26 ..
+-rw------- 1 root root 2524 Nov 26 14:32 2025-01-15.md
+-rw------- 1 root root 2101 Nov 26 14:32 2025-01-16.md
+-rw------- 1 root root 1972 Nov 26 14:32 2025-01-17.md
+-rw------- 1 root root 3793 Nov 26 14:32 2025-01-18.md
+-rw------- 1 root root 2537 Nov 26 14:32 2025-01-19.md
+-rw------- 1 root root 1067 Nov 26 14:32 2025-01-20.md
+-rw------- 1 root root 1392 Nov 26 14:32 2025-01-24.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 24
+drwxrwxrwx 2 root root 4096 Nov 26 14:27 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:26 ..
+-rw------- 1 root root 1073 Nov 26 14:27 explore_sparse_attention_mechanisms_for_model_efficiency.md
+-rw------- 1 root root 1147 Nov 26 14:27 investigate_hierarchical_attention_for_accuracy_improvements.md
+-rw------- 1 root root 1185 Nov 26 14:27 multi_head_attention_baseline_comparison_study.md
+-rw------- 1 root root 1926 Nov 26 14:27 urgent_attention_mechanism_integration_for_techcorp_demo.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 32
+drwxrwxrwx 2 root root 4096 Nov 26 14:29 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:26 ..
+-rw------- 1 root root 2766 Nov 26 14:29 attention_experiments.md
+-rw------- 1 root root  214 Nov 26 14:29 competition.md
+-rw------- 1 root root 1504 Nov 26 14:29 general.md
+-rw------- 1 root root  398 Nov 26 14:29 infrastructure.md
+-rw------- 1 root root 1661 Nov 26 14:29 research.md
+-rw------- 1 root root  385 Nov 26 14:29 sales.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+---
+title: Event History Processing Summary
+date: 2025-11-26
+processing_date: 2025-11-26
+source_file: event_history.json
+total_events: 40
+date_range: 2025-01-15 to 2025-01-24
+---
+
+# Event History Processing Summary
+
+## Overview
+Processed 40 events from Linear and Slack spanning January 15-24, 2025. Data organized into Linear ticket objects, Slack channel threads, and daily narrative digests.
+
+## Linear Tickets Summary
+
+### All Tickets and Current Status
+
+1. **Explore sparse attention mechanisms for model efficiency**
+   - **Status**: IN_PROGRESS
+   - **Team**: research
+   - **Priority**: high
+   - **Lead**: diana
+   - **Created**: 2025-01-15
+   - **Target**: 40% compute reduction
+   - **File**: `linear_objects/explore_sparse_attention_mechanisms_for_model_efficiency.md`
+
+2. **Investigate hierarchical attention for accuracy improvements**
+   - **Status**: IN_PROGRESS
+   - **Team**: research
+   - **Priority**: high
+   - **Lead**: charlie
+   - **Created**: 2025-01-15
+   - **Target**: 15% accuracy improvement
+   - **File**: `linear_objects/investigate_hierarchical_attention_for_accuracy_improvements.md`
+
+3. **Multi-head attention baseline comparison study**
+   - **Status**: TODO
+   - **Team**: research
+   - **Priority**: medium
+   - **Lead**: bob
+   - **Created**: 2025-01-16
+   - **Purpose**: Baseline comparisons for all three approaches
+   - **File**: `linear_objects/multi_head_attention_baseline_comparison_study.md`
+
+4. **URGENT: Attention mechanism integration for TechCorp demo**
+   - **Status**: DONE ✓
+   - **Team**: engineering
+   - **Priority**: urgent
+   - **Lead**: CodeAgent
+
+=== Count of files created ===
+Daily digests: 7
+Linear objects: 4
+Slack threads: 6
+

@@ -1,0 +1,23 @@
+Based on the Slack messages from the backend channel in early December, here's Bob's mental model of the performance problem:
+
+## Bob's Diagnostic Reasoning (Early December)
+
+**Assumption about the root cause:**
+Bob believed the 3-5 second API response times were caused by **repeated database queries** executing the same expensive analytics aggregations multiple times. He assumed users were refreshing their dashboards frequently, causing identical complex queries to run over and over against the database.
+
+**Key reasoning (from backend.md:6,12):**
+- "I'm seeing a lot of repeated database queries for the same analytics data. Users are probably refreshing their dashboards frequently"
+- "The same complex aggregation queries are running repeatedly. Each user session probably triggers the same analytics queries multiple times"
+
+**Mental model:** `Slow API = Database performing expensive queries repeatedly = User behavior pattern (frequent refreshing)`
+
+**Solution approach this led to:**
+This diagnosis led Bob to choose **aggressive caching** as the solution:
+- Implement 2-hour cache TTL on all analytics endpoints
+- Eliminate "redundant database load from repeated user requests"
+- Cache expensive queries since "analytics data doesn't need to be real-time"
+
+**The flaw in his reasoning:**
+Bob never verified that the database queries themselves were actually slow. He observed slow API responses and saw repeated queries, then jumped to the conclusion that the query execution was the bottleneck. He didn't check network latency between the API and database servers, which turned out to be 2.5 seconds due to VPN routing misconfiguration—the actual root cause.
+
+His solution "worked" (800ms responses) because caching eliminated network round-trips, but it solved the wrong problem and created unnecessary complexity.

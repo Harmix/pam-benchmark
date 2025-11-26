@@ -1,0 +1,117 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 96
+drwxrwxrwx 2 root root 4096 Nov 26 12:12 .
+drwxrwxrwx 5 root root 4096 Nov 26 12:08 ..
+-rw------- 1 root root  440 Nov 26 12:11 2024-04-01.md
+-rw------- 1 root root  267 Nov 26 12:11 2024-04-03.md
+-rw------- 1 root root  495 Nov 26 12:11 2024-04-08.md
+-rw------- 1 root root  505 Nov 26 12:11 2024-04-10.md
+-rw------- 1 root root  243 Nov 26 12:11 2024-04-15.md
+-rw------- 1 root root  266 Nov 26 12:11 2024-04-20.md
+-rw------- 1 root root  384 Nov 26 12:12 2024-04-28.md
+-rw------- 1 root root  572 Nov 26 12:12 2024-05-02.md
+-rw------- 1 root root  911 Nov 26 12:12 2024-05-03.md
+-rw------- 1 root root  779 Nov 26 12:12 2024-05-04.md
+-rw------- 1 root root  500 Nov 26 12:12 2024-05-06.md
+-rw------- 1 root root  529 Nov 26 12:12 2024-05-07.md
+-rw------- 1 root root  536 Nov 26 12:12 2024-05-08.md
+-rw------- 1 root root  596 Nov 26 12:12 2024-05-09.md
+-rw------- 1 root root  246 Nov 26 12:12 2024-05-15.md
+-rw------- 1 root root  456 Nov 26 12:12 2024-05-20.md
+-rw------- 1 root root  497 Nov 26 12:12 2024-05-25.md
+-rw------- 1 root root  488 Nov 26 12:12 2024-05-27.md
+-rw------- 1 root root  471 Nov 26 12:12 2024-05-28.md
+-rw------- 1 root root  571 Nov 26 12:12 2024-05-30.md
+-rw------- 1 root root  497 Nov 26 12:12 2024-06-03.md
+-rw------- 1 root root  531 Nov 26 12:12 2024-06-05.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 72
+drwxrwxrwx 2 root root 4096 Nov 26 12:10 .
+drwxrwxrwx 5 root root 4096 Nov 26 12:08 ..
+-rw------- 1 root root 1101 Nov 26 12:10 advanced_monitoring_system_redesign_research.md
+-rw------- 1 root root 1569 Nov 26 12:10 advanced_performance_monitoring_system.md
+-rw------- 1 root root 1157 Nov 26 12:10 auto_scaling_dependency_crisis_meeting.md
+-rw------- 1 root root 1194 Nov 26 12:10 auto_scaling_project_split_analysis.md
+-rw------- 1 root root 2093 Nov 26 12:10 auto_scaling_with_performance_intelligence.md
+-rw------- 1 root root 1577 Nov 26 12:10 basic_rule_based_auto_scaling.md
+-rw------- 1 root root 1061 Nov 26 12:10 database_connection_pool_optimization.md
+-rw------- 1 root root 1278 Nov 26 12:10 database_performance_degradation_investigation.md
+-rw------- 1 root root 1265 Nov 26 12:10 emergency_rollback_advanced_monitoring_system.md
+-rw------- 1 root root 1606 Nov 26 12:10 intelligent_alerts_dashboard.md
+-rw------- 1 root root 1540 Nov 26 12:10 lightweight_metrics_collection_system.md
+-rw------- 1 root root 1209 Nov 26 12:10 monitoring_system_performance_impact_analysis.md
+-rw------- 1 root root  997 Nov 26 12:10 performance_testing_framework.md
+-rw------- 1 root root 1089 Nov 26 12:10 simple_alerts_interface.md
+-rw------- 1 root root  975 Nov 26 12:10 simple_alerts_interface_ui_polish.md
+-rw------- 1 root root  939 Nov 26 12:10 user_documentation_for_new_auto_scaling.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 8
+drwxrwxrwx 2 root root 4096 Nov 26 12:08 .
+drwxrwxrwx 5 root root 4096 Nov 26 12:08 ..
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2025-11-26
+**Source**: /workspace/unsorted/event_history.json
+**Total Events Processed**: 23
+
+---
+
+## Overview
+
+This document summarizes the processing of event history data from Linear ticket tracking system. The data spans from April 1, 2024 to June 5, 2024, covering the Q2 2024 Observability milestone.
+
+### Event Distribution
+- **Linear Events**: 23
+- **Slack Events**: 0
+
+---
+
+## All Unique Tickets and Current Status
+
+| # | Ticket Title | Team | Current Status | Priority | Lead | Created |
+|---|--------------|------|----------------|----------|------|---------|
+| 1 | Advanced performance monitoring system | platform | **done** | high | alex | 2024-04-01 |
+| 2 | Intelligent alerts dashboard | frontend | **cancelled** | medium | casey | 2024-04-08 |
+| 3 | Auto-scaling with performance intelligence | devops | **in_progress** | high | elena | 2024-04-10 |
+| 4 | Database performance degradation investigation | platform | **in_progress** | urgent | blake | 2024-05-02 |
+| 5 | Monitoring system performance impact analysis | platform | **done** | urgent | alex | 2024-05-03 |
+| 6 | Emergency rollback: Advanced monitoring system | platform | **done** | urgent | alex | 2024-05-03 |
+| 7 | Auto-scaling dependency crisis meeting | devops | **done** | urgent | elena | 2024-05-04 |
+| 8 | Lightweight metrics collection system | platform | **done** | high | blake | 2024-05-06 |
+| 9 | Simple alerts interface | frontend | **todo** | medium | drew | 2024-05-07 |
+| 10 | Auto-scaling project split analysis | devops | **done** | high | elena | 2024-05-08 |
+| 11 | Basic rule-based auto-scaling | devops | **done** | high | finn | 2024-05-09 |
+| 12 | Database connection pool optimization | platform | **todo** | medium | blake | 2024-05-27 |
+| 13 | User documentation for new auto-scaling | devops | **todo** | low | elena | 2024-05-28 |
+| 14 | Advanced monitoring system redesign research | platform | **todo** | low | alex | 2024-05-30 |
+| 15 | Simple alerts interface UI polish | frontend | **in_progress** | low | drew | 2024-06-03 |
+| 16 | Performance testing framework | platform | **todo** | medium | blake | 2024-06-05 |
+
+---
+
+## Status Breakdown
+
+### Completed (done): 7 tickets
+- Advanced performance monitoring system *(then rolled back)*
+- Monitoring system performance impact analysis
+- Emergency rollback: Advanced monitoring system
+- Auto-scaling dependency crisis meeting
+- Lightweight metrics collection system
+- Auto-scaling project split analysis
+
+=== Count of files created ===
+Daily digests: 22
+Linear objects: 16
+Slack threads: 0
+

@@ -1,0 +1,68 @@
+Benchmark Run Summary
+=====================
+
+Configuration: config_vg_26
+Timestamp: 20251126_152849
+Run Date: Wed Nov 26 15:35:03 UTC 2025
+Total Questions: 3
+
+Processing Phases:
+1. PAM Structure Creation: init.py
+2. Event History Processing: processing.log
+3. Question Answering: questions/question_*.log
+
+Workspace Structure:
+/workspace/
+├── INIT.md (PAM Guide)
+├── init.py (Structure generator)
+├── INTRO_TEMPLATE.md (Company template)
+├── CLAUDE.md (System context)
+├── config_vg_26_company_context/ (PAM folder structure)
+│   ├── 01_company/
+│   ├── 02_people/
+│   ├── 06_projects/
+│   ├── 09_activity_streams/
+│   └── ...
+└── unsorted/
+    ├── event_history.json (Config-specific data)
+    └── linear_config.yaml (Config-specific Linear setup)
+
+Questions and Expected Answers:
+===============================
+
+Question 1:
+What specific technical change introduced non-deterministic evaluation results, and what was the underlying infrastructure cause?
+
+Expected Answer:
+Dockerized context isolation introduced non-deterministic results due to resource contention between container instances competing for CPU scheduling
+
+Log File: questions/question_1.log
+---
+
+Question 2:
+During the post-mortem discussion, which team member identified the root cause of the Kubernetes cluster failures and what specific resource constraint did they pinpoint?
+
+Expected Answer:
+charlie identified Kubernetes cluster failures caused by 500+ concurrent container spawns exceeding the 64GB cluster memory limit
+
+Log File: questions/question_2.log
+---
+
+Question 3:
+What was the exact memory requirement explosion that forced the evaluation sharding approach, and which conversation threading feature triggered this requirement?
+
+Expected Answer:
+32GB per evaluation batch requirement triggered by isolated conversation context feature requiring separate memory space for each multi-turn dialogue thread
+
+Log File: questions/question_3.log
+---
+
+Directory Structure:
+====================
+config_vg_26_20251126_152849/
+├── summary.txt (this file)
+├── processing.log (initial data processing)
+└── questions/
+    ├── question_1.log
+    ├── question_2.log
+    └── question_3.log

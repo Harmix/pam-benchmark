@@ -1,0 +1,24 @@
+Based on the processed data in the PAM folder structure, I can now answer your question:
+
+## Root Cause of Context Window Exhaustion
+
+**The root cause was: Complex reasoning chains exceeding the 32k context window limit during evaluation, specifically on tasks like SWE-bench and GPQA.**
+
+### Key Details:
+
+**Problem** (identified Nov 19-20, 2024):
+- Reasoning chains for complex tasks were generating 50k+ tokens
+- The evaluation system had a 32k token context window limit
+- Evaluations were getting truncated mid-reasoning, corrupting the task completion reward signals
+- This made it impossible to properly evaluate full reasoning chains, which was a "showstopper" for the entire multi-turn agentic evaluation approach
+
+**Solution** (implemented Nov 22-23, 2024):
+- Hierarchical reasoning chunk evaluation architecture (EVAL-008)
+- Breaking long reasoning chains into 8k token chunks with intermediate verification points
+- Each chunk evaluated independently, then combined for final task completion score
+- Based on research paper on "Hierarchical Reasoning Evaluation"
+- Implemented by charlie, designed by bob
+
+This was one of three critical blockers that threatened to derail the entire migration from RLHF to multi-turn agentic evaluation (the others being conversation state persistence failures and API reward corruption).
+
+**Reference**: `/workspace/config_vg_25_company_context/09_activity_streams/linear_objects/context_window_exhaustion_in_reasoning_chain_evaluation.md` and post_training.md:42-45

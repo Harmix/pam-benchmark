@@ -1,0 +1,11 @@
+Based on the processed data in /workspace/config_vg_24_company_context/, here's the answer:
+
+## Answer
+
+**Technical Bottleneck**: LLM inference for quality classification was approximately **100x slower than training**, creating a severe throughput problem in the data pipeline.
+
+**Metric that Revealed the Issue**: **GPU utilization dropped to 12%** during classification phases, meaning 88% of compute capacity was wasted on classification overhead rather than actual model training.
+
+This was reported by Diana on 2024-10-07 in the #engineering Slack channel after first results from the LLM classifier pipeline came in. The low GPU utilization metric clearly demonstrated that the quality classifier pipeline couldn't meet training throughput requirements because the GPUs were sitting idle while waiting for slow inference-based data classification to complete.
+
+**Reference**: /workspace/config_vg_24_company_context/09_activity_streams/slack_threads/engineering.md and /workspace/config_vg_24_company_context/09_activity_streams/daily_digests/2024-10-07.md

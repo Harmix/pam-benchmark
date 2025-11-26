@@ -1,0 +1,7 @@
+Based on the processed event history data, when Charlie analyzed the epoch training inconsistencies in the final crisis week, the checkpoint analysis revealed this specific technical bug:
+
+**PyTorch DataLoader had a shuffling bug with filtered datasets where the dataset length calculation was incorrect** - it reported the full dataset size but only iterated through 30% of the data before resetting. The logging systems showed "epoch complete" but training actually stopped at 0.3 epochs instead of completing the full 1.0 epoch.
+
+The root cause required fixing the dataset length calculation and iterator state management for filtered data (as documented in `/workspace/config_vg_24_company_context/09_activity_streams/linear_objects/pytorch_dataloader_shuffling_bug___epoch_iteration_fix.md:19`).
+
+This bug discovery happened on 2024-10-24 and was critical because it explained why the quality classifier pipeline appeared slow and had confusing convergence metrics - it wasn't just the inference overhead, but also the incomplete data training caused by this DataLoader iteration bug.

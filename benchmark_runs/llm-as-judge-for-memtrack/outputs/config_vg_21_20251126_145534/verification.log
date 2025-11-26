@@ -1,0 +1,114 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 100
+drwxrwxrwx 2 root root 4096 Nov 26 14:58 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:55 ..
+-rw------- 1 root root  429 Nov 26 14:58 2024-02-05.md
+-rw------- 1 root root  761 Nov 26 14:58 2024-02-06.md
+-rw------- 1 root root  474 Nov 26 14:58 2024-02-07.md
+-rw------- 1 root root  265 Nov 26 14:58 2024-02-08.md
+-rw------- 1 root root  256 Nov 26 14:58 2024-02-09.md
+-rw------- 1 root root  720 Nov 26 14:58 2024-02-12.md
+-rw------- 1 root root  446 Nov 26 14:58 2024-02-13.md
+-rw------- 1 root root  327 Nov 26 14:58 2024-02-14.md
+-rw------- 1 root root  293 Nov 26 14:58 2024-02-15.md
+-rw------- 1 root root  291 Nov 26 14:58 2024-02-16.md
+-rw------- 1 root root  287 Nov 26 14:58 2024-02-20.md
+-rw------- 1 root root  456 Nov 26 14:58 2024-02-21.md
+-rw------- 1 root root  316 Nov 26 14:58 2024-02-23.md
+-rw------- 1 root root  430 Nov 26 14:58 2024-02-26.md
+-rw------- 1 root root  293 Nov 26 14:58 2024-02-27.md
+-rw------- 1 root root  265 Nov 26 14:58 2024-02-28.md
+-rw------- 1 root root  311 Nov 26 14:58 2024-03-01.md
+-rw------- 1 root root  452 Nov 26 14:58 2024-03-04.md
+-rw------- 1 root root  261 Nov 26 14:58 2024-03-05.md
+-rw------- 1 root root 1940 Nov 26 14:58 2024-03-08.md
+-rw------- 1 root root  470 Nov 26 14:58 2024-03-12.md
+-rw------- 1 root root  534 Nov 26 14:58 2024-03-15.md
+-rw------- 1 root root  433 Nov 26 14:58 2024-03-18.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 44
+drwxrwxrwx 2 root root 4096 Nov 26 14:56 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:55 ..
+-rw------- 1 root root  840 Nov 26 14:56 database_agnostic_connection_pooling_architecture.md
+-rw------- 1 root root  825 Nov 26 14:56 database_security_hardening_connection_limits_and_access_controls.md
+-rw------- 1 root root  726 Nov 26 14:56 distributed_consensus_reliability_analysis_for_techflow_sla.md
+-rw------- 1 root root  851 Nov 26 14:56 emergency_production_database_connection_bottleneck_resolution.md
+-rw------- 1 root root  713 Nov 26 14:56 evaluate_distributed_database_options_security_first_approach.md
+-rw------- 1 root root  742 Nov 26 14:56 high_performance_distributed_consensus_database_evaluation.md
+-rw------- 1 root root  970 Nov 26 14:56 hybrid_database_scaling_architecture_multiplexing_replication.md
+-rw------- 1 root root  837 Nov 26 14:56 master_slave_replication_with_read_scaling_architecture.md
+-rw------- 1 root root 1393 Nov 26 14:56 user_database_migration_for_horizontal_scaling.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 20
+drwxrwxrwx 2 root root 4096 Nov 26 14:57 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:55 ..
+-rw------- 1 root root  729 Nov 26 14:57 architecture.md
+-rw------- 1 root root 1891 Nov 26 14:57 engineering.md
+-rw------- 1 root root 2767 Nov 26 14:57 infrastructure.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+## Processing Date
+2025-11-26
+
+## Source Data
+- **Input File**: /workspace/unsorted/event_history.json
+- **Total Events**: 29 events
+- **Date Range**: 2024-02-05 to 2024-03-18
+
+---
+
+## Linear Tickets Summary
+
+### Total Tickets: 9 unique tickets
+
+| Ticket Title | Team | Priority | Lead | Current Status | Created | Completed |
+|-------------|------|----------|------|----------------|---------|-----------|
+| User database migration for horizontal scaling | infrastructure | high | bob | **done** | 2024-02-05 | 2024-03-18 |
+| Evaluate distributed database options - security-first approach | infrastructure | high | charlie | todo | 2024-02-07 | - |
+| Database security hardening - connection limits and access controls | infrastructure | urgent | charlie | in_progress | 2024-02-12 | - |
+| High-performance distributed consensus database evaluation | infrastructure | high | bob | todo | 2024-02-13 | - |
+| Database-agnostic connection pooling architecture | architecture | medium | diana | in_progress | 2024-02-21 | - |
+| Distributed consensus reliability analysis for TechFlow SLA | infrastructure | urgent | bob | todo | 2024-02-26 | - |
+| Master-slave replication with read scaling architecture | infrastructure | high | alice | in_progress | 2024-03-04 | - |
+| EMERGENCY: Production database connection bottleneck resolution | infrastructure | urgent | diana | in_progress | 2024-03-08 | - |
+| Hybrid database scaling architecture - multiplexing + replication | architecture | high | diana | in_progress | 2024-03-12 | - |
+
+### Status Breakdown
+- **done**: 1 ticket (11%)
+- **in_progress**: 5 tickets (56%)
+- **todo**: 3 tickets (33%)
+
+### Priority Breakdown
+- **urgent**: 3 tickets
+- **high**: 5 tickets
+- **medium**: 1 ticket
+
+### Team Distribution
+- **infrastructure**: 7 tickets
+- **architecture**: 2 tickets
+
+### Lead Assignments
+- **bob**: 3 tickets
+- **charlie**: 2 tickets
+- **diana**: 3 tickets
+- **alice**: 1 ticket
+
+### Lead Reassignments Detected
+**Ticket: "User database migration for horizontal scaling"**
+
+=== Count of files created ===
+Daily digests: 23
+Linear objects: 9
+Slack threads: 3
+

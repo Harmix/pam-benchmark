@@ -1,0 +1,15 @@
+Based on the processed data from the PAM folder structure, here's the answer to your question:
+
+## Branching Factor Explosion Details
+
+**Exact branching factor:** 8 branches per node
+
+**Search depth parameter:** 50 steps (increased from the baseline of 5 steps)
+
+**Exponential growth:** 8^50 possible paths = approximately 10^45 possible paths (computationally intractable)
+
+**Latency impact:** 3 seconds → 45+ seconds per request
+
+This explosion occurred on **January 9, 2025**, when the tree search optimization was first implemented. The system went from the baseline beam search (5 linear steps, 3-second latency) to a tree search exploring 8 branches at each of 50+ depth levels, resulting in the 45-second latency crisis that ultimately cascaded into system failure.
+
+The data shows this was the critical mathematical error that made all subsequent optimization attempts fail - the exponential compute requirements from 8^50 were fundamentally unsolvable, and each later "fix" (pruning, multi-agent) only compounded the problem rather than addressing the root cause.

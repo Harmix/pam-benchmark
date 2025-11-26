@@ -1,0 +1,15 @@
+Based on the processed data, I can now provide you with the answer:
+
+## Answer
+
+**Charlie** (infrastructure team) identified the root cause of the Kubernetes cluster failures during the post-mortem discussion on 2025-01-30 at 14:30.
+
+The specific resource constraint Charlie pinpointed was **memory limits** - specifically, the 500+ concurrent containers exceeded the **64GB cluster memory limit**, causing the entire system to crash.
+
+Charlie's full analysis identified two connected issues:
+1. **CPU scheduling contention** - dockerized context isolation caused non-deterministic results because container instances competed for CPU scheduling
+2. **Memory exhaustion** - 500+ concurrent container spawns exceeded the cluster's 64GB memory capacity
+
+The context isolation feature alone had caused memory requirements to explode from 2GB total to 32GB per batch (a 16x increase), which when combined with high container counts, overwhelmed the infrastructure.
+
+Reference: `/workspace/config_vg_26_company_context/09_activity_streams/slack_threads/infrastructure.md` (2025-01-30 14:30 message)

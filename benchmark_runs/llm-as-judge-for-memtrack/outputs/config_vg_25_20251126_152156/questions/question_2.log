@@ -1,0 +1,7 @@
+Based on the processed data in the PAM folder structure:
+
+**Answer:**
+
+The **Weather API** timeout failures led to the discovery of reward signal corruption during tool-calling evaluations. The corruption rate was **23%** of tool-calling evaluations.
+
+Specifically, the Weather API timeout failures were causing partial responses to be marked as successful completions, which was teaching models to incorrectly accept incomplete API responses as correct behavior. This critical issue (tracked as EVAL-006) was discovered on 2024-11-16 and resolved on 2024-11-18 by implementing timeout detection, retry logic, and API health monitoring.

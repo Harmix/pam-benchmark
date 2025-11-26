@@ -1,0 +1,14 @@
+Based on the processed data, **Eve's core insight** about why the flag system had become unmanageable despite each individual decision being reasonable was:
+
+**The system had become a distributed state machine where business logic was encoded in flag interactions rather than explicit code.**
+
+Specifically, as documented in `engineering.md:114` and `engineering.md:123-126`:
+
+- When conditional flag dependencies were implemented (e.g., "advanced_filters only if new_dashboard"), the system transformed from simple feature toggles into a state machine
+- **Business logic became implicit in flag combinations** rather than explicit in the codebase
+- This created **emergent behavior** - the system exhibited behaviors from flag combinations that were never explicitly designed or tested
+- Each individual flag addition was locally reasonable, but the conditional dependencies created exponential state space complexity
+
+Eve compared this to cellular automata: simple local rules interacting to create complex, unpredictable global patterns. The fundamental problem was that **you cannot reason systematically about a system where business rules emerge from implicit flag interactions** rather than being explicitly coded.
+
+Her proposed solution: Flags should control features (boolean toggles), not define business logic (which should live in an explicit rule engine).

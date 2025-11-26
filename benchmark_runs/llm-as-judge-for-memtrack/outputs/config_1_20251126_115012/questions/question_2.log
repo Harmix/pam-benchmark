@@ -1,0 +1,10 @@
+Based on the processed data, I can see that there were 2 reassignments detected:
+
+1. **Legacy system migration planning** - Reassigned on 2024-11-21 (oldest)
+2. **Security audit preparation** - Reassigned on 2024-12-07
+
+The **oldest reassigned ticket** is "Legacy system migration planning," which was reassigned on 2024-11-21.
+
+**Answer: The lead of the oldest reassigned ticket is Charlie.**
+
+(This ticket was originally assigned to Alice but was reassigned to Charlie on 2024-11-21 because Charlie had more experience with old system architecture.)

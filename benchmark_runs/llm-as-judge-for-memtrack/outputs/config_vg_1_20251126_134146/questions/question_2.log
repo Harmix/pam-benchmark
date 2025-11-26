@@ -1,0 +1,10 @@
+Based on the processed data, during the post-mortem discussion, the team identified **mandatory real-time use case review** as the prevention method that could have caught this issue before it affected customers.
+
+Specifically, on 2025-01-09 at 10:00, alice proposed: *"Post-mortem follow-up: I think we need to add a mandatory 'real-time use case review' step to any architecture changes involving caching or data delays. We should have caught this during the design phase."*
+
+This review would be:
+- **When**: During the architecture design phase (not post-deployment)
+- **Scope**: Applied to any changes involving caching or data delays
+- **Purpose**: Identify freshness requirements and conflicts before implementation
+
+The team recognized that if they had conducted this analysis upfront, they would have discovered that e-commerce clients running flash sales, inventory management, and time-sensitive campaigns required near real-time data (not the 2-hour cached data), preventing the 14 percentage point drop in renewal rate (from 92% to 78%).

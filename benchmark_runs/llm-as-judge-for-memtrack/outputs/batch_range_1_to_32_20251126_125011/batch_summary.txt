@@ -1,0 +1,69 @@
+Batch Range Run: Config 1 to 32
+Start Time: Wed Nov 26 12:50:11 CET 2025
+Mode: No MCP/Git - Direct file processing
+
+config_1: SUCCESS (319s)
+  Container log: config_1_container.log
+  Result logs: Check outputs/ for config_1_* directories
+
+config_2: SUCCESS (305s)
+  Container log: config_2_container.log
+  Result logs: Check outputs/ for config_2_* directories
+
+config_3: SUCCESS (217s)
+  Container log: config_3_container.log
+  Result logs: Check outputs/ for config_3_* directories
+
+config_4: SUCCESS (256s)
+  Container log: config_4_container.log
+  Result logs: Check outputs/ for config_4_* directories
+
+config_5: SUCCESS (368s)
+  Container log: config_5_container.log
+  Result logs: Check outputs/ for config_5_* directories
+
+config_6: SKIPPED (file not found)
+config_7: SKIPPED (file not found)
+config_8: SKIPPED (file not found)
+config_9: SKIPPED (file not found)
+config_10: SKIPPED (file not found)
+config_11: SKIPPED (file not found)
+config_12: SKIPPED (file not found)
+config_13: SKIPPED (file not found)
+config_14: SKIPPED (file not found)
+config_15: SKIPPED (file not found)
+config_16: SKIPPED (file not found)
+config_17: SKIPPED (file not found)
+config_18: SKIPPED (file not found)
+config_19: SKIPPED (file not found)
+config_20: SKIPPED (file not found)
+config_21: SKIPPED (file not found)
+config_22: SKIPPED (file not found)
+config_23: SKIPPED (file not found)
+config_24: SKIPPED (file not found)
+config_25: SKIPPED (file not found)
+config_26: SKIPPED (file not found)
+config_27: SKIPPED (file not found)
+config_28: SKIPPED (file not found)
+config_29: SKIPPED (file not found)
+config_30: SKIPPED (file not found)
+config_31: SKIPPED (file not found)
+config_32: SKIPPED (file not found)
+
+=======================================
+Final Summary
+=======================================
+End Time: Wed Nov 26 13:15:01 CET 2025
+Total Configs: 32
+Successful: 5
+Failed: 0
+Skipped: 27
+Success Rate: 100.0%
+
+Log Files:
+- Each config has a container log: <config_name>_container.log
+- Each config creates a result directory in outputs/
+  Format: <config_name>_<timestamp>/
+    ├── summary.txt
+    └── questions/
+        └── question_N.log

@@ -1,0 +1,100 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 48
+drwxrwxrwx 2 root root 4096 Nov 26 14:46 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:43 ..
+-rw------- 1 root root  365 Nov 26 14:45 2024-11-05.md
+-rw------- 1 root root  343 Nov 26 14:45 2024-11-10.md
+-rw------- 1 root root  369 Nov 26 14:45 2024-11-15.md
+-rw------- 1 root root  327 Nov 26 14:45 2024-11-25.md
+-rw------- 1 root root  904 Nov 26 14:45 2024-12-02.md
+-rw------- 1 root root 1210 Nov 26 14:45 2024-12-03.md
+-rw------- 1 root root 2637 Nov 26 14:45 2024-12-04.md
+-rw------- 1 root root 2107 Nov 26 14:45 2024-12-05.md
+-rw------- 1 root root  411 Nov 26 14:46 2025-01-08.md
+-rw------- 1 root root  438 Nov 26 14:46 2025-01-10.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 48
+drwxrwxrwx 2 root root 4096 Nov 26 14:44 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:43 ..
+-rw------- 1 root root  904 Nov 26 14:44 api_performance_regression_user_profile_endpoints.md
+-rw------- 1 root root  993 Nov 26 14:44 automated_integration_testing_for_library_updates.md
+-rw------- 1 root root 2154 Nov 26 14:44 critical_fast_json_parse_v3_0_null_handling_breaks_multiple_systems.md
+-rw------- 1 root root  890 Nov 26 14:44 dashboard_data_inconsistency_metrics_showing_gaps.md
+-rw------- 1 root root 1263 Nov 26 14:44 december_security_library_updates.md
+-rw------- 1 root root 1036 Nov 26 14:44 dependency_change_impact_assessment_process.md
+-rw------- 1 root root  749 Nov 26 14:44 monthly_report_template_redesign.md
+-rw------- 1 root root  761 Nov 26 14:44 q4_dashboard_theme_updates.md
+-rw------- 1 root root  935 Nov 26 14:44 urgent_monthly_report_generation_failing_with_json_errors.md
+-rw------- 1 root root  747 Nov 26 14:44 user_profile_api_rate_limiting.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 12
+drwxrwxrwx 2 root root 4096 Nov 26 14:45 .
+drwxrwxrwx 5 root root 4096 Nov 26 14:43 ..
+-rw------- 1 root root 3795 Nov 26 14:45 engineering.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2024-11-26
+**Source File**: /workspace/unsorted/event_history.json
+**Total Events**: 33 (13 Linear + 20 Slack)
+
+---
+
+## Linear Tickets Summary
+
+### Unique Tickets Processed: 10
+
+| Ticket | Team | Lead | Status | Priority | Created |
+|--------|------|------|--------|----------|---------|
+| Q4 dashboard theme updates | frontend | diana | done | low | 2024-11-05 |
+| User profile API rate limiting | backend | bob | done | medium | 2024-11-10 |
+| Monthly report template redesign | frontend | alice | done | medium | 2024-11-15 |
+| December security library updates | backend | charlie | done | high | 2024-12-02 |
+| URGENT: Monthly report generation failing with JSON errors | frontend | alice | in_progress | high | 2024-12-03 |
+| API performance regression - user profile endpoints | backend | bob | in_progress | high | 2024-12-03 |
+| Dashboard data inconsistency - metrics showing gaps | frontend | diana | in_progress | medium | 2024-12-04 |
+| CRITICAL: fast-json-parse v3.0 null-handling breaks multiple systems | backend | charlie | done | urgent | 2024-12-05 |
+| Dependency change impact assessment process | engineering | alice | todo | medium | 2025-01-08 |
+| Automated integration testing for library updates | backend | bob | todo | medium | 2025-01-10 |
+
+### Tickets with Status Changes (Reassignments/Updates)
+
+1. **December security library updates**
+   - 2024-12-02 09:00: Created (In Progress)
+   - 2024-12-02 14:30: Updated to Done
+
+2. **CRITICAL: fast-json-parse v3.0 null-handling breaks multiple systems**
+   - 2024-12-05 09:00: Created (In Progress)
+   - 2024-12-05 14:30: Updated to Done
+
+### Status Distribution
+- ✅ **Done**: 5 tickets
+- 🔄 **In Progress**: 3 tickets
+- 📋 **Todo**: 2 tickets
+
+### Priority Distribution
+- 🔴 **Urgent**: 1 ticket
+- 🟠 **High**: 3 tickets
+- 🟡 **Medium**: 5 tickets
+- 🟢 **Low**: 1 ticket
+
+---
+
+## Slack Channels Summary
+
+
+=== Count of files created ===
+Daily digests: 10
+Linear objects: 10
+Slack threads: 1
+

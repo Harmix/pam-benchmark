@@ -1,0 +1,118 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 128
+drwxrwxrwx 2 root root 4096 Nov 26 15:45 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:42 ..
+-rw------- 1 root root  639 Nov 26 15:45 2025-01-06.md
+-rw------- 1 root root  508 Nov 26 15:45 2025-01-07.md
+-rw------- 1 root root  463 Nov 26 15:45 2025-01-08.md
+-rw------- 1 root root  326 Nov 26 15:45 2025-01-09.md
+-rw------- 1 root root  271 Nov 26 15:45 2025-01-15.md
+-rw------- 1 root root  248 Nov 26 15:45 2025-01-18.md
+-rw------- 1 root root  281 Nov 26 15:45 2025-01-20.md
+-rw------- 1 root root  274 Nov 26 15:45 2025-01-25.md
+-rw------- 1 root root  265 Nov 26 15:45 2025-01-28.md
+-rw------- 1 root root  280 Nov 26 15:45 2025-02-01.md
+-rw------- 1 root root  449 Nov 26 15:45 2025-02-03.md
+-rw------- 1 root root  275 Nov 26 15:45 2025-02-04.md
+-rw------- 1 root root  256 Nov 26 15:45 2025-02-05.md
+-rw------- 1 root root  255 Nov 26 15:45 2025-02-06.md
+-rw------- 1 root root  485 Nov 26 15:45 2025-02-10.md
+-rw------- 1 root root  260 Nov 26 15:45 2025-02-12.md
+-rw------- 1 root root  289 Nov 26 15:45 2025-02-14.md
+-rw------- 1 root root  497 Nov 26 15:45 2025-02-15.md
+-rw------- 1 root root  274 Nov 26 15:45 2025-02-17.md
+-rw------- 1 root root  250 Nov 26 15:45 2025-02-20.md
+-rw------- 1 root root  266 Nov 26 15:45 2025-02-22.md
+-rw------- 1 root root  764 Nov 26 15:45 2025-02-25.md
+-rw------- 1 root root  284 Nov 26 15:45 2025-02-26.md
+-rw------- 1 root root  294 Nov 26 15:45 2025-02-27.md
+-rw------- 1 root root  305 Nov 26 15:45 2025-02-28.md
+-rw------- 1 root root  426 Nov 26 15:45 2025-03-01.md
+-rw------- 1 root root  286 Nov 26 15:45 2025-03-05.md
+-rw------- 1 root root  278 Nov 26 15:45 2025-03-10.md
+-rw------- 1 root root  504 Nov 26 15:45 2025-03-12.md
+-rw------- 1 root root  304 Nov 26 15:45 2025-03-15.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 36
+drwxrwxrwx 2 root root 4096 Nov 26 15:43 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:42 ..
+-rw------- 1 root root 1247 Nov 26 15:43 critical_techflow_audit_trail_corruption_discovered.md
+-rw------- 1 root root  926 Nov 26 15:43 customer_complaint_citation_errors_in_generated_content.md
+-rw------- 1 root root 1379 Nov 26 15:43 design_observability_infrastructure_for_agentic_workflows.md
+-rw------- 1 root root  921 Nov 26 15:43 implement_web_search_and_fact_checking_tool_calls.md
+-rw------- 1 root root  896 Nov 26 15:43 multi_turn_conversation_memory_system.md
+-rw------- 1 root root  899 Nov 26 15:43 urgent_enterprise_audit_trail_requirements.md
+-rw------- 1 root root  907 Nov 26 15:43 writingbot_v2_add_agentic_features_for_competitive_parity.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 20
+drwxrwxrwx 2 root root 4096 Nov 26 15:44 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:42 ..
+-rw------- 1 root root 4427 Nov 26 15:44 engineering.md
+-rw------- 1 root root  900 Nov 26 15:44 research.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+## Overview
+Processed 34 total events from event_history.json spanning January 6 - March 15, 2025.
+
+## Linear Tickets Processed
+
+### Unique Tickets: 7
+
+| Ticket Title | Current Status | Priority | Lead | Created | Completed |
+|--------------|----------------|----------|------|---------|-----------|
+| WritingBot V2: Add agentic features for competitive parity | todo | high | alice | 2025-01-06 | - |
+| Implement web search and fact-checking tool calls | in_progress | high | bob | 2025-01-07 | - |
+| Multi-turn conversation memory system | in_progress | high | diana | 2025-01-09 | - |
+| Customer Complaint: Citation errors in generated content | todo | urgent | alice | 2025-02-03 | - |
+| URGENT: Enterprise audit trail requirements | in_progress | urgent | alice | 2025-02-10 | - |
+| Design observability infrastructure for agentic workflows | **done** | urgent | diana | 2025-02-15 | 2025-03-12 |
+| CRITICAL: TechFlow audit trail corruption discovered | **done** | urgent | diana | 2025-02-25 | 2025-03-01 |
+
+### Status Breakdown
+- **Todo**: 2 tickets
+- **In Progress**: 3 tickets
+- **Done**: 2 tickets
+
+### Priority Breakdown
+- **High**: 3 tickets
+- **Urgent**: 4 tickets
+
+## Slack Channels Found
+
+### Channels: 2
+
+1. **#engineering** - 21 messages
+   - Most active channel
+   - Primary contributors: alice (7), bob (4), diana (5), charlie (5)
+   - Topics: agentic features, tool calling, observability, debugging
+
+2. **#research** - 4 messages
+   - Research-focused discussions
+   - Primary contributor: charlie (4)
+   - Topics: ReAct paper, Constitutional AI framework
+
+### Message Distribution
+- **Total Messages**: 25
+- **engineering**: 21 messages (84%)
+- **research**: 4 messages (16%)
+
+## Activity Timeline
+
+### January 2025
+
+=== Count of files created ===
+Daily digests: 30
+Linear objects: 7
+Slack threads: 2
+

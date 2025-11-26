@@ -1,0 +1,26 @@
+Based on the processed data, here's the answer to your question:
+
+## Core Technical Issue: Optimistic Locking Failure in Distributed Transactions
+
+**The specific technical integration pattern that caused the $47K in inventory-payment mismatches was:**
+
+**Optimistic locking used for independent system consistency, but applied to simultaneous distributed operations without proper distributed transaction coordination.**
+
+### The Mechanism:
+
+1. **Architecture Pattern**: Two separate systems (payment and inventory) each using optimistic locking with version numbers for their own internal consistency
+
+2. **Integration Flaw**: When payment processing and inventory reservation operations overlapped within a **~200ms window** during high-concurrency periods, they executed simultaneously as distributed operations
+
+3. **The Race Condition**: Bob's optimistic locking assumed sequential access, but during high load the operations ran in parallel. This caused:
+   - Payment succeeds → Inventory reservation fails (or vice versa)
+   - One operation commits while the other fails intermittently
+   - Data corruption occurs when only one side of the transaction completes
+
+4. **When It Manifested**: Only during high-concurrency events (Black Friday, Cyber Monday, flash sales) - never during low-traffic periods
+
+**Root Cause**: Using per-system optimistic locking for what was actually a cross-system distributed transaction requiring coordinated locking (two-phase commit or saga pattern).
+
+---
+
+*Source: /workspace/config_vg_6_company_context/09_activity_streams/daily_digests/2025-02-03.md and /workspace/config_vg_6_company_context/09_activity_streams/slack_threads/engineering.md (messages from 2025-02-03 11:00-12:00 UTC)*

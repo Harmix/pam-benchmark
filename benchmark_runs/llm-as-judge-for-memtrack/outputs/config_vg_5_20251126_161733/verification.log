@@ -1,0 +1,99 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 60
+drwxrwxrwx 2 root root 4096 Nov 26 16:20 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:17 ..
+-rw------- 1 root root 1190 Nov 26 16:20 2025-04-01.md
+-rw------- 1 root root  553 Nov 26 16:20 2025-04-02.md
+-rw------- 1 root root 1806 Nov 26 16:20 2025-04-03.md
+-rw------- 1 root root  677 Nov 26 16:20 2025-04-04.md
+-rw------- 1 root root 1224 Nov 26 16:20 2025-04-07.md
+-rw------- 1 root root 1959 Nov 26 16:20 2025-04-10.md
+-rw------- 1 root root  601 Nov 26 16:20 2025-04-12.md
+-rw------- 1 root root  801 Nov 26 16:20 2025-04-15.md
+-rw------- 1 root root 1280 Nov 26 16:20 2025-04-18.md
+-rw------- 1 root root  649 Nov 26 16:20 2025-04-22.md
+-rw------- 1 root root 4496 Nov 26 16:20 2025-05-06.md
+-rw------- 1 root root 1010 Nov 26 16:20 2025-05-07.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 36
+drwxrwxrwx 2 root root 4096 Nov 26 16:18 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:17 ..
+-rw------- 1 root root 1047 Nov 26 16:18 backend_database_audit_trail_for_user_activity_tracking.md
+-rw------- 1 root root  881 Nov 26 16:18 email_service_performance_issues_investigation.md
+-rw------- 1 root root 1013 Nov 26 16:18 frontend_user_behavior_analytics_and_heatmap_system.md
+-rw------- 1 root root  856 Nov 26 16:18 gdpr_compliance_audit_data_processing_review.md
+-rw------- 1 root root 1269 Nov 26 16:18 resolution_integrate_divergent_user_activity_tracking_systems.md
+-rw------- 1 root root 1012 Nov 26 16:18 security_privacy_compliant_session_recording_system.md
+-rw------- 1 root root 1129 Nov 26 16:18 urgent_implement_user_activity_tracking_system_for_techcorp.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 16
+drwxrwxrwx 2 root root 4096 Nov 26 16:19 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:17 ..
+-rw------- 1 root root 6197 Nov 26 16:19 engineering.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+---
+title: Event History Processing Summary
+date: 2025-11-26
+type: processing_report
+status: completed
+---
+
+# Event History Processing Summary
+
+## Overview
+Processed event history from 2025-04-01 to 2025-05-07 covering the TechCorp contract crisis and resolution.
+
+## Processing Statistics
+
+### Events Processed
+- **Total Events**: 38
+- **Linear Events**: 7 tickets
+- **Slack Events**: 31 messages
+- **Date Range**: 2025-04-01 to 2025-05-07
+- **Duration**: 37 days
+
+### Files Created
+- **Linear Objects**: 7 files
+- **Slack Threads**: 1 file (engineering channel)
+- **Daily Digests**: 12 files
+
+---
+
+## Linear Tickets Summary
+
+### 1. URGENT: Implement user activity tracking system for TechCorp
+- **File**: `urgent_implement_user_activity_tracking_system_for_techcorp.md`
+- **Team**: product
+- **Lead**: Alice
+- **Priority**: urgent
+- **Status**: in_progress
+- **Created**: 2025-04-01
+- **Timeline**: 2025-04-01 to 2025-05-15
+- **Milestone**: Q2 2025 TechCorp Contract Renewal
+- **Description**: Parent ticket for TechCorp contract renewal requirement
+
+### 2. Backend: Database audit trail for user activity tracking
+- **File**: `backend_database_audit_trail_for_user_activity_tracking.md`
+- **Team**: backend
+- **Lead**: Bob
+- **Priority**: urgent
+- **Status**: in_progress (completed 2025-04-18)
+- **Created**: 2025-04-03
+- **Timeline**: 2025-04-03 to 2025-04-20
+- **Milestone**: Q2 2025 TechCorp Contract Renewal
+
+=== Count of files created ===
+Daily digests: 12
+Linear objects: 7
+Slack threads: 1
+

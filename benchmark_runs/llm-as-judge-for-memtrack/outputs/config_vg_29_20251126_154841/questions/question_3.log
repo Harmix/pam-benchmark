@@ -1,0 +1,9 @@
+## Answer
+
+**Performance Metric Threshold:** 38% recall on technical queries (below the 40% SLA minimum)
+
+**Enterprise Client:** DataCorp
+
+**Context:** DataCorp had a 500GB technical documentation corpus where their engineering team couldn't find specific API method names using the BM25 sparse search algorithm. Bob's diagnostics on 2024-10-05 revealed the 38% recall rate, which alice confirmed on 2024-10-07 was unacceptable and below their 40% SLA minimum. This specific failure at DataCorp was the catalyst that forced the team to abandon pure sparse search and begin investigating dense embedding alternatives.
+
+As confirmed in the retrospective discussion (2024-01-25), bob stated: "The DataCorp case was pivotal - 38% recall on technical queries was the hard threshold that forced us off pure sparse."

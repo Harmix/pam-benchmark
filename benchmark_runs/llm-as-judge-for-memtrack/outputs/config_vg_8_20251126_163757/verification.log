@@ -1,0 +1,102 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 64
+drwxrwxrwx 2 root root 4096 Nov 26 16:41 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:37 ..
+-rw------- 1 root root  713 Nov 26 16:41 2024-12-01.md
+-rw------- 1 root root  671 Nov 26 16:41 2024-12-05.md
+-rw------- 1 root root  640 Nov 26 16:41 2024-12-10.md
+-rw------- 1 root root 1937 Nov 26 16:41 2025-01-13.md
+-rw------- 1 root root 1465 Nov 26 16:41 2025-01-14.md
+-rw------- 1 root root 1315 Nov 26 16:41 2025-01-15.md
+-rw------- 1 root root  745 Nov 26 16:41 2025-01-16.md
+-rw------- 1 root root  663 Nov 26 16:41 2025-01-18.md
+-rw------- 1 root root  693 Nov 26 16:41 2025-01-20.md
+-rw------- 1 root root  802 Nov 26 16:41 2025-01-25.md
+-rw------- 1 root root  918 Nov 26 16:41 2025-01-30.md
+-rw------- 1 root root  728 Nov 26 16:41 2025-02-05.md
+-rw------- 1 root root  704 Nov 26 16:41 2025-02-10.md
+-rw------- 1 root root 1157 Nov 26 16:41 2025-03-15.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 32
+drwxrwxrwx 2 root root 4096 Nov 26 16:39 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:37 ..
+-rw------- 1 root root  751 Nov 26 16:38 devstudio_q4_2024_market_position_review.md
+-rw------- 1 root root  941 Nov 26 16:39 hiring_senior_ai_ml_engineer_for_devstudio_ai_initiative.md
+-rw------- 1 root root  768 Nov 26 16:38 server_infrastructure_database_connection_pooling_optimization.md
+-rw------- 1 root root 1423 Nov 26 16:39 strategic_initiative_ai_integration_for_devstudio.md
+-rw------- 1 root root  691 Nov 26 16:39 theme_system_dark_mode_improvements_for_devstudio.md
+-rw------- 1 root root  716 Nov 26 16:38 ui_ux_refresh_for_devstudio_sidebar_navigation.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 24
+drwxrwxrwx 2 root root 4096 Nov 26 16:40 .
+drwxrwxrwx 5 root root 4096 Nov 26 16:37 ..
+-rw------- 1 root root 2069 Nov 26 16:40 company-wide.md
+-rw------- 1 root root 1459 Nov 26 16:40 engineering.md
+-rw------- 1 root root 5838 Nov 26 16:40 product-strategy.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+# Event History Processing Summary
+
+**Processing Date**: 2025-11-26
+**Source File**: /workspace/unsorted/event_history.json
+**Date Range**: 2024-12-01 to 2025-03-15
+
+---
+
+## Processing Statistics
+
+- **Total Events Processed**: 25
+  - Linear Events: 8
+  - Slack Events: 17
+- **Unique Dates**: 13
+- **Slack Channels**: 3
+- **Linear Tickets**: 6 unique tickets
+
+---
+
+## Linear Tickets Summary
+
+### All Tickets (Current Status)
+
+| Ticket | Team | Priority | Status | Lead | Created | Expected Finish |
+|--------|------|----------|--------|------|---------|-----------------|
+| DevStudio Q4 2024 market position review | product | medium | todo | alice | 2024-12-01 | 2024-12-15 |
+| UI/UX refresh for DevStudio sidebar navigation | product | low | todo | diana | 2024-12-10 | 2024-12-20 |
+| SERVER INFRASTRUCTURE: Database connection pooling optimization | engineering | medium | todo | charlie | 2025-01-13 | 2025-01-18 |
+| **STRATEGIC INITIATIVE: AI Integration for DevStudio** | product | **urgent** | **in_progress** | alice | 2025-01-15 | 2025-03-31 |
+| HIRING: Senior AI/ML Engineer for DevStudio AI Initiative | ai-research | urgent | todo (filled) | alice | 2025-01-16 | 2025-02-15 |
+| THEME SYSTEM: Dark mode improvements for DevStudio | product | low | todo | diana | 2025-01-20 | 2025-01-25 |
+
+### Status Breakdown
+- **In Progress**: 1 (AI Integration - Strategic Initiative)
+- **Todo**: 5 (includes 1 filled hiring position)
+
+### Priority Breakdown
+- **Urgent**: 2
+- **Medium**: 2
+- **Low**: 2
+
+### Team Breakdown
+- **Product**: 4 tickets
+- **Engineering**: 1 ticket
+- **AI Research**: 1 ticket
+
+---
+
+## Ticket State Changes & Reassignments
+
+
+=== Count of files created ===
+Daily digests: 14
+Linear objects: 6
+Slack threads: 3
+

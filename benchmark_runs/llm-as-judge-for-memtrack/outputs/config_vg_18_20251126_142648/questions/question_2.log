@@ -1,0 +1,16 @@
+Perfect! I found the answer in the processed data. Let me provide you with the specific technical reason:
+
+## Answer
+
+**The fundamental technical reason was: incompatible GPU memory allocation patterns.**
+
+Specifically, the three attention mechanisms (sparse, hierarchical, and multi-head) each optimized for different computational graphs with conflicting GPU memory allocation requirements. When attempting to integrate them in parallel, these memory conflicts made it technically impossible for them to coexist simultaneously.
+
+**The Solution:** The team pivoted from parallel integration to a sequential pipeline architecture:
+- Stage 1: Sparse attention (preprocessing/efficiency)
+- Stage 2: Hierarchical attention (main inference/accuracy)  
+- Stage 3: Multi-head attention (output layer/reliability)
+
+The key insight was "problem decomposition instead of integration" - the memory conflicts that prevented integration became the natural boundaries between pipeline stages.
+
+This is documented in `/workspace/processed_data.md:152-162` and throughout the daily digests, particularly in the crisis day events of January 18th.

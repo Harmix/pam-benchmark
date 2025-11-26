@@ -1,0 +1,21 @@
+Based on the processed data in the PAM folder structure, here are the **three specific technical shortcuts Bob implemented between January 20-22** that directly caused the HealthSystem Corp demo failure on January 28:
+
+## The Three Technical Shortcuts
+
+1. **January 20, 08:00** - **Disabled Input Validation on Patient Forms**
+   - Bob removed input validation to avoid "edge case failures"
+   - This eliminated critical data integrity checks on patient data
+
+2. **January 21, 09:00** - **Hardcoded API Credentials in Source Code**
+   - Bob hardcoded HealthSystem Corp's API credentials directly in the application code
+   - Bypassed proper credential management to save time
+
+3. **January 22, 10:00** - **Removed Database Transaction Rollbacks**
+   - Bob eliminated all database transaction rollbacks to prevent timeouts during data imports
+   - Chose "fast, risky operations" over "slow, safe ones"
+
+## Impact
+
+These three shortcuts created a perfect storm: without input validation, bad data could enter the system; without transaction rollbacks, corrupted data couldn't be recovered; and hardcoded credentials created security vulnerabilities. When the demo failed on January 28, these shortcuts contributed to the catastrophic data corruption that affected 847 customer accounts by February 1.
+
+**Source**: Daily digest files at `/workspace/config_vg_15_company_context/09_activity_streams/daily_digests/2025-01-[20-22].md`

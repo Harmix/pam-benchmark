@@ -1,0 +1,117 @@
+Checking directory structure...
+
+=== 09_activity_streams/daily_digests/ ===
+total 104
+drwxrwxrwx 2 root root 4096 Nov 26 15:18 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:17 ..
+-rw-r--r-- 1 root root  909 Nov 26 15:18 2024-10-01.md
+-rw-r--r-- 1 root root  648 Nov 26 15:18 2024-10-02.md
+-rw-r--r-- 1 root root  637 Nov 26 15:18 2024-10-03.md
+-rw-r--r-- 1 root root 1187 Nov 26 15:18 2024-10-04.md
+-rw-r--r-- 1 root root  653 Nov 26 15:18 2024-10-05.md
+-rw-r--r-- 1 root root  428 Nov 26 15:18 2024-10-06.md
+-rw-r--r-- 1 root root  692 Nov 26 15:18 2024-10-07.md
+-rw-r--r-- 1 root root  635 Nov 26 15:18 2024-10-08.md
+-rw-r--r-- 1 root root  650 Nov 26 15:18 2024-10-09.md
+-rw-r--r-- 1 root root 1164 Nov 26 15:18 2024-10-10.md
+-rw-r--r-- 1 root root  687 Nov 26 15:18 2024-10-11.md
+-rw-r--r-- 1 root root 1361 Nov 26 15:18 2024-10-12.md
+-rw-r--r-- 1 root root  386 Nov 26 15:18 2024-10-13.md
+-rw-r--r-- 1 root root  439 Nov 26 15:18 2024-10-14.md
+-rw-r--r-- 1 root root  408 Nov 26 15:18 2024-10-15.md
+-rw-r--r-- 1 root root  428 Nov 26 15:18 2024-10-16.md
+-rw-r--r-- 1 root root  417 Nov 26 15:18 2024-10-18.md
+-rw-r--r-- 1 root root  695 Nov 26 15:18 2024-10-19.md
+-rw-r--r-- 1 root root  373 Nov 26 15:18 2024-10-20.md
+-rw-r--r-- 1 root root  437 Nov 26 15:18 2024-10-21.md
+-rw-r--r-- 1 root root  421 Nov 26 15:18 2024-10-22.md
+-rw-r--r-- 1 root root  645 Nov 26 15:18 2024-10-23.md
+-rw-r--r-- 1 root root  888 Nov 26 15:18 2024-10-24.md
+-rw-r--r-- 1 root root  899 Nov 26 15:18 2024-10-25.md
+
+=== 09_activity_streams/linear_objects/ ===
+total 44
+drwxrwxrwx 2 root root 4096 Nov 26 15:18 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:17 ..
+-rw-r--r-- 1 root root  874 Nov 26 15:18 critical_epoch_training_inconsistency_analysis.md
+-rw-r--r-- 1 root root  912 Nov 26 15:18 implement_llm_based_data_quality_classifier_pipeline.md
+-rw-r--r-- 1 root root  835 Nov 26 15:18 optimize_minhash_deduplication_cpu_bottleneck.md
+-rw-r--r-- 1 root root  884 Nov 26 15:18 parallel_pipeline_comparison_volume_vs_quality_filtering.md
+-rw-r--r-- 1 root root  858 Nov 26 15:18 pivot_to_multi_epoch_training_strategy.md
+-rw-r--r-- 1 root root  898 Nov 26 15:18 pytorch_dataloader_shuffling_bug___epoch_iteration_fix.md
+-rw-r--r-- 1 root root  932 Nov 26 15:18 scale_pretraining_pipeline_to_512_node_a100_cluster.md
+-rw-r--r-- 1 root root  867 Nov 26 15:18 storage_capacity_crisis_shutdown_parallel_pipelines.md
+-rw-r--r-- 1 root root  904 Nov 26 15:18 urgent_prototype_synthetic_data_generation_pipeline.md
+
+=== 09_activity_streams/slack_threads/ ===
+total 32
+drwxrwxrwx 2 root root 4096 Nov 26 15:18 .
+drwxrwxrwx 5 root root 4096 Nov 26 15:17 ..
+-rw-r--r-- 1 root root  626 Nov 26 15:18 competition.md
+-rw-r--r-- 1 root root 6669 Nov 26 15:18 engineering.md
+-rw-r--r-- 1 root root 1244 Nov 26 15:18 post_training.md
+-rw-r--r-- 1 root root  765 Nov 26 15:18 random.md
+-rw-r--r-- 1 root root  887 Nov 26 15:18 research.md
+
+=== Full tree of 09_activity_streams ===
+/benchmark_data/setup_and_run.sh: line 218: tree: command not found
+
+=== processed_data.md exists? ===
+YES - processed_data.md found
+First 50 lines:
+---
+title: Event History Processing Summary
+date: 2024-11-26
+type: processing_summary
+---
+
+# Event History Processing Summary
+
+## Overview
+- **Total Events Processed**: 49
+- **Linear Events**: 9
+- **Slack Events**: 40
+- **Date Range**: 2024-10-01 to 2024-10-25
+- **Days Covered**: 24 days
+
+## Linear Tickets Summary
+
+### All Tickets and Current Status
+
+#### CRITICAL: Epoch training inconsistency analysis
+- **Current Status**: in_progress
+- **Priority**: urgent
+- **Lead**: [[charlie]]
+- **Team**: ml_infrastructure
+
+#### Parallel pipeline comparison: volume vs quality filtering
+- **Current Status**: in_progress
+- **Priority**: urgent
+- **Lead**: [[alice]]
+- **Team**: ml_infrastructure
+
+#### PyTorch DataLoader shuffling bug - epoch iteration fix
+- **Current Status**: done
+- **Priority**: urgent
+- **Lead**: [[charlie]]
+- **Team**: ml_infrastructure
+
+#### Storage capacity crisis: shutdown parallel pipelines
+- **Current Status**: done
+- **Priority**: urgent
+- **Lead**: [[charlie]]
+- **Team**: ml_infrastructure
+
+#### URGENT: Prototype synthetic data generation pipeline
+- **Current Status**: in_progress
+- **Priority**: urgent
+- **Lead**: [[diana]]
+- **Team**: ml_infrastructure
+
+#### Optimize MinHash deduplication CPU bottleneck
+
+=== Count of files created ===
+Daily digests: 24
+Linear objects: 9
+Slack threads: 5
+
