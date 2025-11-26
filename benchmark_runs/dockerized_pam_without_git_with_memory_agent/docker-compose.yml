@@ -10,7 +10,7 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
       - ./claude-config:/root/.claude
-      - ./outputs:/workspace/logs
+      - ./outputs:/benchmark_logs
       - ./test_configs:/benchmark_data/test_configs:ro
       - ./test_event_histories:/benchmark_data/test_event_histories:ro
     working_dir: /workspace

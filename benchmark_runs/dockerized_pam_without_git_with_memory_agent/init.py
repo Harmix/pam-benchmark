@@ -257,6 +257,34 @@ tags: [activity-stream, daily-log]
 ## 🔗 Context Links
 - [[06_projects/active/project_name]]
 """,
+        # --- NEW TEMPLATE FOR SLACK CHANNELS ---
+        "slack_channel_template.md": """---
+    title: Channel - [channel_name]
+    type: slack_channel
+    source: slack
+    tags: [slack, communication]
+    ---
+
+    # Channel: #[channel_name]
+
+    ## Overview
+    - **Purpose**: [What this channel is for]
+    - **Members**: [Key participants]
+
+    ## Messages
+
+    ### [YYYY-MM-DD HH:MM] - @sender
+    message content
+
+    ### [YYYY-MM-DD HH:MM] - @sender
+    message content
+
+    ---
+
+    ## Related Context
+    - Projects: [[06_projects/active/related_project]]
+    - People: [[02_people/teams/engineering]]
+    """,
 
         # --- NEW TEMPLATE FOR LINEAR OBJECTS ---
         "linear_ticket_template.md": """---

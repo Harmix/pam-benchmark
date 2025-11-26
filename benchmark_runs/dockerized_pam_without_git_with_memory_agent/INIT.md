@@ -52,6 +52,7 @@ This guide explains how to organize company information into a standardized fold
 │   │   ├── linear_objects/  # The Data: Specific Ticket History
 │   │   │   └── [ticket_id].md
 │   │   └── slack_threads/   # The Context: Extracted Conversations
+            └── [channel_name].md # the channel logs
 │   │
 │   └── artifacts/           # AI-generated outputs
 │       ├── reports/

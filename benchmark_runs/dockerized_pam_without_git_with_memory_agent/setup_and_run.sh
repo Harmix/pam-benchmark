@@ -8,7 +8,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Create organized directory structure for this config
 # This will appear in outputs/ on the host
-CONFIG_LOG_DIR="/workspace/logs/${CONFIG_NAME}_${TIMESTAMP}"
+CONFIG_LOG_DIR="/benchmark_logs/${CONFIG_NAME}_${TIMESTAMP}"
 QUESTIONS_DIR="$CONFIG_LOG_DIR/questions"
 mkdir -p "$QUESTIONS_DIR"
 
@@ -79,17 +79,23 @@ echo "Creating PAM Memory Folder Structure"
 echo "========================================"
 cd /workspace
 python3 init.py "${CONFIG_NAME}_company" 2>&1 | head -20
+
+# Fix permissions so Claude can create folders/files inside context
+chmod -R 777 /workspace/${CONFIG_NAME}_company_context/
+chmod 777 /workspace/unsorted/
+echo "Permissions set for workspace directories"
+
 echo ""
 echo "PAM folder structure created at: /workspace/${CONFIG_NAME}_company_context/"
 ls -la /workspace/*_context/ 2>/dev/null | head -10
 echo ""
 
 # Clear any Claude Code cache/state
-echo "Clearing Claude Code cache..."
-rm -rf /root/.claude/cache/* 2>/dev/null || true
-rm -rf /tmp/claude* 2>/dev/null || true
-echo "Claude cache cleared"
-echo ""
+#echo "Clearing Claude Code cache..."
+#rm -rf /root/.claude/cache/* 2>/dev/null || true
+#rm -rf /tmp/claude* 2>/dev/null || true
+#echo "Claude cache cleared"
+#echo ""
 
 # Get all questions from config
 QUESTION_COUNT=$(yq eval '.benchmark.questions | length' "$CONFIG_FILE")
@@ -119,30 +125,121 @@ Files in /workspace/unsorted/ (data for this specific config):
 - event_history.json - Chronological list of Linear tickets and Slack messages
 - linear_config.yaml - Linear team and user configuration
 
-Process the event history following the PAM guide:
-1. Read INIT.md to understand the PAM structure
-2. Process event_history.json from the unsorted folder
-3. Organize the data into the PAM folder structure at /workspace/${CONFIG_NAME}_company_context/:
-   - Create daily digests in 09_activity_streams/daily_digests/
-   - Create ticket objects in 09_activity_streams/linear_objects/
-   - Update project statuses in 06_projects/
-   - Track people mentioned in 02_people/
-4. Create a summary file at /workspace/processed_data.md that tracks:
-   * Each unique ticket by title
-   * Current status of each ticket
-   * Current lead/assignee
-   * History of status changes
-   * History of reassignments (when lead changes for same ticket)
-5. Focus especially on tracking reassignments - when a ticket with the same title appears with a different 'lead' value
+## PROCESSING INSTRUCTIONS
 
-Use the PAM folder structure to properly organize the information, then confirm you're ready to answer questions about the data."
+### Step 1: Read and parse event_history.json
+Read the JSON file and separate events by platform (linear vs slack).
+
+### Step 2: Process LINEAR events
+For each Linear event:
+1. Create/update a file in: /workspace/${CONFIG_NAME}_company_context/09_activity_streams/linear_objects/
+2. Filename: [ticket_title_snake_case].md
+3. Track: title, description, status, priority, lead, dates
+4. If same ticket appears multiple times, UPDATE the existing file with new status/lead
+
+### Step 3: Process SLACK events
+For each Slack event:
+1. Group messages by channel
+2. Create ONE file per channel: /workspace/${CONFIG_NAME}_company_context/09_activity_streams/slack_threads/[channel_name].md
+3. Format each file as chronological log:
+
+\`\`\`markdown
+# Channel: [channel_name]
+
+## Messages
+
+### [YYYY-MM-DD HH:MM] - @sender
+message content
+
+### [YYYY-MM-DD HH:MM] - @sender
+message content
+\`\`\`
+
+### Step 4: Create Daily Digests
+Group ALL events (Linear + Slack) by date.
+Create files in: /workspace/${CONFIG_NAME}_company_context/09_activity_streams/daily_digests/
+Filename: [YYYY-MM-DD].md
+Include both Linear status changes AND Slack messages for that day.
+
+### Step 5: Create Summary
+Create /workspace/processed_data.md with:
+- List of all unique tickets and their CURRENT status
+- List of all channels found
+- Count of messages per channel
+- Any reassignments detected (lead changes on same ticket)
+
+## OUTPUT VERIFICATION
+After processing, list the files you created in each directory:
+- 09_activity_streams/linear_objects/
+- 09_activity_streams/slack_threads/
+- 09_activity_streams/daily_digests/
+
+Start now. Read the files and process them."
 
 echo "Asking Claude to process event history..."
 cd /workspace
-claude --verbose -p "$PROCESSING_PROMPT" 2>&1 | tee "$PROCESSING_LOG_FILE"
+claude --verbose -p "$PROCESSING_PROMPT" --permission-mode acceptEdits --add-dir /workspace --allowedTools Read Edit Write Bash 2>&1 | tee "$PROCESSING_LOG_FILE"
+echo "Cleaning up unsorted folder..."
+rm -rf /workspace/unsorted
+echo "Unsorted folder removed"
+echo ""
 
 echo ""
 echo "Processing phase completed. Log saved to: $PROCESSING_LOG_FILE"
+echo ""
+
+# Small delay before questions
+sleep 3
+
+# VERIFICATION: Check what Claude created
+# ========================================
+echo "=========================================="
+echo "Phase 1.5: Verifying Created Files"
+echo "=========================================="
+
+VERIFY_LOG_FILE="$CONFIG_LOG_DIR/verification.log"
+
+echo "Checking directory structure..." | tee "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== 09_activity_streams/daily_digests/ ===" | tee -a "$VERIFY_LOG_FILE"
+ls -la /workspace/${CONFIG_NAME}_company_context/09_activity_streams/daily_digests/ 2>&1 | tee -a "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== 09_activity_streams/linear_objects/ ===" | tee -a "$VERIFY_LOG_FILE"
+ls -la /workspace/${CONFIG_NAME}_company_context/09_activity_streams/linear_objects/ 2>&1 | tee -a "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== 09_activity_streams/slack_threads/ ===" | tee -a "$VERIFY_LOG_FILE"
+ls -la /workspace/${CONFIG_NAME}_company_context/09_activity_streams/slack_threads/ 2>&1 | tee -a "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== Full tree of 09_activity_streams ===" | tee -a "$VERIFY_LOG_FILE"
+tree /workspace/${CONFIG_NAME}_company_context/09_activity_streams/ 2>&1 | tee -a "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== processed_data.md exists? ===" | tee -a "$VERIFY_LOG_FILE"
+if [ -f /workspace/processed_data.md ]; then
+    echo "YES - processed_data.md found" | tee -a "$VERIFY_LOG_FILE"
+    echo "First 50 lines:" | tee -a "$VERIFY_LOG_FILE"
+    head -50 /workspace/processed_data.md | tee -a "$VERIFY_LOG_FILE"
+else
+    echo "NO - processed_data.md NOT FOUND" | tee -a "$VERIFY_LOG_FILE"
+fi
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "=== Count of files created ===" | tee -a "$VERIFY_LOG_FILE"
+echo "Daily digests: $(find /workspace/${CONFIG_NAME}_company_context/09_activity_streams/daily_digests/ -type f 2>/dev/null | wc -l)" | tee -a "$VERIFY_LOG_FILE"
+echo "Linear objects: $(find /workspace/${CONFIG_NAME}_company_context/09_activity_streams/linear_objects/ -type f 2>/dev/null | wc -l)" | tee -a "$VERIFY_LOG_FILE"
+echo "Slack threads: $(find /workspace/${CONFIG_NAME}_company_context/09_activity_streams/slack_threads/ -type f 2>/dev/null | wc -l)" | tee -a "$VERIFY_LOG_FILE"
+echo "" | tee -a "$VERIFY_LOG_FILE"
+
+echo "Verification complete. Log saved to: $VERIFY_LOG_FILE"
+echo ""
+
+echo "Cleaning up unsorted folder..."
+rm -rf /workspace/unsorted
+echo "Unsorted folder removed"
 echo ""
 
 # Small delay before questions
@@ -156,20 +253,20 @@ echo ""
 
 for i in $(seq 0 $((QUESTION_COUNT - 1))); do
     QUESTION=$(yq eval ".benchmark.questions[$i]" "$CONFIG_FILE")
-    EXPECTED_ANSWER=$(yq eval ".benchmark.expected_answers[$i]" "$CONFIG_FILE")
+#    EXPECTED_ANSWER=$(yq eval ".benchmark.expected_answers[$i]" "$CONFIG_FILE")
 
     echo "=========================================="
     echo "Processing Question $((i + 1))/$QUESTION_COUNT"
     echo "=========================================="
     echo "Question: $QUESTION"
-    echo "Expected Answer: $EXPECTED_ANSWER"
+#    echo "Expected Answer: $EXPECTED_ANSWER"
     echo ""
 
     # Create question-specific log file in questions subdirectory
     QUESTION_LOG_FILE="$QUESTIONS_DIR/question_$((i + 1)).log"
 
     # Prepare the prompt for this specific question
-    QUESTION_PROMPT="Based on the event history data you've processed and organized in the PAM folder structure at /workspace/${CONFIG_NAME}_company_context/:
+    QUESTION_PROMPT="Based on the event history data you've processed and organized in the PAM folder structure at /workspace/${CONFIG_NAME}_company_context/ and only that folder:
 
 Answer this specific question: $QUESTION
 
@@ -180,8 +277,7 @@ Provide a clear, concise answer based solely on the data you've processed. You c
 
     # Use Claude to answer the question
     cd /workspace
-    claude --verbose -p "$QUESTION_PROMPT" 2>&1 | tee "$QUESTION_LOG_FILE"
-
+    claude --verbose -p "$QUESTION_PROMPT" --allowedTools "Read(/workspace/**)" "Bash(ls:/workspace/*)" "Bash(cat:/workspace/*)" "Bash(find:/workspace/*)" "Bash(head:/workspace/*)" "Bash(tail:/workspace/*)" "Bash(tree:/workspace/*)" 2>&1 | tee "$QUESTION_LOG_FILE"
     echo ""
     echo "Question $((i + 1)) completed. Log saved to: $QUESTION_LOG_FILE"
     echo ""
