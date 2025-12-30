@@ -1,0 +1,22 @@
+version = "1.0"
+
+[metadata]
+author_name = "PAM Benchmark Team"
+author_email = "benchmark@example.com"
+difficulty = "hard"
+category = "multi-modal-reasoning"
+tags = ["pam", "memory-agent", "linear", "slack", "event-history", "temporal-reasoning"]
+
+[verifier]
+timeout_sec = 1800.0  # 30 minutes for processing and answering questions
+
+[agent]
+timeout_sec = 1800.0  # 30 minutes for agent execution
+# Agent is claude-code with memory built using init.py
+
+[environment]
+build_timeout_sec = 600.0  # 10 minutes for Docker build
+cpus = 2
+memory = "4G"
+storage = "20G"
+

@@ -1,0 +1,257 @@
+[
+  {
+    "timestamp": "20241201T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement advanced enterprise authentication middleware",
+      "description": "Build sophisticated auth middleware to handle enterprise SSO, multi-tenant session management, and token refresh logic. Critical for upcoming enterprise client onboarding.",
+      "team": "security",
+      "priority": "high",
+      "lead": "charlie",
+      "start_date": "2024-12-01",
+      "expected_finish_date": "2024-12-20",
+      "status": "in_progress",
+      "milestone": "Q1 2025 Platform Scaling",
+      "labels": ["authentication", "enterprise", "security"]
+    }
+  },
+  {
+    "timestamp": "20241205T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Auth middleware implementation is getting complex. Added special session invalidation logic for concurrent enterprise logins and custom token refresh handling. Will add docs after I finish the core functionality.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241215T1600",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "charlie",
+      "message": "Enterprise auth middleware complete and deployed! Handles SSO, concurrent sessions, token management. Basic README updated. Some edge cases might need tweaking as we onboard more enterprise clients.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20241220T1700",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement advanced enterprise authentication middleware",
+      "description": "COMPLETED: Enterprise auth middleware deployed with SSO support, multi-tenant sessions, and token refresh logic. Basic documentation in README.md. Ready for enterprise client onboarding.",
+      "team": "security",
+      "priority": "high",
+      "lead": "charlie",
+      "start_date": "2024-12-01",
+      "expected_finish_date": "2024-12-20",
+      "status": "done",
+      "milestone": "Q1 2025 Platform Scaling"
+    }
+  },
+  {
+    "timestamp": "20250103T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Hey team, charlie has decided to take a position at TechCorp starting Monday. It's a great opportunity for him. We'll miss his security expertise but wish him the best!",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250107T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "Welcome bob to the team! You'll be taking over some of charlie's work including the enterprise authentication system. The codebase is in good shape with basic docs to get you started.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250108T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Thanks for the warm welcome! I've been reading through the auth middleware code. The main flow is clear, but I need to extend the token refresh logic for our new enterprise client. Going to dig deeper into the implementation.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250110T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Question about the auth middleware - I'm seeing some complex session invalidation code that's not documented. It seems to bypass standard logout in certain cases. Anyone know why charlie implemented it this way?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250110T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "@bob Hmm, not sure about the specific implementation details. charlie mentioned there were edge cases for enterprise logins but didn't document the specifics. Can you look through the commit history for clues?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250112T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "We're getting complaints from MegaCorp about authentication timeouts. They say users are getting logged out unexpectedly during long sessions. @bob any insights from your auth middleware investigation?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250112T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@alice This might be related to that undocumented session invalidation logic I found. It looks like it might be interfering with concurrent login sessions. I need to trace through the actual behavior.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250113T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Enterprise client authentication timeout issues",
+      "description": "MegaCorp reporting unexpected logouts during long sessions. Appears related to undocumented session invalidation logic in charlie's auth middleware. Need to understand the intended behavior and fix timeout issues.",
+      "team": "security",
+      "priority": "urgent",
+      "lead": "bob",
+      "start_date": "2025-01-13",
+      "expected_finish_date": "2025-01-17",
+      "status": "in_progress",
+      "labels": ["enterprise-client", "authentication", "timeout"]
+    }
+  },
+  {
+    "timestamp": "20250114T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "Found the issue! charlie's session invalidation logic bypasses standard logout for concurrent logins. When enterprise users have multiple browser tabs open, it's invalidating sessions unexpectedly. The behavior isn't documented anywhere.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250115T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "I can help with documenting the auth system properly. Let me dive into the codebase and create comprehensive docs for the session management logic. We can't afford to lose this knowledge again.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250116T1400",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Working on auth documentation and discovering more undocumented complexity. The token refresh logic assumes all enterprise tokens have 24-hour max lifetime, but I'm seeing some clients with 7-day tokens. This might cause silent failures.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250117T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana That 7-day token assumption explains some of the refresh errors I've been seeing in the logs. The middleware is probably failing silently when tokens exceed the expected lifetime.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250117T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "This is getting concerning. How much of the auth system behavior is actually undocumented? @diana can you do a thorough analysis of what charlie implemented vs what we understand?",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250118T1300",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Deep-diving into the auth middleware using commit history and code archaeology. Going to add debug logging to token_manager.py to trace the actual refresh behavior vs what the code comments suggest.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250119T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Major discovery! The token refresh middleware is caching stale refresh tokens. When enterprise clients use 7-day tokens, the cache holds expired tokens for up to 6 hours. This causes silent auth failures that look like random logouts.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250120T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "bob",
+      "message": "@diana That explains everything! The session invalidation + stale token caching combo is causing the enterprise timeout issues. charlie's assumptions about token lifetimes broke down with longer-lived enterprise tokens.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250120T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Document and fix enterprise authentication edge cases",
+      "description": "Root cause analysis complete: auth middleware has undocumented assumptions about token lifetimes and session behavior. Need to fix stale token caching issue and document all authentication edge cases to prevent future knowledge transfer problems.",
+      "team": "security",
+      "priority": "high",
+      "lead": "diana",
+      "start_date": "2025-01-20",
+      "expected_finish_date": "2025-01-27",
+      "status": "in_progress",
+      "labels": ["documentation", "authentication", "knowledge-transfer"]
+    }
+  },
+  {
+    "timestamp": "20250121T1600",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "diana",
+      "message": "Fix deployed for the stale token caching issue. Also created comprehensive auth system documentation with all the edge cases charlie implemented but never documented. This should prevent future knowledge gaps.",
+      "channel": "engineering"
+    }
+  },
+  {
+    "timestamp": "20250122T1000",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "sender": "alice",
+      "message": "MegaCorp confirms the timeout issues are resolved. Great detective work everyone! This has been a valuable lesson about the importance of documenting complex system behavior, especially when team members transition.",
+      "channel": "engineering"
+    }
+  }
+]
