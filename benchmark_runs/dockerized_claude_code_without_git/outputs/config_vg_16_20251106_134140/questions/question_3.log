@@ -1,9 +1,0 @@
-Based on the Slack messages I found, Bob discovered that TechCorp was building a competing product internally called **NeuralCore Analytics**.
-
-This is documented in the #engineering channel messages from November 22-26, 2024:
-
-- **November 22** (M0020): Bob found a reference to "Project NeuralCore Analytics" in TechCorp integration docs
-- **November 25** (M0021): Bob discovered leaked access to TechCorp's internal Slack showing channel #project-neural-competitor discussing building "AI analytics platform identical to acquired startup features"
-- **November 26** (M0024): Bob confirmed that "NeuralCore Analytics" had their exact feature set, identical UI mockups, and even their technical architecture diagrams
-
-The discovery revealed that the acquisition was actually an "acqui-kill" strategy - TechCorp acquired the startup to copy their technology and then shut them down, using the Java migration deadline as a stalling tactic.

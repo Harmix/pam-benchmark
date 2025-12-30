@@ -1,9 +1,0 @@
-Based on the ticket information I've retrieved, I can see the current lead for each ticket, but the Linear MCP server doesn't provide explicit reassignment history in the ticket details. However, I can identify potential reassignments by looking at tickets where the creator differs from the current lead:
-
-Looking at the tickets chronologically:
-- **TICK-0000**: Created by alice, currently assigned to charlie (reassigned)
-- **TICK-0005**: Created by grace, currently assigned to alice (reassigned)
-
-The oldest ticket that was reassigned is **TICK-0000** (created 2024-11-15), and its current status is **done**.
-
-To answer your question: The status of the oldest ticket that was once reassigned is **done**. This is ticket TICK-0000 "Legacy system migration planning", which was created by alice but is currently assigned to charlie, indicating it was reassigned at some point.

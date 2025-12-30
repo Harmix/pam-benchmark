@@ -2,6 +2,7 @@
 
 A comprehensive benchmark framework for evaluating AI agents' ability to operate in realistic, dynamic environments with multiple information sources (Linear, Slack, Git) and temporal reasoning requirements.
 
+
 ## Overview
 
 PAM Benchmark tests agents' capabilities to:
@@ -10,6 +11,7 @@ PAM Benchmark tests agents' capabilities to:
 - Reason about temporal sequences and causal relationships
 - Extract precise technical details from ambiguous or incomplete information
 - Handle realistic workplace scenarios with missing context and indirect references
+
 
 ## Key Features
 
@@ -32,6 +34,7 @@ PAM Benchmark tests agents' capabilities to:
 - Team coordination challenges
 - Production incident analysis
 
+
 ## Benchmark Statistics
 
 - **Total Configurations**: 46
@@ -42,20 +45,6 @@ PAM Benchmark tests agents' capabilities to:
 - **Teams Represented**: 38 different team types
 - **Average Team Size**: 3.37 members
 
-## Repository Structure
-
-```
-.
-├── test_configs/           # YAML configuration files (46 scenarios)
-├── test_event_histories/   # JSON event data from Linear, Slack, Git
-├── extract_questions.py    # Extract Q&A pairs from configs
-├── analyze_event_histories.py  # Analyze event patterns
-├── questions_answers.csv   # All Q&A pairs in CSV format
-├── questions_answers.json  # All Q&A pairs in JSON format
-├── quantitative_metadata.json  # Benchmark statistics
-├── docker-compose.yaml     # Docker environment setup
-└── requirements.txt        # Python dependencies
-```
 
 ## Quick Start
 
@@ -79,6 +68,7 @@ python analyze_event_histories.py
 docker-compose up
 ```
 
+
 ## Configuration Format
 
 Each benchmark scenario includes:
@@ -88,6 +78,7 @@ Each benchmark scenario includes:
 - Questions and expected answers
 - Evaluation criteria (exact match, LLM judge)
 - Milestones and success metrics
+
 
 ## Question Types
 
@@ -108,11 +99,13 @@ Each benchmark scenario includes:
 - Code pattern analysis from vague descriptions
 - Configuration debugging across systems
 
+
 ## Evaluation Metrics
 
 - **Exact Match**: Case-insensitive string matching (32 configs use this)
 - **LLM Judge**: GPT-4o evaluates answer quality (32 configs)
-- 
+
+
 ## Tools Available to Agents
 
 - `notification_server`: 32 configs
@@ -121,11 +114,13 @@ Each benchmark scenario includes:
 - `git`: 46 configs
 - `slack_server`: 7 configs
 
+
 ## Platform Distribution
 
 - Linear events: Primary task tracking
 - Slack events: Team communication (7 scenarios)
 - Git events: Code changes and history
+
 
 ## Agent Performance Considerations
 
@@ -137,6 +132,7 @@ Successful agents must:
 5. Reason about team dynamics and decision-making
 6. Extract technical details from natural language
 
+
 ## Contributing
 
 To add new benchmark scenarios:
@@ -145,16 +141,7 @@ To add new benchmark scenarios:
 3. Run extraction scripts to validate
 4. Update statistics with `analyze_event_histories.py`
 
+
 ## License
 
 MIT
-
-## Citation
-
-```bibtex
-@misc{harmix_pam_benchmark,
-  title={Harmix/PAM Benchmark: Performance Assessment for Agents in Dynamic Multi-Modal Environments},
-  author={Vitalii Ratushnyi},
-  year={2025}
-}
-```

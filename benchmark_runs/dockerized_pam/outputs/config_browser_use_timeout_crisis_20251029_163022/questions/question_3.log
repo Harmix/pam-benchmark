@@ -1,8 +1,0 @@
-Based on the commit details, the answer is clear:
-
-**3**
-
-Three timeout parameters were adjusted in the `DefaultActionWatchdog`:
-1. Click element fallback: 3.0s → 10.0s (line 126)
-2. Mouse press event: 1.0s → 3.0s (line 496)
-3. Mouse release event: 3.0s → 5.0s (line 516)

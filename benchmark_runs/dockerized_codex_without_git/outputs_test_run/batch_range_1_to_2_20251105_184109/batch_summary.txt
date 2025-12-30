@@ -1,9 +1,0 @@
-
-Batch Range Run: Config 1 to 2
-Start Time: Wed Nov  5 18:41:10 CET 2025
-
-config_1: SUCCESS (141s)
-config_2: SUCCESS (100s)
-
-Summary: 2/2 successful, 0 failed
-Batch directory: ./outputs/batch_range_1_to_2_20251105_184109

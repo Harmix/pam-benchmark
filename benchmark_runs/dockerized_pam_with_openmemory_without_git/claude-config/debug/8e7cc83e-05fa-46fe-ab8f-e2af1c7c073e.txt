@@ -1,6 +1,0 @@
-[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
-[DEBUG] [LSP MANAGER] initializeLspServerManager() called
-[DEBUG] [LSP MANAGER] Created manager instance, state=pending
-[DEBUG] [LSP MANAGER] Starting async initialization (generation 1)
-[DEBUG] [LSP SERVER MANAGER] initialize() called
-[DEBUG] [LSP SERVER MANAGER] Calling getAllLspServers()

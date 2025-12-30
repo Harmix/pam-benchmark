@@ -1,4 +1,0 @@
-
-Batch Range Run: Config 1 to 2
-Start Time: Fri Nov  7 21:06:34 CET 2025
-

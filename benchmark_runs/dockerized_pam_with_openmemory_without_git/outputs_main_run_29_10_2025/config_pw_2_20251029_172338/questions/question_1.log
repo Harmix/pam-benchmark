@@ -1,1 +1,0 @@
-**Root Cause Summary:** The initial implementation used keyword matching instead of semantic search, which couldn't understand natural language product descriptions. The issue was resolved when the ML team implemented semantic search with embeddings.
