@@ -178,7 +178,8 @@ Start now. Read the files and process them."
 
 echo "Asking Claude to process event history..."
 cd /workspace
-claude --verbose -p "$PROCESSING_PROMPT" --permission-mode acceptEdits --add-dir /workspace --allowedTools Read Edit Write Bash 2>&1 | tee "$PROCESSING_LOG_FILE"
+claude --verbose -p "$PROCESSING_PROMPT" --allowedTools "Read(*)" "Edit(*)" "Write(*)" "Bash(*)" < /dev/null 2>&1 | tee "$PROCESSING_LOG_FILE"
+
 echo "Cleaning up unsorted folder..."
 rm -rf /workspace/unsorted
 echo "Unsorted folder removed"
@@ -277,7 +278,7 @@ Provide a clear, concise answer based solely on the data you've processed. You c
 
     # Use Claude to answer the question
     cd /workspace
-    claude --verbose -p "$QUESTION_PROMPT" --allowedTools "Read(/workspace/**)" "Bash(ls:/workspace/*)" "Bash(cat:/workspace/*)" "Bash(find:/workspace/*)" "Bash(head:/workspace/*)" "Bash(tail:/workspace/*)" "Bash(tree:/workspace/*)" 2>&1 | tee "$QUESTION_LOG_FILE"
+    claude --verbose -p "$QUESTION_PROMPT" --allowedTools "Read(/workspace/**)" "Bash(ls:/workspace/*)" "Bash(cat:/workspace/*)" "Bash(find:/workspace/*)" "Bash(head:/workspace/*)" "Bash(tail:/workspace/*)" "Bash(tree:/workspace/*)" < /dev/null 2>&1 | tee -a "$QUESTION_LOG_FILE"
     echo ""
     echo "Question $((i + 1)) completed. Log saved to: $QUESTION_LOG_FILE"
     echo ""
