@@ -20,3 +20,5 @@ cpus = 2
 memory = "4G"
 storage = "20G"
 
+[start-env]
+ANTHROPIC_API_KEY = "<KEY>"

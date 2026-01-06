@@ -20,26 +20,26 @@
     "5"
   ],
   "results": {
-    "3": {
-      "score": 1.0,
-      "is_correct": true,
-      "confidence": 1.0,
-      "reasoning": "The agent answered that 5 tickets are currently done and listed their titles and completion dates, which exactly matches the expected answer of 5. The extra details confirm the accuracy. The answer is correct.",
-      "agent_answer": "Based on the processed event history data, **5 tickets are currently done**.\n\nThe completed tickets are:\n1. Legacy system migration planning (Completed 2024-12-14)\n2. Database performance optimization (Completed 2024-11-30)\n3. Machine learning model training pipeline (Completed 2024-12-15)\n4. API rate limiting implementation (Completed 2024-12-06)\n5. Security audit preparation (Completed 2024-12-10)\n\nThis represents 50% of all unique tickets tracked in the system."
-    },
     "2": {
       "score": 1.0,
       "is_correct": true,
       "confidence": 1.0,
-      "reasoning": "The agent correctly identified 'charlie' as the lead of the oldest reassigned ticket, matching the expected answer exactly. The answer also provided useful context, but the essential required information was reported accurately and completely.",
+      "reasoning": "The agent explicitly identified the correct lead ('Charlie') for the oldest reassigned ticket. It also reinforced the answer by providing details about the ticket and its reassignment history, matching the expected answer exactly both in content and context.",
       "agent_answer": "Based on the processed data, I can see that there were 2 reassignments detected:\n\n1. **Legacy system migration planning** - Reassigned on 2024-11-21 (oldest)\n2. **Security audit preparation** - Reassigned on 2024-12-07\n\nThe **oldest reassigned ticket** is \"Legacy system migration planning,\" which was reassigned on 2024-11-21.\n\n**Answer: The lead of the oldest reassigned ticket is Charlie.**\n\n(This ticket was originally assigned to Alice but was reassigned to Charlie on 2024-11-21 because Charlie had more experience with old system architecture.)"
     },
     "1": {
       "score": 1.0,
       "is_correct": true,
       "confidence": 1.0,
-      "reasoning": "The agent correctly identifies the ticket and clearly states its current status as 'DONE,' which fully matches the expected answer of 'done.' The additional details provided do not detract from the correctness of the answer; rather, they support it. Therefore, the answer is fully correct.",
+      "reasoning": "The agent's answer explicitly states the current status is 'DONE (Completed 2024-12-14)', which matches the expected answer 'done.' Extra details about the ticket do not detract from correctness. The match is exact (case-insensitive) and semantically equivalent.",
       "agent_answer": "Based on the processed data, **the oldest ticket that was once reassigned is \"Legacy system migration planning\"**.\n\n**Details:**\n- **Created**: 2024-11-15\n- **Current Status**: DONE (Completed 2024-12-14)\n- **Reassignment**: From Alice to Charlie on 2024-11-21\n- **Priority**: Urgent\n- **Team**: Engineering\n\nThis ticket was created earlier than the other reassigned ticket (\"Security audit preparation\" created on 2024-12-01), making it the oldest reassigned ticket in the dataset."
+    },
+    "3": {
+      "score": 1.0,
+      "is_correct": true,
+      "confidence": 1.0,
+      "reasoning": "The agent correctly stated that 5 tickets are currently done, which matches the expected answer exactly. The agent also provided the titles and completion dates of the 5 tickets, showing clear reasoning and supporting evidence. There is no discrepancy between the expected and given answer.",
+      "agent_answer": "Based on the processed event history data, **5 tickets are currently done**.\n\nThe completed tickets are:\n1. Legacy system migration planning (Completed 2024-12-14)\n2. Database performance optimization (Completed 2024-11-30)\n3. Machine learning model training pipeline (Completed 2024-12-15)\n4. API rate limiting implementation (Completed 2024-12-06)\n5. Security audit preparation (Completed 2024-12-10)\n\nThis represents 50% of all unique tickets tracked in the system."
     }
   }
 }
