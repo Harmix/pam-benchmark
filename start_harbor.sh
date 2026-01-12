@@ -12,5 +12,7 @@ fi
 # Export variables from .env (ignores comments and empty lines)
 export $(grep -v '^#' "$ENV_FILE" | xargs)
 
+echo $ANTHROPIC_API_KEY
+
 # Run the command
 harbor tasks start-env -p benchmark -e docker -a -i

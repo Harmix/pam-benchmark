@@ -37,6 +37,22 @@ COPY init.py /benchmark_data/init.py
 COPY INTRO_TEMPLATE.md /benchmark_data/INTRO_TEMPLATE.md
 COPY CLAUDE.md /benchmark_data/CLAUDE.md
 
+# Copy secrets.env file
+COPY secrets.env /workspace/secrets.env
+
+# Create .bashrc that sources secrets.env for interactive shells
+# This ensures environment variables are available even if Harbor starts a new shell session
+RUN echo '' >> /root/.bashrc && \
+    echo '# Source secrets.env for environment variables' >> /root/.bashrc && \
+    echo 'if [ -f /workspace/secrets.env ]; then' >> /root/.bashrc && \
+    echo '  set -a' >> /root/.bashrc && \
+    echo '  source /workspace/secrets.env' >> /root/.bashrc && \
+    echo '  set +a' >> /root/.bashrc && \
+    echo 'fi' >> /root/.bashrc
+
+# Also create .bash_profile for login shells (sources .bashrc)
+RUN echo 'if [ -f ~/.bashrc ]; then . ~/.bashrc; fi' >> /root/.bash_profile
+
 WORKDIR /workspace
 
 # Set environment variables
