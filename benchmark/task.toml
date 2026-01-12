@@ -19,6 +19,3 @@ build_timeout_sec = 600.0  # 10 minutes for Docker build
 cpus = 2
 memory = "4G"
 storage = "20G"
-
-[start-env]
-ANTHROPIC_API_KEY = "<KEY>"

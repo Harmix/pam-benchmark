@@ -49,6 +49,8 @@ This will:
 Once inside the interactive environment, you can run benchmarks:
 
 ```bash
+export ANTHROPIC_API_KEY=<YOUR-KEY>
+
 # Run a single config
 /benchmark_data/setup_and_run.sh /benchmark_data/test_configs/config_1.yaml
 

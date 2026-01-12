@@ -40,8 +40,6 @@ COPY CLAUDE.md /benchmark_data/CLAUDE.md
 WORKDIR /workspace
 
 # Set environment variables
-ENV ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 ENV NODE_ENV=production
 
 CMD ["/bin/bash"]
-
