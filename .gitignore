@@ -8,6 +8,7 @@ __pycache__/
 
 .idea/*
 
+jobs/**
 secrets.env
 pam-agent-credentials.json
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/claude-config/**

@@ -56,15 +56,32 @@ Once inside the interactive environment, you can run benchmarks:
 # Note: You may need to copy this script into the task directory if needed
 ```
 
-### Running with Harbor Agent
+### Running Tasks Non-Interactively with Configs
 
-To run with a Harbor agent (instead of interactive mode):
+To run benchmarks non-interactively with specific configs, use Harbor's run command with the `BENCHMARK_CONFIGS` environment variable:
 
 ```bash
+# Run a single config
+BENCHMARK_CONFIGS="config_1" harbor run -p benchmark -a <agent-name> -m <model>
+
+# Run multiple configs (space-separated)
+BENCHMARK_CONFIGS="config_1 config_2 config_3" harbor run -p benchmark -a <agent-name> -m <model>
+
+# Run VG configs
+BENCHMARK_CONFIGS="config_vg_15 config_vg_16" harbor run -p benchmark -a <agent-name> -m <model>
+
+# Run with default config (config_1) if BENCHMARK_CONFIGS not set
 harbor run -p benchmark -a <agent-name> -m <model>
 ```
 
-Note: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
+The `solution/solve.sh` script:
+- Reads configs from `BENCHMARK_CONFIGS` environment variable (space-separated)
+- Also accepts config names as command-line arguments (for direct execution)
+- Runs `/benchmark_data/setup_and_run.sh` for each config
+- Sources environment variables from `/workspace/secrets.env`
+- Defaults to `config_1` if neither environment variable nor arguments are provided
+
+**Note**: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
 
 ## Task Configuration
 

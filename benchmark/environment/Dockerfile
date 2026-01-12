@@ -58,4 +58,6 @@ WORKDIR /workspace
 # Set environment variables
 ENV NODE_ENV=production
 
-CMD ["/bin/bash"]
+# Default CMD runs solution script (Harbor mounts it at /workspace/solution/solve.sh)
+# Harbor will execute this when running tasks
+CMD ["/workspace/solution/solve.sh"]
