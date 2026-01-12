@@ -58,28 +58,75 @@ Once inside the interactive environment, you can run benchmarks:
 
 ### Running Tasks Non-Interactively with Configs
 
-To run benchmarks non-interactively with specific configs, use Harbor's run command with the `BENCHMARK_CONFIGS` environment variable:
+**Quick Start: Use the helper script (Recommended)**
+
+From the project root, use the `run_benchmark.sh` script:
 
 ```bash
-# Run a single config
-BENCHMARK_CONFIGS="config_1" harbor run -p benchmark -a <agent-name> -m <model>
+# Interactive mode - will prompt for configs
+./run_benchmark.sh
 
-# Run multiple configs (space-separated)
-BENCHMARK_CONFIGS="config_1 config_2 config_3" harbor run -p benchmark -a <agent-name> -m <model>
+# Or specify configs directly
+./run_benchmark.sh config_1 config_2 config_3
 
-# Run VG configs
-BENCHMARK_CONFIGS="config_vg_15 config_vg_16" harbor run -p benchmark -a <agent-name> -m <model>
+# With Harbor arguments
+./run_benchmark.sh config_1 config_2 -a oracle -m claude-3-5-sonnet-20241022
+```
 
-# Run with default config (config_1) if BENCHMARK_CONFIGS not set
+The script will:
+- Validate that configs exist
+- Create `benchmark_configs.txt` automatically
+- Start Harbor with the appropriate settings
+
+**Manual Method: Create config file**
+
+Alternatively, create a `benchmark_configs.txt` file manually:
+
+**Step 1: Create the config file**
+
+Create `benchmark_configs.txt` in the `benchmark/solution/` directory (Harbor mounts this directory):
+
+```bash
+# In the benchmark/solution/ directory
+echo "config_1 config_2 config_3" > benchmark/solution/benchmark_configs.txt
+```
+
+Or one config per line (comments allowed):
+```bash
+cat > benchmark/solution/benchmark_configs.txt << EOF
+# Run these configs
+config_1
+config_2
+config_3
+EOF
+```
+
+**Step 2: Run Harbor**
+
+```bash
 harbor run -p benchmark -a <agent-name> -m <model>
 ```
 
-The `solution/solve.sh` script:
-- Reads configs from `BENCHMARK_CONFIGS` environment variable (space-separated)
-- Also accepts config names as command-line arguments (for direct execution)
-- Runs `/benchmark_data/setup_and_run.sh` for each config
-- Sources environment variables from `/workspace/secrets.env`
-- Defaults to `config_1` if neither environment variable nor arguments are provided
+Harbor mounts the `solution/` directory, so the solution script will automatically find and read `benchmark_configs.txt` from `/workspace/solution/benchmark_configs.txt`.
+
+**Alternative: Environment variable (if supported)**
+
+If your setup supports it, you can also try:
+```bash
+BENCHMARK_CONFIGS="config_1 config_2" harbor run -p benchmark -a <agent-name> -m <model>
+```
+
+**Default behavior**
+
+If no configs are specified (no file and no env var), it defaults to `config_1`.
+
+The `solution/solve.sh` script reads configs in this priority order:
+1. `BENCHMARK_CONFIGS` environment variable (space-separated)
+2. `/workspace/solution/benchmark_configs.txt` file (Harbor mounts solution/ directory here)
+3. Command-line arguments (for direct execution)
+4. Default: `config_1`
+
+It runs `/benchmark_data/setup_and_run.sh` for each config sequentially.
 
 **Note**: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
 
