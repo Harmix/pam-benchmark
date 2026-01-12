@@ -10,8 +10,8 @@ __pycache__/
 
 jobs/**
 secrets.env
-benchmark/solution/benchmark_configs.txt
 pam-agent-credentials.json
+benchmark/solution/benchmark_configs.txt
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/claude-config/**
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/outputs/**
 

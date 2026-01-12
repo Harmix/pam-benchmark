@@ -21,6 +21,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 # Install Claude Code globally (version 2.0.76)
 RUN npm install -g @anthropic-ai/claude-code@2.0.76
 
+# Install Python packages needed for evaluation script
+RUN pip install --no-cache-dir \
+    openai>=2.6.1 \
+    pyyaml>=6.0 \
+    pydantic>=2.0.0 \
+    python-dotenv
+
 # Create working directories
 RUN mkdir -p /workspace/unsorted /workspace/logs /benchmark_data /logs/verifier
 
@@ -36,6 +43,10 @@ COPY INIT.md /benchmark_data/INIT.md
 COPY init.py /benchmark_data/init.py
 COPY INTRO_TEMPLATE.md /benchmark_data/INTRO_TEMPLATE.md
 COPY CLAUDE.md /benchmark_data/CLAUDE.md
+
+# Copy stub parser script
+COPY parse_oracle_stub.py /benchmark_data/parse_oracle_stub.py
+RUN chmod +x /benchmark_data/parse_oracle_stub.py
 
 # Copy secrets.env file
 COPY secrets.env /workspace/secrets.env

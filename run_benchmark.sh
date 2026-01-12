@@ -4,6 +4,9 @@ set -e
 
 # Script to run Harbor benchmarks with config selection
 # Usage: ./run_benchmark.sh [config1] [config2] ... [harbor-args...]
+# 
+# Stub mode (for debugging):
+#   STUB_MODE=true ORACLE_FILE=./jobs/2026-01-12__11-08-06/benchmark__b9NqGZ2/agent/oracle.txt ./run_benchmark.sh config_1
 
 BENCHMARK_DIR="benchmark"
 # Harbor mounts solution/ directory, so put config file there
@@ -161,6 +164,55 @@ if [[ ! " ${HARBOR_ARGS[@]} " =~ " -m " ]] && [[ ! " ${HARBOR_ARGS[@]} " =~ " --
     fi
 fi
 
+# Handle stub mode - only enable if explicitly requested
+STUB_MODE_FILE="$BENCHMARK_DIR/solution/stub_mode.txt"
+ORACLE_DEST="$BENCHMARK_DIR/solution/oracle.txt"
+
+# Clean up any existing stub mode files from previous runs
+if [ -f "$STUB_MODE_FILE" ]; then
+    rm -f "$STUB_MODE_FILE"
+fi
+if [ -f "$ORACLE_DEST" ]; then
+    rm -f "$ORACLE_DEST"
+fi
+
+# Only enable stub mode if explicitly set
+if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
+    ORACLE_FILE="${ORACLE_FILE:-}"
+    if [ -z "$ORACLE_FILE" ]; then
+        echo ""
+        echo "Error: STUB_MODE enabled but ORACLE_FILE not set"
+        echo "Usage: STUB_MODE=true ORACLE_FILE=./jobs/2026-01-12__11-08-06/benchmark__b9NqGZ2/agent/oracle.txt ./run_benchmark.sh config_1"
+        exit 1
+    fi
+    
+    if [ ! -f "$ORACLE_FILE" ]; then
+        echo ""
+        echo "Error: Oracle file not found: $ORACLE_FILE"
+        exit 1
+    fi
+    
+    # Copy oracle file to solution directory so Harbor can mount it
+    echo ""
+    echo "⚠ STUB MODE ENABLED"
+    echo "Oracle file: $ORACLE_FILE"
+    echo "Copying to: $ORACLE_DEST (for Harbor mounting)"
+    cp "$ORACLE_FILE" "$ORACLE_DEST"
+    # Create stub mode flag file
+    echo "stub_mode_enabled" > "$STUB_MODE_FILE"
+    echo "Created stub mode flag: $STUB_MODE_FILE"
+    echo "This will create logs from oracle file instead of running benchmarks"
+    echo ""
+else
+    # Ensure stub mode is disabled (clean up any leftover files)
+    if [ -f "$STUB_MODE_FILE" ]; then
+        rm -f "$STUB_MODE_FILE"
+    fi
+    if [ -f "$ORACLE_DEST" ]; then
+        rm -f "$ORACLE_DEST"
+    fi
+fi
+
 # Show final command
 echo ""
 echo "=========================================="
@@ -177,6 +229,14 @@ echo ""
 # Check if --force-build is in the args, if not, suggest it
 if [[ ! " ${HARBOR_ARGS[@]} " =~ " --force-build " ]] && [[ ! " ${HARBOR_ARGS[@]} " =~ " --no-force-build " ]]; then
     echo "Tip: Consider adding --force-build to ensure the config file is mounted correctly"
+    echo ""
+fi
+
+# Export stub mode and oracle file for Harbor to pass to container
+if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
+    export STUB_MODE=true
+    export ORACLE_FILE
+    echo "Stub mode environment variables will be passed to container"
     echo ""
 fi
 

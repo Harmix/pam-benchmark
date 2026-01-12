@@ -132,8 +132,70 @@ for CONFIG_NAME in "${CONFIG_ARRAY[@]}"; do
   echo "Config file: $CONFIG_FILE"
   echo "========================================"
   
-  # Run the benchmark
-  /benchmark_data/setup_and_run.sh "$CONFIG_FILE"
+  # Check if stub mode is enabled (only via environment variable or explicitly created file)
+  # Stub mode should ONLY be enabled if explicitly requested, not by leftover files
+  STUB_MODE_ENABLED=false
+  ORACLE_FILE=""
+  
+  # Check environment variable first (highest priority)
+  if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
+    STUB_MODE_ENABLED=true
+    echo "[DEBUG] Stub mode enabled via STUB_MODE environment variable"
+  else
+    # Only check for stub mode file if environment variable is not explicitly false
+    # This allows file-based stub mode when Harbor doesn't pass env vars
+    STUB_MODE_FILE_PATHS=(
+      "/workspace/solution/stub_mode.txt"
+      "/solution/stub_mode.txt"
+      "/workspace/stub_mode.txt"
+    )
+    
+    for stub_file in "${STUB_MODE_FILE_PATHS[@]}"; do
+      if [ -f "$stub_file" ]; then
+        STUB_MODE_ENABLED=true
+        echo "[DEBUG] Found stub mode file at: $stub_file"
+        break
+      fi
+    done
+  fi
+  
+  if [ "$STUB_MODE_ENABLED" = "true" ]; then
+    # Stub mode: use oracle file instead of running actual benchmark
+    ORACLE_FILE="${ORACLE_FILE:-}"
+    
+    if [ -z "$ORACLE_FILE" ]; then
+      # Try to find oracle file in common locations (Harbor mounts solution/ directory)
+      POSSIBLE_ORACLE_PATHS=(
+        "/workspace/solution/oracle.txt"
+        "/solution/oracle.txt"
+        "/workspace/oracle.txt"
+        "./oracle.txt"
+        "oracle.txt"
+      )
+      
+      for path in "${POSSIBLE_ORACLE_PATHS[@]}"; do
+        if [ -f "$path" ]; then
+          ORACLE_FILE="$path"
+          echo "[DEBUG] Found oracle file at: $path"
+          break
+        fi
+      done
+    fi
+    
+    if [ -n "$ORACLE_FILE" ] && [ -f "$ORACLE_FILE" ]; then
+      echo "⚠ STUB MODE: Using oracle file instead of running benchmark"
+      echo "Oracle file: $ORACLE_FILE"
+      STUB_MODE=true ORACLE_FILE="$ORACLE_FILE" /benchmark_data/setup_and_run.sh "$CONFIG_FILE"
+    else
+      echo "Warning: STUB_MODE enabled but oracle file not found"
+      echo "Attempted paths: ${POSSIBLE_ORACLE_PATHS[*]}"
+      echo "Falling back to normal mode..."
+      /benchmark_data/setup_and_run.sh "$CONFIG_FILE"
+    fi
+  else
+    # Normal mode: run the actual benchmark
+    /benchmark_data/setup_and_run.sh "$CONFIG_FILE"
+  fi
   
   echo ""
   echo "Completed: $CONFIG_NAME"
@@ -142,4 +204,79 @@ done
 
 echo "========================================"
 echo "All benchmarks completed!"
+echo "========================================"
+echo ""
+
+# Run evaluation script after all configs are executed
+# Check multiple possible locations where Harbor might mount the solution directory
+echo "[DEBUG] Looking for evaluation script..."
+EVAL_SCRIPT=""
+POSSIBLE_EVAL_PATHS=(
+    "/workspace/solution/llm_judge_eval.py"
+    "/solution/llm_judge_eval.py"
+    "./solution/llm_judge_eval.py"
+    "solution/llm_judge_eval.py"
+    "$(pwd)/solution/llm_judge_eval.py"
+    "/workspace/llm_judge_eval.py"
+)
+
+# Debug: List solution directory if it exists
+if [ -d "/workspace/solution" ]; then
+    echo "[DEBUG] Contents of /workspace/solution/:"
+    ls -la /workspace/solution/ 2>/dev/null | head -10 || echo "  (cannot list)"
+fi
+
+for path in "${POSSIBLE_EVAL_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        EVAL_SCRIPT="$path"
+        echo "[DEBUG] Found evaluation script at: $path"
+        break
+    else
+        echo "[DEBUG] Not found: $path"
+    fi
+done
+
+if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ]; then
+    echo "========================================"
+    echo "Running LLM Judge Evaluation"
+    echo "========================================"
+    echo ""
+    
+    # Check if Python 3 is available
+    if ! command -v python3 &> /dev/null; then
+        echo "Warning: python3 not found, skipping evaluation"
+    else
+        # Check if OPENAI_API_KEY is available (required for evaluation)
+        if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "Warning: OPENAI_API_KEY not set, skipping evaluation"
+            echo "Note: Evaluation requires OPENAI_API_KEY to be set in secrets.env"
+        else
+            # Run evaluation script
+            # Output dir: /benchmark_logs (where setup_and_run.sh saves logs)
+            # Test configs dir: /benchmark_data/test_configs (where config YAMLs are)
+            # The script will discover all configs that were run and evaluate them
+            echo "Running evaluation for all completed configs..."
+            python3 "$EVAL_SCRIPT" \
+                --output-dir /benchmark_logs \
+                --test-configs-dir /benchmark_data/test_configs \
+                --summary-only
+            
+            EVAL_EXIT_CODE=$?
+            if [ $EVAL_EXIT_CODE -eq 0 ]; then
+                echo ""
+                echo "✓ Evaluation completed successfully"
+            else
+                echo ""
+                echo "⚠ Evaluation completed with exit code: $EVAL_EXIT_CODE"
+            fi
+        fi
+    fi
+else
+    echo "Warning: Evaluation script not found at $EVAL_SCRIPT"
+    echo "Skipping evaluation"
+fi
+
+echo ""
+echo "========================================"
+echo "All tasks completed!"
 echo "========================================"

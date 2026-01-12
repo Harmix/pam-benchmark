@@ -1,6 +1,8 @@
 #!/bin/bash
 
 CONFIG_FILE="${1:-/benchmark_data/test_configs/config_1.yaml}"
+STUB_MODE="${STUB_MODE:-false}"
+ORACLE_FILE="${ORACLE_FILE:-}"
 
 # Extract config name from path
 CONFIG_NAME=$(basename "$CONFIG_FILE" .yaml)
@@ -11,6 +13,43 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 CONFIG_LOG_DIR="/benchmark_logs/${CONFIG_NAME}_${TIMESTAMP}"
 QUESTIONS_DIR="$CONFIG_LOG_DIR/questions"
 mkdir -p "$QUESTIONS_DIR"
+
+# If stub mode is enabled, parse oracle file and exit
+if [ "$STUB_MODE" = "true" ] || [ "$STUB_MODE" = "1" ]; then
+    if [ -z "$ORACLE_FILE" ]; then
+        echo "Error: STUB_MODE enabled but ORACLE_FILE not set"
+        echo "Usage: STUB_MODE=true ORACLE_FILE=/path/to/oracle.txt $0 <config_file>"
+        exit 1
+    fi
+    
+    if [ ! -f "$ORACLE_FILE" ]; then
+        echo "Error: Oracle file not found: $ORACLE_FILE"
+        exit 1
+    fi
+    
+    echo "========================================"
+    echo "STUB MODE: Using oracle file"
+    echo "========================================"
+    echo "Config: $CONFIG_NAME"
+    echo "Oracle file: $ORACLE_FILE"
+    echo "Output directory: $CONFIG_LOG_DIR"
+    echo ""
+    
+    # Use Python script to parse oracle file
+    PARSE_SCRIPT="/benchmark_data/parse_oracle_stub.py"
+    if [ -f "$PARSE_SCRIPT" ]; then
+        python3 "$PARSE_SCRIPT" "$ORACLE_FILE" "$CONFIG_FILE" "$CONFIG_LOG_DIR" "$QUESTIONS_DIR"
+    else
+        echo "Error: Parser script not found at $PARSE_SCRIPT"
+        exit 1
+    fi
+    
+    echo ""
+    echo "========================================"
+    echo "Stub mode complete: $CONFIG_NAME"
+    echo "========================================"
+    exit 0
+fi
 
 # CRITICAL: Clean up workspace but NOT logs (logs accumulate for evaluation)
 echo "========================================"
