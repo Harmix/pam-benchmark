@@ -1,8 +1,0 @@
-I can see the ticket details, but the information doesn't show reassignment history directly. The details show "Created by" and "Lead" but don't indicate if there were any reassignments. Based on the available information, I cannot determine which tickets have been reassigned or identify the oldest reassigned ticket.
-
-Could you clarify what you mean by "reassigned ticket"? Are you referring to:
-1. A ticket where the lead was changed from the original creator?
-2. A ticket that has specific reassignment records you'd like me to check?
-3. Something else?
-
-From what I can see, tickets like TICK-0000 (created by alice, lead: charlie) and TICK-0005 (created by grace, lead: alice) show different creators and leads, which might indicate reassignment, but I'd need confirmation on how you'd like me to interpret "reassigned."

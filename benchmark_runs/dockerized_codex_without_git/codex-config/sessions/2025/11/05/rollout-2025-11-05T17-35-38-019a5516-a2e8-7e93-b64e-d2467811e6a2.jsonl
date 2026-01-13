@@ -1,6 +1,0 @@
-{"timestamp":"2025-11-05T17:35:38.268Z","type":"session_meta","payload":{"id":"019a5516-a2e8-7e93-b64e-d2467811e6a2","timestamp":"2025-11-05T17:35:38.217Z","cwd":"/workspace","originator":"codex_exec","cli_version":"0.55.0","instructions":null,"source":"exec","model_provider":"openai"}}
-{"timestamp":"2025-11-05T17:35:44.259Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<environment_context>\n  <cwd>/workspace</cwd>\n  <approval_policy>never</approval_policy>\n  <sandbox_mode>read-only</sandbox_mode>\n  <network_access>restricted</network_access>\n  <shell>bash</shell>\n</environment_context>"}]}}
-{"timestamp":"2025-11-05T17:35:44.371Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Who is the lead of that oldest reassigned ticket?"}]}}
-{"timestamp":"2025-11-05T17:35:44.373Z","type":"event_msg","payload":{"type":"user_message","message":"Who is the lead of that oldest reassigned ticket?","images":[]}}
-{"timestamp":"2025-11-05T17:35:44.396Z","type":"turn_context","payload":{"cwd":"/workspace","approval_policy":"never","sandbox_policy":{"mode":"read-only"},"model":"gpt-5","summary":"auto"}}
-{"timestamp":"2025-11-05T17:35:45.006Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"primary":null,"secondary":null}}}

@@ -17,8 +17,8 @@ RUN curl -L "https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
-# Install Claude Code globally
-RUN npm install -g @anthropic-ai/claude-code
+# Install Claude Code globally (version 2.0.76)
+RUN npm install -g @anthropic-ai/claude-code@2.0.76
 
 # Create working directories
 RUN mkdir -p /workspace/unsorted /workspace/logs /benchmark_data

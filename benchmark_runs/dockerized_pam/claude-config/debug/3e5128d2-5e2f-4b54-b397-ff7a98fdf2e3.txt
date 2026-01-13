@@ -1,7 +1,0 @@
-[DEBUG] Watching for changes in setting files /root/.claude/settings.json...
-[DEBUG] Writing to temp file: /root/.claude.json.tmp.2430.1761756563337
-[DEBUG] Preserving file permissions: 100600
-[DEBUG] Temp file written successfully, size: 1620 bytes
-[DEBUG] Applied original permissions to temp file
-[DEBUG] Renaming /root/.claude.json.tmp.2430.1761756563337 to /root/.claude.json
-[DEBUG] File /root/.claude.json written atomically

@@ -1,1 +1,0 @@
-The Anthropic Constitutional AI paper that Charlie shared on February 1, 2025, became critical for solving the conversation state persistence problem across multiple turns by maintaining context graphs rather than linear conversation history.

@@ -1,5 +1,0 @@
-Based on my search of the Bootstrap codebase, the specific data attribute name that Bootstrap used for their theme switching mechanism is:
-
-**`data-bs-theme`**
-
-This attribute is used to specify the theme context on HTML elements, with values like `"light"`, `"dark"`, or `"body"` for contextual switching. The implementation was developed through commits in September-October 2023, with key work by Julien Déramond, and this became the standard approach for Bootstrap's color mode/theme switching system.

@@ -1,3 +1,0 @@
-The answer is **prepare.py**.
-
-This file is located at `mlebench/competitions/3d-object-detection-for-autonomous-vehicles/prepare.py` and contains the `prepare` function which spans 470 lines (lines 14-483). This function handles the complex task of splitting raw training data for the 3D object detection competition, managing multiple JSON files, images, and LIDAR data throughout the train/test split process.

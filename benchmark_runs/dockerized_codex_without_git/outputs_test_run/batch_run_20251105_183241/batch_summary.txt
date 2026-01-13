@@ -1,6 +1,0 @@
-Isolated Batch Benchmark Run
-============================
-Start Time: Wed Nov  5 18:32:41 CET 2025
-Total Configs: 32
-Batch Directory: ./outputs/batch_run_20251105_183241
-

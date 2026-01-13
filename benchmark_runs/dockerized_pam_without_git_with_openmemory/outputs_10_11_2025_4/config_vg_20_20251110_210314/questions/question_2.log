@@ -1,7 +1,0 @@
-Based on the March 2024 post-mortem discussion in the #engineering Slack channel:
-
-**Alice's specific reason for the incorrect implementation:** Charlie misread the compliance requirements specification. The audit logs captured actions but not user intent context as required by SOC2 Appendix B.
-
-**Team member assigned responsibility:** Alice assigned responsibility to **Charlie** for the requirements misunderstanding. Charlie acknowledged this in his response, stating he focused on the action logging part and missed the intent context requirements, and that he should have asked for clarification instead of assuming.
-
-The conversation occurred on March 5, 2024, after the TechCorp contract renewal was successfully secured.

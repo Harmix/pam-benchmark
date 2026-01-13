@@ -5,13 +5,15 @@ Extracts Q/A pairs from configs and runs evaluation automatically
 """
 
 import os
-import json
 import re
+import json
+import yaml
 import argparse
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Tuple
-import yaml
+
+from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
@@ -409,6 +411,7 @@ def main():
     )
 
     args = parser.parse_args()
+    load_dotenv()  # loads .env from current working directory
 
     # Check for OpenAI API key
     if not os.environ.get("OPENAI_API_KEY"):

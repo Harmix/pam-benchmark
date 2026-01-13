@@ -1,7 +1,0 @@
-There are currently **5 tickets** in the "done" status:
-
-1. **TICK-0000** - Legacy system migration planning [engineering] [urgent] (Lead: charlie)
-2. **TICK-0001** - Database performance optimization [engineering] [high] (Lead: bob)
-3. **TICK-0002** - Machine learning model training pipeline [ml] [high] (Lead: diana)
-4. **TICK-0004** - API rate limiting implementation [engineering] [medium] (Lead: frank)
-5. **TICK-0005** - Security audit preparation [engineering] [urgent] (Lead: alice)

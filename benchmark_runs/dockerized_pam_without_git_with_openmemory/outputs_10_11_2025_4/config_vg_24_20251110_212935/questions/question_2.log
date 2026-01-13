@@ -1,7 +1,0 @@
-Based on the log files I found, I can answer your question:
-
-**The specific infrastructure resource limit was: Kubernetes persistent volume storage capacity**
-
-**How quickly was this limit reached: After 4 days of concurrent pipeline operation**
-
-The team had to abandon running all three pipelines (ingestion, classification, and synthetic generation) simultaneously because the Kubernetes persistent volume storage was exhausted after just 4 days when all pipelines were running concurrently.

@@ -1,9 +1,0 @@
-Based on the Slack messages I've reviewed, I can now provide you with the answer:
-
-**Charlie** identified the root cause of the Kubernetes cluster failures during the post-mortem discussion. 
-
-In message M0027 sent on January 30, 2025 at 14:30:00 in the #infrastructure channel, Charlie stated:
-
-> "I can identify the exact root cause: dockerized context isolation introduced non-deterministic results because container instances compete for CPU scheduling. Then 500+ concurrent spawns exceeded our 64GB cluster memory limit."
-
-The specific resource constraint Charlie pinpointed was **memory (RAM)** - specifically, the cluster's **64GB total memory limit** was exceeded when 500+ containers were spawned simultaneously, with each evaluation batch requiring 32GB of RAM due to the context isolation feature.
