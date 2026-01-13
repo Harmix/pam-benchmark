@@ -1,147 +1,172 @@
-# PAM Benchmark: Performance Assessment for Agents in Dynamic Multi-Modal Environments
+# PAM Benchmark Harbor Task
 
-A comprehensive benchmark framework for evaluating AI agents' ability to operate in realistic, dynamic environments with multiple information sources (Linear, Slack, Git) and temporal reasoning requirements.
+This Harbor task structure allows you to run PAM (Proactive AI Manager) benchmark evaluations using the Harbor framework.
 
+## Task Structure
 
-## Overview
-
-PAM Benchmark tests agents' capabilities to:
-- Navigate complex organizational communication across multiple platforms
-- Correlate information from disparate sources (task tracking, team chat, version control)
-- Reason about temporal sequences and causal relationships
-- Extract precise technical details from ambiguous or incomplete information
-- Handle realistic workplace scenarios with missing context and indirect references
-
-
-## Key Features
-
-**Multi-Platform Integration**
-- Linear (task/project management)
-- Slack (team communication)
-- Git (code repository and history)
-- Notification systems
-
-**Dynamic Event Histories**
-- Real-world temporal event sequences
-- State transitions and dependencies
-- Cross-platform information correlation
-- Missing or incomplete context scenarios
-
-**Diverse Evaluation Scenarios**
-- Software development crisis situations (46 configurations)
-- Technical debt investigations
-- System architecture decisions
-- Team coordination challenges
-- Production incident analysis
-
-
-## Benchmark Statistics
-
-- **Total Configurations**: 46
-- **Total Questions**: 143
-- **Average Questions per Config**: 3.11
-- **Agent Models Tested**: PAM, Claude Code, Codex
-- **Evaluation Methods**: Exact match, LLM judge
-- **Teams Represented**: 38 different team types
-- **Average Team Size**: 3.37 members
-
-
-## Quick Start
-
-**Install Dependencies at Benchmark runs (TODO)**
-```bash
-pip install -r requirements.txt
+```
+benchmark/
+├── instruction.md          # Task description and requirements
+├── task.toml              # Harbor task configuration
+├── environment/
+│   └── Dockerfile        # Container environment definition
+├── tests/
+│   ├── test.sh           # Test verification script
+│   └── test_outputs.py   # Pytest unit tests
+├── test_configs/         # YAML configuration files
+├── test_event_histories/ # JSON event history files
+├── setup_and_run.sh      # Main execution script
+├── init.py               # PAM memory structure generator
+├── INIT.md               # PAM Memory Agent Guide
+├── INTRO_TEMPLATE.md     # Company template
+└── CLAUDE.md             # Claude Code system context
 ```
 
-**Extract Questions and Answers**
+## Prerequisites
+
+1. Install Harbor framework
+2. Set `ANTHROPIC_API_KEY` environment variable
+3. Have Docker installed and running
+
+## Usage
+
+### Start Interactive Environment
+
+To start an interactive environment (similar to the original docker-compose setup):
+
 ```bash
-python extract_questions.py
+harbor tasks start-env -p benchmark -e docker -a -i
 ```
 
-**Analyze Event Histories**
+This will:
+- Build the Docker image from `environment/Dockerfile`
+- Start an interactive container
+- Mount the task files into the container
+- Give you a shell to work with
+
+### Running a Benchmark
+
+Once inside the interactive environment, you can run benchmarks:
+
 ```bash
-python analyze_event_histories.py
+# Run a single config
+/benchmark_data/setup_and_run.sh /benchmark_data/test_configs/config_1.yaml
+
+# Or run a range (if you have the run_range_isolated.sh script)
+# Note: You may need to copy this script into the task directory if needed
 ```
 
-**Run Benchmark with Docker**
+### Running Tasks Non-Interactively with Configs
+
+**Quick Start: Use the helper script (Recommended)**
+
+From the project root, use the `run_benchmark.sh` script:
+
 ```bash
-docker-compose up
+# Interactive mode - will prompt for configs
+./run_benchmark.sh
+
+# Or specify configs directly
+./run_benchmark.sh config_1 config_2 config_3
+
+# With Harbor arguments
+./run_benchmark.sh config_1 config_2 -a oracle -m claude-3-5-sonnet-20241022
 ```
 
+The script will:
+- Validate that configs exist
+- Create `benchmark_configs.txt` automatically
+- Start Harbor with the appropriate settings
 
-## Configuration Format
+**Manual Method: Create config file**
 
-Each benchmark scenario includes:
-- Agent configuration (model, tools, max turns)
-- Repository details (URL, branch)
-- Team structure (members, roles)
-- Questions and expected answers
-- Evaluation criteria (exact match, LLM judge)
-- Milestones and success metrics
+Alternatively, create a `benchmark_configs.txt` file manually:
 
+**Step 1: Create the config file**
 
-## Question Types
+Create `benchmark_configs.txt` in the `benchmark/solution/` directory (Harbor mounts this directory):
 
-**Direct Factual Queries**
-- "What is the status of the oldest ticket that was once reassigned?"
-- "How many tickets are currently done?"
+```bash
+# In the benchmark/solution/ directory
+echo "config_1 config_2 config_3" > benchmark/solution/benchmark_configs.txt
+```
 
-**Cross-Platform Correlation**
-- Linking Slack discussions to Linear tickets to Git commits
-- Tracing decision flows across communication channels
+Or one config per line (comments allowed):
+```bash
+cat > benchmark/solution/benchmark_configs.txt << EOF
+# Run these configs
+config_1
+config_2
+config_3
+EOF
+```
 
-**Temporal Reasoning**
-- Understanding event sequences and causality
-- Identifying root causes through timeline analysis
+**Step 2: Run Harbor**
 
-**Technical Archaeology**
-- Git history investigation
-- Code pattern analysis from vague descriptions
-- Configuration debugging across systems
+```bash
+harbor run -p benchmark -a <agent-name> -m <model>
+```
 
+Harbor mounts the `solution/` directory, so the solution script will automatically find and read `benchmark_configs.txt` from `/workspace/solution/benchmark_configs.txt`.
 
-## Evaluation Metrics
+**Alternative: Environment variable (if supported)**
 
-- **Exact Match**: Case-insensitive string matching (32 configs use this)
-- **LLM Judge**: GPT-4o evaluates answer quality (32 configs)
+If your setup supports it, you can also try:
+```bash
+BENCHMARK_CONFIGS="config_1 config_2" harbor run -p benchmark -a <agent-name> -m <model>
+```
 
+**Default behavior**
 
-## Tools Available to Agents
+If no configs are specified (no file and no env var), it defaults to `config_1`.
 
-- `notification_server`: 32 configs
-- `linear_server`: 32 configs
-- `filesystem`: 32 configs
-- `git`: 46 configs
-- `slack_server`: 7 configs
+The `solution/solve.sh` script reads configs in this priority order:
+1. `BENCHMARK_CONFIGS` environment variable (space-separated)
+2. `/workspace/solution/benchmark_configs.txt` file (Harbor mounts solution/ directory here)
+3. Command-line arguments (for direct execution)
+4. Default: `config_1`
 
+It runs `/benchmark_data/setup_and_run.sh` for each config sequentially.
 
-## Platform Distribution
+**Note**: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
 
-- Linear events: Primary task tracking
-- Slack events: Team communication (7 scenarios)
-- Git events: Code changes and history
+## Task Configuration
 
+The task is configured in `task.toml`:
+- **Timeout**: 30 minutes for both agent and verifier
+- **Resources**: 2 CPUs, 4GB RAM, 20GB storage
+- **Difficulty**: Hard
+- **Category**: Multi-modal reasoning
 
-## Agent Performance Considerations
+## Test Configs and Event Histories
 
-Successful agents must:
-1. Read event histories chronologically
-2. Correlate timestamps across platforms
-3. Track state transitions (todo → in_progress → done)
-4. Handle indirect references and incomplete information
-5. Reason about team dynamics and decision-making
-6. Extract technical details from natural language
+- **test_configs/**: Contains YAML files defining benchmark scenarios
+- **test_event_histories/**: Contains JSON files with Linear and Slack event data
 
+Each config file references an event history file and defines:
+- Agent configuration
+- Benchmark questions
+- Expected answers
 
-## Contributing
+## Environment Details
 
-To add new benchmark scenarios:
-1. Create YAML config in `test_configs/`
-2. Generate corresponding event history JSON
-3. Run extraction scripts to validate
-4. Update statistics with `analyze_event_histories.py`
+The Docker environment includes:
+- Python 3.11
+- Claude Code v2.0.76 (installed globally)
+- yq for YAML parsing
+- System tools (curl, git, jq, build-essential, tree)
 
+## Differences from Original Setup
 
-## License
+The Harbor version:
+- Uses Harbor's task structure instead of docker-compose
+- Can be run with Harbor's agent system
+- Maintains the same execution flow via `setup_and_run.sh`
+- Test verification uses Harbor's standard test format
 
-MIT
+## Next Steps
+
+1. **Solution Script**: Create a `solution/` directory with `solve.sh` for automated Oracle testing
+2. **Enhanced Tests**: Update `tests/test_outputs.py` with specific verification logic for your benchmarks
+3. **Agent Configuration**: Configure Harbor to use claude-code if needed for non-interactive runs
+
