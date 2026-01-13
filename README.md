@@ -25,8 +25,11 @@ benchmark/
 ## Prerequisites
 
 1. Install Harbor framework
-2. Set `ANTHROPIC_API_KEY` environment variable
+2. Set `ANTHROPIC_API_KEY` environment variable (required for LLM judge evaluation)
 3. Have Docker installed and running
+4. (Optional) Configure MongoDB for results storage:
+   - Set `DB_NAME` in `benchmark/environment/secrets.env`
+   - Set `CONNECTION_STRING` in `benchmark/environment/secrets.env`
 
 ## Usage
 
@@ -128,6 +131,14 @@ The `solution/solve.sh` script reads configs in this priority order:
 
 It runs `/benchmark_data/setup_and_run.sh` for each config sequentially.
 
+**Execution Workflow:**
+1. For each config:
+   - Benchmark executes (agent processes event history and answers questions)
+   - Execution time is tracked
+   - LLM Judge evaluation runs immediately after completion
+   - Results (metrics + execution time) are saved to MongoDB (if configured)
+2. Process repeats for next config
+
 **Note**: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
 
 ## Task Configuration
@@ -155,6 +166,66 @@ The Docker environment includes:
 - Claude Code v2.0.76 (installed globally)
 - yq for YAML parsing
 - System tools (curl, git, jq, build-essential, tree)
+- Python packages: openai, pyyaml, pydantic, python-dotenv, pymongo
+
+## Evaluation and Results Storage
+
+### LLM-as-Judge Evaluation
+
+After each config execution, the system automatically:
+1. Evaluates agent answers using an LLM judge
+2. Calculates metrics: `total_questions`, `correct_count`, `accuracy`, `avg_score`, `avg_confidence`
+3. Logs execution time for the config
+4. Saves results to MongoDB (if configured)
+
+### MongoDB Integration
+
+Results are saved to MongoDB with the following structure (one record per config):
+
+```json
+{
+  "experiment_name": "experiment_20250112_143022_config_1_config_2",
+  "config_name": "config_1",
+  "dataset_name": "event_history_1",
+  "agent_name": "CodeAgent",
+  "task_name": "config_1",
+  "total_questions": 3,
+  "correct_count": 2,
+  "accuracy": 0.6667,
+  "avg_score": 0.85,
+  "avg_confidence": 0.92,
+  "execution_time_seconds": 245.67,
+  "timestamp": "2025-01-12T14:30:22.123Z",
+  "created_at": "2025-01-12T14:30:22.123456"
+}
+```
+
+**Experiment Name:**
+- Automatically generated if not provided: `experiment_YYYYMMDD_HHMMSS_<config_summary>`
+- Can be set via `EXPERIMENT_NAME` environment variable when running `run_benchmark.sh`
+- All configs from the same run share the same experiment name, allowing you to group related benchmark runs
+- Example: `EXPERIMENT_NAME=baseline_test_2025 ./run_benchmark.sh config_1 config_2`
+
+**Configuration:**
+Add to `benchmark/environment/secrets.env`:
+```bash
+DB_NAME=your_database_name
+CONNECTION_STRING=mongodb://your_connection_string
+```
+
+### Running in Stub Mode (for fast debugging)
+
+To use the stub mode, which generates logs from a pre-recorded agent output (`oracle.txt`) instead of running the full benchmark:
+
+```bash
+STUB_MODE=true ORACLE_FILE=./jobs/2026-01-12__11-08-06/benchmark__b9NqGZ2/agent/oracle.txt ./run_benchmark.sh config_1
+```
+
+- Set `STUB_MODE=true` environment variable
+- Provide the `ORACLE_FILE` environment variable pointing to the raw agent output file from a previous run
+- The `run_benchmark.sh` script will automatically copy `oracle.txt` to `benchmark/solution/oracle.txt` and create a `benchmark/solution/stub_mode.txt` flag file for the container
+- The `setup_and_run.sh` script will then use `parse_oracle_stub.py` to generate the benchmark logs, allowing the LLM Judge evaluation to run quickly
+- Execution time in stub mode reflects the time to parse the oracle file, not the actual benchmark execution
 
 ## Differences from Original Setup
 
@@ -164,9 +235,29 @@ The Harbor version:
 - Maintains the same execution flow via `setup_and_run.sh`
 - Test verification uses Harbor's standard test format
 
+## Output Structure
+
+After running benchmarks, you'll find:
+
+```
+/benchmark_logs/
+├── config_1_20250112_143022/
+│   ├── summary.txt              # Summary of the benchmark run
+│   ├── processing.log            # Initial data processing log
+│   ├── execution_time.txt        # Execution duration in seconds
+│   ├── questions/
+│   │   ├── question_1.log        # Agent's answer to question 1
+│   │   ├── question_2.log        # Agent's answer to question 2
+│   │   └── ...
+│   └── llm_judge_results.json    # Evaluation results (if evaluation ran)
+├── config_2_20250112_143045/
+│   └── ...
+```
+
 ## Next Steps
 
-1. **Solution Script**: Create a `solution/` directory with `solve.sh` for automated Oracle testing
-2. **Enhanced Tests**: Update `tests/test_outputs.py` with specific verification logic for your benchmarks
-3. **Agent Configuration**: Configure Harbor to use claude-code if needed for non-interactive runs
+1. **View Results**: Check MongoDB for aggregated results across all configs
+2. **Analyze Performance**: Use execution times and accuracy metrics to compare different agents/configurations
+3. **Enhanced Tests**: Update `tests/test_outputs.py` with specific verification logic for your benchmarks
+4. **Agent Configuration**: Configure Harbor to use claude-code if needed for non-interactive runs
 
