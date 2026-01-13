@@ -5,6 +5,9 @@ set -e
 # Script to run Harbor benchmarks with config selection
 # Usage: ./run_benchmark.sh [config1] [config2] ... [harbor-args...]
 # 
+# This script runs Harbor with the memtrack dataset:
+#   harbor run -d "memtrack@1.0" -a oracle -m <model> --registry-path "datasets/memtrack/registry.json"
+# 
 # Stub mode (for debugging):
 #   STUB_MODE=true ORACLE_FILE=./jobs/2026-01-12__11-08-06/benchmark__b9NqGZ2/agent/oracle.txt ./run_benchmark.sh config_1
 
@@ -22,9 +25,9 @@ show_usage() {
     echo "  $0                                      # Interactive mode - will prompt for configs"
     echo ""
     echo "Available configs:"
-    if [ -d "$BENCHMARK_DIR/environment/test_configs" ]; then
-        ls -1 "$BENCHMARK_DIR/environment/test_configs"/*.yaml 2>/dev/null | \
-            sed "s|$BENCHMARK_DIR/environment/test_configs/||" | \
+    if [ -d "datasets/memtrack/test_configs" ]; then
+        ls -1 "datasets/memtrack/test_configs"/*.yaml 2>/dev/null | \
+            sed "s|datasets/memtrack/test_configs/||" | \
             sed 's|\.yaml||' | \
             head -20
         echo "..."
@@ -83,7 +86,7 @@ VALID_CONFIGS=()
 for config in "${CONFIGS[@]}"; do
     # Remove .yaml extension if present
     config_name="${config%.yaml}"
-    config_file="$BENCHMARK_DIR/environment/test_configs/${config_name}.yaml"
+    config_file="datasets/memtrack/test_configs/${config_name}.yaml"
     
     if [ -f "$config_file" ]; then
         VALID_CONFIGS+=("$config_name")
@@ -129,8 +132,35 @@ if ! command -v harbor &> /dev/null; then
     exit 1
 fi
 
+# Prepare dataset for Docker build
+# This copies the dataset into benchmark/datasets/ so it's available in the Docker build context
+PREPARE_BUILD_SCRIPT="$BENCHMARK_DIR/prepare_build.sh"
+if [ -f "$PREPARE_BUILD_SCRIPT" ]; then
+    echo ""
+    echo "Preparing dataset for Docker build..."
+    bash "$PREPARE_BUILD_SCRIPT"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to prepare dataset for build"
+        exit 1
+    fi
+    echo "Dataset prepared successfully"
+    echo ""
+else
+    echo "Warning: prepare_build.sh not found at $PREPARE_BUILD_SCRIPT"
+    echo "Dataset may not be available in Docker build context"
+    echo ""
+fi
+
 # Build Harbor command
 HARBOR_CMD=("harbor" "run" "-p" "$BENCHMARK_DIR")
+
+# Add dataset registry path to use memtrack dataset
+REGISTRY_PATH="datasets/memtrack/registry.json"
+if [ -f "$REGISTRY_PATH" ]; then
+    HARBOR_CMD+=("--registry-path" "$REGISTRY_PATH")
+else
+    echo "Warning: Dataset registry not found at $REGISTRY_PATH"
+fi
 
 # Add --force-build by default to ensure config file is picked up
 # User can override with --no-force-build if needed
@@ -223,7 +253,9 @@ echo "Starting Harbor with configs:"
 cat "$CONFIG_FILE" | sed 's/^/  - /'
 echo "=========================================="
 echo ""
-echo "Command: ${HARBOR_CMD[*]}"
+echo "Harbor command: ${HARBOR_CMD[*]}"
+echo ""
+echo "Note: Using memtrack dataset via --registry-path"
 echo ""
 
 # Generate experiment name if not provided

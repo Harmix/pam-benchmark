@@ -32,10 +32,12 @@ RUN pip install --no-cache-dir \
 # Create working directories
 RUN mkdir -p /workspace/unsorted /workspace/logs /benchmark_data /logs/verifier
 
-# Copy benchmark data from task root
-# Harbor uses task root as build context, so paths are relative to task root
-COPY test_configs/ /benchmark_data/test_configs/
-COPY test_event_histories/ /benchmark_data/test_event_histories/
+# Copy dataset from datasets folder
+# Harbor build context is benchmark/environment/, so paths are relative to that directory
+# The dataset is copied to benchmark/environment/datasets/ by prepare_build.sh
+# Note: Docker COPY doesn't follow symlinks outside the build context
+COPY datasets/memtrack/test_configs/ /benchmark_data/test_configs/
+COPY datasets/memtrack/test_event_histories/ /benchmark_data/test_event_histories/
 COPY setup_and_run.sh /benchmark_data/setup_and_run.sh
 RUN chmod +x /benchmark_data/setup_and_run.sh
 

@@ -1,0 +1,7 @@
+{
+  "name": "memtrack",
+  "version": "1.0",
+  "description": "MemTrack benchmark dataset with test configs and event histories for evaluating memory agents on Linear and Slack event data",
+  "test_configs": "test_configs",
+  "test_event_histories": "test_event_histories"
+}
