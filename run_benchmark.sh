@@ -250,8 +250,9 @@ if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
     echo ""
 fi
 
-# Export experiment name for Harbor to pass to container
+# Export experiment name and Harbor project name for Harbor to pass to container
 export EXPERIMENT_NAME
+export HARBOR_PROJECT_NAME="$BENCHMARK_DIR"  # "benchmark"
 
 # Execute Harbor
 exec "${HARBOR_CMD[@]}"

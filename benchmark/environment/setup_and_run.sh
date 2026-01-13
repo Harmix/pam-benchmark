@@ -488,8 +488,11 @@ if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ]; then
                 fi
             fi
             
-            # Run with execution time in environment
-            EXPORT_EXECUTION_TIME="$EXECUTION_DURATION_SECONDS" "${EVAL_CMD[@]}"
+            # Run with execution time and Harbor project name in environment
+            # Harbor project name defaults to "benchmark" if not set
+            EXPORT_EXECUTION_TIME="$EXECUTION_DURATION_SECONDS" \
+            HARBOR_PROJECT_NAME="${HARBOR_PROJECT_NAME:-benchmark}" \
+            "${EVAL_CMD[@]}"
             
             EVAL_EXIT_CODE=$?
             if [ $EVAL_EXIT_CODE -eq 0 ]; then

@@ -326,7 +326,24 @@ def print_config_results(config_name: str, results: Dict, questions: List[str], 
     print(f"Summary: {correct}/{total} correct ({correct/total*100:.1f}%), Avg Score: {avg_score:.2f}")
 
 
-def extract_metadata_from_config(config: Dict, config_name: str) -> Dict[str, str]:
+def extract_base_config_name(config_name: str) -> str:
+    """Extract base config name without timestamp suffix
+    
+    Examples:
+        "config_2_20260113_024345" -> "config_2"
+        "config_1" -> "config_1"
+    """
+    # Pattern: config_name_YYYYMMDD_HHMMSS
+    # Try to match timestamp pattern at the end
+    # Match pattern: _ followed by 8 digits, underscore, 6 digits at the end
+    pattern = r'^(.+)_\d{8}_\d{6}$'
+    match = re.match(pattern, config_name)
+    if match:
+        return match.group(1)
+    return config_name
+
+
+def extract_metadata_from_config(config: Dict, config_name: str, yaml_filename: str = None) -> Dict[str, str]:
     """Extract metadata fields from config YAML"""
     agent_name = config.get("agent", {}).get("name", "unknown")
     
@@ -338,12 +355,19 @@ def extract_metadata_from_config(config: Dict, config_name: str) -> Dict[str, st
         # Extract filename without extension (e.g., "event_history_1" from "test_event_histories/event_history_1.json")
         dataset_name = Path(event_history).stem
     
-    # Task name could be from metadata or use config name
-    # For now, we'll use the config name as task name
-    task_name = config_name
+    # Extract base config name (without timestamp suffix)
+    # Prefer yaml filename if available, otherwise try to extract from config_name
+    if yaml_filename:
+        base_config_name = Path(yaml_filename).stem  # e.g., "config_2.yaml" -> "config_2"
+    else:
+        base_config_name = extract_base_config_name(config_name)
+    
+    # Task name is the Harbor project name (default: "benchmark")
+    # Can be overridden via HARBOR_PROJECT_NAME environment variable
+    task_name = os.environ.get("HARBOR_PROJECT_NAME", "benchmark")
     
     return {
-        "config_name": config_name,
+        "config_name": base_config_name,
         "dataset_name": dataset_name,
         "agent_name": agent_name,
         "task_name": task_name
@@ -446,14 +470,16 @@ def save_config_results(config_dir: Path, config_name: str, config_yaml: str, mo
     if connection_string and db_name and experiment_name:
         # Extract metadata from config if provided
         if config:
-            metadata = extract_metadata_from_config(config, config_name)
+            metadata = extract_metadata_from_config(config, config_name, yaml_filename=config_yaml)
         else:
             # Fallback if config not provided
+            base_config_name = extract_base_config_name(config_name)
+            task_name = os.environ.get("HARBOR_PROJECT_NAME", "benchmark")
             metadata = {
-                "config_name": config_name,
+                "config_name": base_config_name,
                 "dataset_name": "unknown",
                 "agent_name": "unknown",
-                "task_name": config_name
+                "task_name": task_name
             }
         
         save_to_mongodb(experiment_name, metadata, metrics, db_name, connection_string, execution_time)
