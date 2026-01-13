@@ -206,76 +206,8 @@ echo "========================================"
 echo "All benchmarks completed!"
 echo "========================================"
 echo ""
-
-# Run evaluation script after all configs are executed
-# Check multiple possible locations where Harbor might mount the solution directory
-echo "[DEBUG] Looking for evaluation script..."
-EVAL_SCRIPT=""
-POSSIBLE_EVAL_PATHS=(
-    "/workspace/solution/llm_judge_eval.py"
-    "/solution/llm_judge_eval.py"
-    "./solution/llm_judge_eval.py"
-    "solution/llm_judge_eval.py"
-    "$(pwd)/solution/llm_judge_eval.py"
-    "/workspace/llm_judge_eval.py"
-)
-
-# Debug: List solution directory if it exists
-if [ -d "/workspace/solution" ]; then
-    echo "[DEBUG] Contents of /workspace/solution/:"
-    ls -la /workspace/solution/ 2>/dev/null | head -10 || echo "  (cannot list)"
-fi
-
-for path in "${POSSIBLE_EVAL_PATHS[@]}"; do
-    if [ -f "$path" ]; then
-        EVAL_SCRIPT="$path"
-        echo "[DEBUG] Found evaluation script at: $path"
-        break
-    else
-        echo "[DEBUG] Not found: $path"
-    fi
-done
-
-if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ]; then
-    echo "========================================"
-    echo "Running LLM Judge Evaluation"
-    echo "========================================"
-    echo ""
-    
-    # Check if Python 3 is available
-    if ! command -v python3 &> /dev/null; then
-        echo "Warning: python3 not found, skipping evaluation"
-    else
-        # Check if OPENAI_API_KEY is available (required for evaluation)
-        if [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "Warning: OPENAI_API_KEY not set, skipping evaluation"
-            echo "Note: Evaluation requires OPENAI_API_KEY to be set in secrets.env"
-        else
-            # Run evaluation script
-            # Output dir: /benchmark_logs (where setup_and_run.sh saves logs)
-            # Test configs dir: /benchmark_data/test_configs (where config YAMLs are)
-            # The script will discover all configs that were run and evaluate them
-            echo "Running evaluation for all completed configs..."
-            python3 "$EVAL_SCRIPT" \
-                --output-dir /benchmark_logs \
-                --test-configs-dir /benchmark_data/test_configs \
-                --summary-only
-            
-            EVAL_EXIT_CODE=$?
-            if [ $EVAL_EXIT_CODE -eq 0 ]; then
-                echo ""
-                echo "✓ Evaluation completed successfully"
-            else
-                echo ""
-                echo "⚠ Evaluation completed with exit code: $EVAL_EXIT_CODE"
-            fi
-        fi
-    fi
-else
-    echo "Warning: Evaluation script not found at $EVAL_SCRIPT"
-    echo "Skipping evaluation"
-fi
-
+echo "Note: Each config was evaluated immediately after execution."
+echo "Results have been saved to MongoDB (if configured)."
 echo ""
 echo "========================================"
 echo "All tasks completed!"

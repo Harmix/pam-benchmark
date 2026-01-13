@@ -8,6 +8,9 @@ ORACLE_FILE="${ORACLE_FILE:-}"
 CONFIG_NAME=$(basename "$CONFIG_FILE" .yaml)
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
+# Record start time for execution duration tracking
+EXECUTION_START_TIME=$(date +%s.%N)
+
 # Create organized directory structure for this config
 # This will appear in outputs/ on the host
 CONFIG_LOG_DIR="/benchmark_logs/${CONFIG_NAME}_${TIMESTAMP}"
@@ -394,11 +397,112 @@ for i in $(seq 1 $QUESTION_COUNT); do
     fi
 done
 
+# Record end time and calculate execution duration
+EXECUTION_END_TIME=$(date +%s.%N)
+# Calculate duration using awk (more portable than bc)
+EXECUTION_DURATION=$(awk "BEGIN {printf \"%.2f\", $EXECUTION_END_TIME - $EXECUTION_START_TIME}")
+EXECUTION_DURATION_SECONDS="$EXECUTION_DURATION"
+
+# Add execution time to summary file
+echo "" >> "$SUMMARY_FILE"
+echo "Execution Statistics:" >> "$SUMMARY_FILE"
+echo "====================" >> "$SUMMARY_FILE"
+echo "Execution time: ${EXECUTION_DURATION_SECONDS} seconds" >> "$SUMMARY_FILE"
+
 echo ""
 echo "Summary saved to: $SUMMARY_FILE"
 echo "Questions saved to: $QUESTIONS_DIR"
 echo "Config directory: $CONFIG_LOG_DIR"
 echo ""
+
 echo "========================================"
 echo "Benchmark Complete: $CONFIG_NAME"
+echo "Execution time: ${EXECUTION_DURATION_SECONDS} seconds"
 echo "========================================"
+
+# Save execution time to a file for the evaluation script
+echo "$EXECUTION_DURATION_SECONDS" > "$CONFIG_LOG_DIR/execution_time.txt"
+
+# Run LLM Judge evaluation for this config immediately after completion
+echo ""
+echo "========================================"
+echo "Running LLM Judge Evaluation"
+echo "========================================"
+echo ""
+
+# Find evaluation script
+EVAL_SCRIPT=""
+POSSIBLE_EVAL_PATHS=(
+    "/workspace/solution/llm_judge_eval.py"
+    "/solution/llm_judge_eval.py"
+    "./solution/llm_judge_eval.py"
+    "solution/llm_judge_eval.py"
+    "$(pwd)/solution/llm_judge_eval.py"
+    "/workspace/llm_judge_eval.py"
+)
+
+for path in "${POSSIBLE_EVAL_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        EVAL_SCRIPT="$path"
+        break
+    fi
+done
+
+if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ]; then
+    # Check if Python 3 is available
+    if ! command -v python3 &> /dev/null; then
+        echo "Warning: python3 not found, skipping evaluation"
+    else
+        # Check if OPENAI_API_KEY is available (required for evaluation)
+        if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "Warning: OPENAI_API_KEY not set, skipping evaluation"
+            echo "Note: Evaluation requires OPENAI_API_KEY to be set in secrets.env"
+        else
+            # Run evaluation script for this specific config
+            # Pass execution time and experiment name
+            echo "Evaluating config: $CONFIG_NAME"
+            echo "Execution time: ${EXECUTION_DURATION_SECONDS} seconds"
+            
+            # Build command with experiment name if available
+            EVAL_CMD=(
+                python3 "$EVAL_SCRIPT"
+                --output-dir /benchmark_logs
+                --test-configs-dir /benchmark_data/test_configs
+                --config "$CONFIG_NAME"
+                --summary-only
+            )
+            
+            # Add experiment name if available (from env or try to read from file)
+            if [ -n "${EXPERIMENT_NAME:-}" ]; then
+                echo "Experiment name: $EXPERIMENT_NAME"
+                EVAL_CMD+=(--experiment-name "$EXPERIMENT_NAME")
+            else
+                # Try to read from a file if Harbor passed it via file
+                EXPERIMENT_NAME_FILE="/workspace/solution/experiment_name.txt"
+                if [ -f "$EXPERIMENT_NAME_FILE" ]; then
+                    EXPERIMENT_NAME=$(cat "$EXPERIMENT_NAME_FILE" | head -1 | tr -d '\n\r')
+                    if [ -n "$EXPERIMENT_NAME" ]; then
+                        echo "Experiment name (from file): $EXPERIMENT_NAME"
+                        EVAL_CMD+=(--experiment-name "$EXPERIMENT_NAME")
+                    fi
+                fi
+            fi
+            
+            # Run with execution time in environment
+            EXPORT_EXECUTION_TIME="$EXECUTION_DURATION_SECONDS" "${EVAL_CMD[@]}"
+            
+            EVAL_EXIT_CODE=$?
+            if [ $EVAL_EXIT_CODE -eq 0 ]; then
+                echo ""
+                echo "✓ Evaluation completed successfully for $CONFIG_NAME"
+            else
+                echo ""
+                echo "⚠ Evaluation completed with exit code: $EVAL_EXIT_CODE for $CONFIG_NAME"
+            fi
+        fi
+    fi
+else
+    echo "Warning: Evaluation script not found, skipping evaluation"
+fi
+
+echo ""

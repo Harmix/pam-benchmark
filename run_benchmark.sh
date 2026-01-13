@@ -120,9 +120,6 @@ fi
 
 echo "Configs written successfully:"
 cat "$CONFIG_FILE" | sed 's/^/  /'
-echo ""
-echo "File location: $(realpath "$CONFIG_FILE")"
-echo "File size: $(wc -c < "$CONFIG_FILE") bytes"
 
 # Check if Harbor is available
 if ! command -v harbor &> /dev/null; then
@@ -176,6 +173,12 @@ if [ -f "$ORACLE_DEST" ]; then
     rm -f "$ORACLE_DEST"
 fi
 
+# Clean up experiment name file from previous runs
+EXPERIMENT_NAME_FILE="$BENCHMARK_DIR/solution/experiment_name.txt"
+if [ -f "$EXPERIMENT_NAME_FILE" ]; then
+    rm -f "$EXPERIMENT_NAME_FILE"
+fi
+
 # Only enable stub mode if explicitly set
 if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
     ORACLE_FILE="${ORACLE_FILE:-}"
@@ -220,17 +223,24 @@ echo "Starting Harbor with configs:"
 cat "$CONFIG_FILE" | sed 's/^/  - /'
 echo "=========================================="
 echo ""
-echo "Note: If Harbor uses a cached image, you may need to rebuild:"
-echo "  Add --force-build flag to force Docker image rebuild"
-echo ""
 echo "Command: ${HARBOR_CMD[*]}"
 echo ""
 
-# Check if --force-build is in the args, if not, suggest it
-if [[ ! " ${HARBOR_ARGS[@]} " =~ " --force-build " ]] && [[ ! " ${HARBOR_ARGS[@]} " =~ " --no-force-build " ]]; then
-    echo "Tip: Consider adding --force-build to ensure the config file is mounted correctly"
-    echo ""
+# Generate experiment name if not provided
+if [ -z "${EXPERIMENT_NAME:-}" ]; then
+    # Generate a unique experiment name based on timestamp and configs
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    CONFIG_SUMMARY=$(cat "$CONFIG_FILE" | tr '\n' '_' | sed 's/_$//' | tr ' ' '_' | head -c 50)
+    EXPERIMENT_NAME="experiment_${TIMESTAMP}_${CONFIG_SUMMARY}"
+    export EXPERIMENT_NAME
+    echo "Generated experiment name: $EXPERIMENT_NAME"
 fi
+
+# Save experiment name to a file so it can be read inside the container
+# Harbor mounts solution/ directory, so put it there
+EXPERIMENT_NAME_FILE="$BENCHMARK_DIR/solution/experiment_name.txt"
+echo "$EXPERIMENT_NAME" > "$EXPERIMENT_NAME_FILE"
+echo "Saved experiment name to: $EXPERIMENT_NAME_FILE"
 
 # Export stub mode and oracle file for Harbor to pass to container
 if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
@@ -239,6 +249,9 @@ if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
     echo "Stub mode environment variables will be passed to container"
     echo ""
 fi
+
+# Export experiment name for Harbor to pass to container
+export EXPERIMENT_NAME
 
 # Execute Harbor
 exec "${HARBOR_CMD[@]}"

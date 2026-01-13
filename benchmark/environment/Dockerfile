@@ -26,7 +26,8 @@ RUN pip install --no-cache-dir \
     openai>=2.6.1 \
     pyyaml>=6.0 \
     pydantic>=2.0.0 \
-    python-dotenv
+    python-dotenv \
+    pymongo>=4.0.0
 
 # Create working directories
 RUN mkdir -p /workspace/unsorted /workspace/logs /benchmark_data /logs/verifier

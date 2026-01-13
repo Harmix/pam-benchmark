@@ -16,6 +16,8 @@ from typing import Dict, List, Tuple
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
+from pymongo import MongoClient
+from datetime import datetime
 
 
 # ============================================================================
@@ -324,33 +326,142 @@ def print_config_results(config_name: str, results: Dict, questions: List[str], 
     print(f"Summary: {correct}/{total} correct ({correct/total*100:.1f}%), Avg Score: {avg_score:.2f}")
 
 
-def save_config_results(config_dir: Path, config_name: str, config_yaml: str, model: str,
-                       questions: List[str], expected_answers: List[str], results: Dict):
-    """Save results to JSON file"""
+def extract_metadata_from_config(config: Dict, config_name: str) -> Dict[str, str]:
+    """Extract metadata fields from config YAML"""
+    agent_name = config.get("agent", {}).get("name", "unknown")
+    
+    # Extract dataset name from event_history path
+    benchmark = config.get("benchmark", {})
+    event_history = benchmark.get("event_history", "")
+    dataset_name = "unknown"
+    if event_history:
+        # Extract filename without extension (e.g., "event_history_1" from "test_event_histories/event_history_1.json")
+        dataset_name = Path(event_history).stem
+    
+    # Task name could be from metadata or use config name
+    # For now, we'll use the config name as task name
+    task_name = config_name
+    
+    return {
+        "config_name": config_name,
+        "dataset_name": dataset_name,
+        "agent_name": agent_name,
+        "task_name": task_name
+    }
+
+
+def save_to_mongodb(experiment_name: str, metadata: Dict[str, str], metrics: Dict, 
+                   db_name: str, connection_string: str, execution_time: float = None) -> bool:
+    """Save evaluation results to MongoDB - one record per config"""
+    try:
+        # Create document with experiment name and metadata
+        mongo_data = {
+            "experiment_name": experiment_name,
+            "config_name": metadata["config_name"],
+            "dataset_name": metadata["dataset_name"],
+            "agent_name": metadata["agent_name"],
+            "task_name": metadata["task_name"],
+            **metrics  # Include all metrics (total_questions, correct_count, accuracy, etc.)
+        }
+        
+        # Add execution time if provided
+        if execution_time is not None:
+            mongo_data["execution_time_seconds"] = float(execution_time)
+        
+        # Add timestamp
+        timestamp = datetime.utcnow()
+        mongo_data["timestamp"] = timestamp
+        mongo_data["created_at"] = timestamp.isoformat()
+        
+        # Connect to MongoDB
+        client = MongoClient(connection_string, serverSelectionTimeoutMS=5000)
+        
+        # Test connection
+        client.admin.command('ping')
+        
+        db = client[db_name]
+        collection = db["evaluation_results"]
+        
+        # Insert document
+        result = collection.insert_one(mongo_data)
+        print(f"✓ Results saved to MongoDB: experiment='{experiment_name}', config='{metadata['config_name']}', ID={result.inserted_id}")
+        
+        client.close()
+        return True
+    except Exception as e:
+        print(f"⚠ Warning: Failed to save to MongoDB: {str(e)}")
+        print(f"   Database: {db_name}, Connection: {'configured' if connection_string else 'not set'}")
+        return False
+
+
+def calculate_metrics(results: Dict) -> Dict:
+    """Calculate evaluation metrics from results"""
     total = len(results)
     correct = sum(1 for r in results.values() if r.get("is_correct", False))
     avg_score = sum(r.get("score", 0.0) for r in results.values()) / total if total > 0 else 0.0
     avg_confidence = sum(r.get("confidence", 0.0) for r in results.values()) / total if total > 0 else 0.0
+    
+    return {
+        "total_questions": total,
+        "correct_count": correct,
+        "accuracy": correct / total if total > 0 else 0.0,
+        "avg_score": avg_score,
+        "avg_confidence": avg_confidence
+    }
+
+
+def save_config_results(config_dir: Path, config_name: str, config_yaml: str, model: str,
+                       questions: List[str], expected_answers: List[str], results: Dict,
+                       experiment_name: str = None, config: Dict = None, execution_time: float = None):
+    """Save results to JSON file and optionally to MongoDB"""
+    metrics = calculate_metrics(results)
 
     output_data = {
         "config": config_name,
         "config_yaml": config_yaml,
         "model": model,
-        "summary": {
-            "total_questions": total,
-            "correct_count": correct,
-            "accuracy": correct / total if total > 0 else 0.0,
-            "avg_score": avg_score,
-            "avg_confidence": avg_confidence
-        },
+        "summary": metrics,
         "questions": questions,
         "expected_answers": expected_answers,
         "results": results
     }
+    
+    # Add experiment name if provided
+    if experiment_name:
+        output_data["experiment_name"] = experiment_name
+    
+    # Add execution time if provided
+    if execution_time is not None:
+        output_data["execution_time_seconds"] = float(execution_time)
 
+    # Save to JSON file
     results_file = config_dir / "llm_judge_results.json"
     with open(results_file, 'w') as f:
         json.dump(output_data, f, indent=2)
+
+    # Save to MongoDB if connection string is provided
+    db_name = os.environ.get("DB_NAME")
+    connection_string = os.environ.get("CONNECTION_STRING")
+    
+    if connection_string and db_name and experiment_name:
+        # Extract metadata from config if provided
+        if config:
+            metadata = extract_metadata_from_config(config, config_name)
+        else:
+            # Fallback if config not provided
+            metadata = {
+                "config_name": config_name,
+                "dataset_name": "unknown",
+                "agent_name": "unknown",
+                "task_name": config_name
+            }
+        
+        save_to_mongodb(experiment_name, metadata, metrics, db_name, connection_string, execution_time)
+    elif connection_string or db_name:
+        if not experiment_name:
+            print("⚠ Warning: EXPERIMENT_NAME not set, skipping MongoDB save")
+        else:
+            print("⚠ Warning: MongoDB CONNECTION_STRING or DB_NAME not fully configured, skipping MongoDB save")
 
     return results_file
 
@@ -358,6 +469,224 @@ def save_config_results(config_dir: Path, config_name: str, config_yaml: str, mo
 # ============================================================================
 # MAIN PIPELINE
 # ============================================================================
+
+def load_environment_variables():
+    """Load environment variables from .env and secrets.env"""
+    load_dotenv()  # loads .env from current working directory
+    
+    # Also try to load from secrets.env if it exists (for Harbor runs)
+    secrets_env_path = Path("/workspace/secrets.env")
+    if secrets_env_path.exists():
+        from dotenv import dotenv_values
+        secrets = dotenv_values(secrets_env_path)
+        for key, value in secrets.items():
+            if value and key not in os.environ:
+                os.environ[key] = value
+
+
+def validate_configuration() -> Tuple[str, str, str]:
+    """Validate required configuration and return MongoDB settings and experiment name"""
+    # Check for OpenAI API key
+    if not os.environ.get("OPENAI_API_KEY"):
+        print("Error: OPENAI_API_KEY environment variable not set")
+        return None, None, None
+    
+    # Get experiment name (optional, but recommended for MongoDB)
+    experiment_name = os.environ.get("EXPERIMENT_NAME", "")
+    if not experiment_name:
+        print("⚠ Warning: EXPERIMENT_NAME not set - MongoDB saves will be skipped")
+    
+    # Check MongoDB configuration (optional, will warn if not set)
+    db_name = os.environ.get("DB_NAME")
+    connection_string = os.environ.get("CONNECTION_STRING")
+    if connection_string and db_name:
+        print(f"✓ MongoDB configured: database='{db_name}'")
+    elif connection_string or db_name:
+        print("⚠ Warning: MongoDB partially configured (missing DB_NAME or CONNECTION_STRING)")
+    else:
+        print("ℹ MongoDB not configured - results will only be saved to JSON files")
+    
+    return db_name, connection_string, experiment_name
+
+
+def process_single_config(config_name: str, yaml_path: Path, config_dir: Path,
+                         model: str, parallel: int, prompt_template: str,
+                         save_raw: bool, experiment_name: str, summary_only: bool,
+                         execution_time: float = None) -> Dict:
+    """Process a single config: load, evaluate, save, and return results"""
+    print(f"\n{'=' * 80}")
+    print(f"Processing: {config_name}")
+    print(f"YAML: {yaml_path.name}")
+    print(f"{'=' * 80}")
+
+    # Load config YAML
+    try:
+        config = load_config_yaml(str(yaml_path))
+    except Exception as e:
+        print(f"Error loading YAML: {e}")
+        return None
+
+    # Determine model (use override if provided, otherwise from config)
+    model = determine_model_from_config(config, model)
+
+    # Extract questions and expected answers
+    benchmark = config.get("benchmark", {})
+    questions = benchmark.get("questions", [])
+    expected_answers = benchmark.get("expected_answers", [])
+
+    if not questions or not expected_answers:
+        print("No questions/answers found in config")
+        return None
+
+    if len(questions) != len(expected_answers):
+        print("Mismatch between questions and expected answers")
+        return None
+
+    print(f"Questions: {len(questions)}")
+    print(f"Model: {model}")
+    print()
+
+    # Run evaluation
+    results = evaluate_config(
+        config_name=config_name,
+        config_dir=config_dir,
+        questions=questions,
+        expected_answers=expected_answers,
+        model=model,
+        parallel=parallel,
+        prompt_template=prompt_template,
+        save_raw=save_raw
+    )
+
+    # Try to read execution time from file if not provided
+    if execution_time is None:
+        execution_time_file = config_dir / "execution_time.txt"
+        if execution_time_file.exists():
+            try:
+                with open(execution_time_file, 'r') as f:
+                    execution_time = float(f.read().strip())
+                print(f"Read execution time from file: {execution_time} seconds")
+            except (ValueError, IOError) as e:
+                print(f"Warning: Could not read execution time from file: {e}")
+
+    # Also check environment variable (set by setup_and_run.sh)
+    if execution_time is None:
+        env_execution_time = os.environ.get("EXPORT_EXECUTION_TIME")
+        if env_execution_time:
+            try:
+                execution_time = float(env_execution_time)
+                print(f"Read execution time from environment: {execution_time} seconds")
+            except ValueError:
+                pass
+
+    # Save results
+    results_file = save_config_results(
+        config_dir, config_name, yaml_path.name, model,
+        questions, expected_answers, results,
+        experiment_name=experiment_name, config=config, execution_time=execution_time
+    )
+
+    # Calculate and log metrics
+    metrics = calculate_metrics(results)
+
+    # Log metrics for this config
+    print(f"\n{'=' * 80}")
+    print(f"METRICS FOR CONFIG: {config_name}")
+    print(f"{'=' * 80}")
+    print(f"  total_questions:  {metrics['total_questions']}")
+    print(f"  correct_count:    {metrics['correct_count']}")
+    print(f"  accuracy:         {metrics['accuracy']:.4f} ({metrics['accuracy']*100:.2f}%)")
+    print(f"  avg_score:        {metrics['avg_score']:.4f}")
+    print(f"  avg_confidence:   {metrics['avg_confidence']:.4f}")
+    if execution_time is not None:
+        print(f"  execution_time:   {execution_time:.2f} seconds")
+    print(f"{'=' * 80}")
+    print(f"\n✓ Results saved to: {results_file}")
+
+    # Print detailed results unless summary-only
+    if not summary_only:
+        print_config_results(config_name, results, questions, expected_answers)
+
+    return {
+        "results": results,
+        "questions": questions,
+        "expected_answers": expected_answers,
+        "model": model,
+        "metrics": metrics
+    }
+
+
+def print_overall_summary(all_results: Dict):
+    """Print overall summary across all configs"""
+    print(f"\n\n{'=' * 80}")
+    print("OVERALL SUMMARY")
+    print(f"{'=' * 80}")
+
+    total_questions = 0
+    total_correct = 0
+
+    for config_name, data in all_results.items():
+        if data is None:
+            continue
+        results = data["results"]
+        correct = sum(1 for r in results.values() if r.get("is_correct", False))
+        total = len(results)
+
+        total_questions += total
+        total_correct += correct
+
+        print(f"{config_name}: {correct}/{total} ({correct/total*100:.1f}%)")
+
+    print(f"\n{'-' * 80}")
+    if total_questions > 0:
+        print(f"TOTAL: {total_correct}/{total_questions} correct ({total_correct/total_questions*100:.1f}%)")
+    else:
+        print("TOTAL: No valid results")
+    print(f"{'=' * 80}")
+
+
+def discover_configs_for_evaluation(args, output_dir: Path, test_configs_dir: Path) -> List[Tuple[str, Path, Path]]:
+    """Discover configs to evaluate based on arguments"""
+    if args.config:
+        # Find specific config
+        configs = []
+        yaml_path = test_configs_dir / f"{args.config}.yaml"
+        if not yaml_path.exists():
+            print(f"Error: Could not find YAML for config: {args.config}")
+            return []
+
+        # Find matching output folder
+        for output_subdir in output_dir.iterdir():
+            if not output_subdir.is_dir():
+                continue
+            if output_subdir.name == args.config or output_subdir.name.startswith(f"{args.config}_"):
+                questions_dir = output_subdir / "questions"
+                if questions_dir.exists():
+                    configs = [(output_subdir.name, yaml_path, output_subdir)]
+                    break
+
+        if not configs:
+            print(f"Error: No questions folder found for config: {args.config}")
+            return []
+    else:
+        configs = discover_configs(output_dir, test_configs_dir)
+    
+    return configs
+
+
+def determine_model_from_config(config: Dict, override_model: str = None) -> str:
+    """Determine which model to use for evaluation"""
+    if override_model:
+        return override_model
+    
+    eval_config = config.get("evaluation", {})
+    llm_judge_config = eval_config.get("llm_judge", {})
+    model = llm_judge_config.get("model", "gpt-4o")
+    if ":" in model:
+        model = model.split(":", 1)[1]
+    
+    return model
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -409,15 +738,36 @@ def main():
         action="store_true",
         help="Save raw OpenAI responses to judge-eval folder"
     )
+    parser.add_argument(
+        "--experiment-name",
+        type=str,
+        default=None,
+        help="Experiment name for MongoDB (overrides EXPERIMENT_NAME env var)"
+    )
 
     args = parser.parse_args()
-    load_dotenv()  # loads .env from current working directory
-
-    # Check for OpenAI API key
-    if not os.environ.get("OPENAI_API_KEY"):
-        print("Error: OPENAI_API_KEY environment variable not set")
+    
+    # Load environment variables
+    load_environment_variables()
+    
+    # Validate configuration
+    db_name, connection_string, experiment_name_env = validate_configuration()
+    if db_name is None and connection_string is None and experiment_name_env is None:
+        # This means OPENAI_API_KEY was missing
         return 1
+    
+    # Use experiment name from command line argument, or environment variable, or generate one
+    experiment_name = args.experiment_name or experiment_name_env
+    if not experiment_name:
+        # Generate a default experiment name if still not set
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_name = f"experiment_{timestamp}"
+        print(f"⚠ No experiment name provided, using generated name: {experiment_name}")
+    else:
+        print(f"✓ Using experiment name: {experiment_name}")
 
+    # Validate paths
     output_dir = Path(args.output_dir)
     test_configs_dir = Path(args.test_configs_dir)
 
@@ -435,29 +785,7 @@ def main():
         prompt_template = load_prompt_template(args.prompt_template)
 
     # Discover configs
-    if args.config:
-        # Find specific config
-        configs = []
-        yaml_path = test_configs_dir / f"{args.config}.yaml"
-        if not yaml_path.exists():
-            print(f"Error: Could not find YAML for config: {args.config}")
-            return 1
-
-        # Find matching output folder
-        for output_subdir in output_dir.iterdir():
-            if not output_subdir.is_dir():
-                continue
-            if output_subdir.name == args.config or output_subdir.name.startswith(f"{args.config}_"):
-                questions_dir = output_subdir / "questions"
-                if questions_dir.exists():
-                    configs = [(output_subdir.name, yaml_path, output_subdir)]
-                    break
-
-        if not configs:
-            print(f"Error: No questions folder found for config: {args.config}")
-            return 1
-    else:
-        configs = discover_configs(output_dir, test_configs_dir)
+    configs = discover_configs_for_evaluation(args, output_dir, test_configs_dir)
 
     if not configs:
         print("No configs found to evaluate")
@@ -468,6 +796,8 @@ def main():
     print(f"{'=' * 80}")
     print(f"Configs to evaluate: {len(configs)}")
     print(f"Parallel workers: {args.parallel}")
+    if experiment_name:
+        print(f"Experiment name: {experiment_name}")
     print(f"{'=' * 80}\n")
 
     # Track overall statistics
@@ -475,99 +805,35 @@ def main():
 
     # Process each config
     for config_name, yaml_path, config_dir in configs:
-        print(f"\n{'=' * 80}")
-        print(f"Processing: {config_name}")
-        print(f"YAML: {yaml_path.name}")
-        print(f"{'=' * 80}")
-
-        # Load config YAML
-        try:
-            config = load_config_yaml(str(yaml_path))
-        except Exception as e:
-            print(f"Error loading YAML: {e}")
-            continue
-
-        # Extract questions and expected answers
-        benchmark = config.get("benchmark", {})
-        questions = benchmark.get("questions", [])
-        expected_answers = benchmark.get("expected_answers", [])
-
-        if not questions or not expected_answers:
-            print("No questions/answers found in config")
-            continue
-
-        if len(questions) != len(expected_answers):
-            print("Mismatch between questions and expected answers")
-            continue
-
-        print(f"Questions: {len(questions)}")
-
-        # Determine model
-        if args.model:
-            model = args.model
-        else:
-            eval_config = config.get("evaluation", {})
-            llm_judge_config = eval_config.get("llm_judge", {})
-            model = 'gpt-4.1'# llm_judge_config.get("model", "gpt-4o")
-            if ":" in model:
-                model = model.split(":", 1)[1]
-
-        print(f"Model: {model}")
-        print()
-
-        # Run evaluation
-        results = evaluate_config(
+        # Try to read execution time from file
+        execution_time = None
+        execution_time_file = config_dir / "execution_time.txt"
+        if execution_time_file.exists():
+            try:
+                with open(execution_time_file, 'r') as f:
+                    execution_time = float(f.read().strip())
+            except (ValueError, IOError):
+                pass
+        
+        # Process config (it will load the config internally)
+        result = process_single_config(
             config_name=config_name,
+            yaml_path=yaml_path,
             config_dir=config_dir,
-            questions=questions,
-            expected_answers=expected_answers,
-            model=model,
+            model=args.model,  # Pass override model, config loading happens inside
             parallel=args.parallel,
             prompt_template=prompt_template,
-            save_raw=args.save_raw
+            save_raw=args.save_raw,
+            experiment_name=experiment_name,
+            summary_only=args.summary_only,
+            execution_time=execution_time
         )
 
-        # Save results
-        results_file = save_config_results(
-            config_dir, config_name, yaml_path.name, model,
-            questions, expected_answers, results
-        )
-
-        print(f"\n✓ Results saved to: {results_file}")
-
-        # Store for overall summary
-        all_results[config_name] = {
-            "results": results,
-            "questions": questions,
-            "expected_answers": expected_answers,
-            "model": model
-        }
-
-        # Print detailed results unless summary-only
-        if not args.summary_only:
-            print_config_results(config_name, results, questions, expected_answers)
+        if result:
+            all_results[config_name] = result
 
     # Print overall summary
-    print(f"\n\n{'=' * 80}")
-    print("OVERALL SUMMARY")
-    print(f"{'=' * 80}")
-
-    total_questions = 0
-    total_correct = 0
-
-    for config_name, data in all_results.items():
-        results = data["results"]
-        correct = sum(1 for r in results.values() if r.get("is_correct", False))
-        total = len(results)
-
-        total_questions += total
-        total_correct += correct
-
-        print(f"{config_name}: {correct}/{total} ({correct/total*100:.1f}%)")
-
-    print(f"\n{'-' * 80}")
-    print(f"TOTAL: {total_correct}/{total_questions} correct ({total_correct/total_questions*100:.1f}%)")
-    print(f"{'=' * 80}")
+    print_overall_summary(all_results)
 
     return 0
 
