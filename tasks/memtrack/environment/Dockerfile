@@ -46,6 +46,9 @@ COPY tasks/memtrack/environment/CLAUDE.md /task_data/CLAUDE.md
 COPY tasks/memtrack/environment/parse_oracle_stub.py /task_data/parse_oracle_stub.py
 RUN chmod +x /task_data/parse_oracle_stub.py
 
+# Copy debug oracle files for DEBUG/stub mode
+COPY agents/debug/ /task_data/debug/
+
 # Copy secrets.env file from project root
 COPY secrets.env /workspace/secrets.env
 

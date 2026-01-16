@@ -8,7 +8,7 @@ set -e
 # Examples:
 #   TASK_CONFIGS="config_1,config_2" solve.sh
 #   TASK_CONFIGS=config_vg_15 solve.sh
-#   solve.sh config_1 config_2 config_3
+#   DEBUG=true TASK_CONFIGS=config_1 solve.sh  # Uses stub mode for faster development
 
 # Source secrets.env if available (for non-interactive Harbor runs)
 if [ -f /workspace/secrets.env ]; then
@@ -17,11 +17,14 @@ if [ -f /workspace/secrets.env ]; then
   set +a
 fi
 
-# Debug: Show environment variable value
-echo "[DEBUG] TASK_CONFIGS='${TASK_CONFIGS:-}'"
-echo "[DEBUG] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
-echo "[DEBUG] Command line args: $@"
-echo "[DEBUG] Number of args: $#"
+# Set DEBUG default to false
+DEBUG="${DEBUG:-false}"
+
+# Show environment variables
+echo "[INFO] TASK_CONFIGS='${TASK_CONFIGS:-}'"
+echo "[INFO] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
+echo "[INFO] DEBUG='${DEBUG}'"
+echo "[INFO] Command line args: $@"
 
 # Get configs from (in priority order):
 # 1. Environment variable TASK_CONFIGS (comma-separated)
@@ -79,68 +82,18 @@ for CONFIG_NAME in "${CONFIG_ARRAY[@]}"; do
   echo "Config file: $CONFIG_FILE"
   echo "========================================"
   
-  # Check if stub mode is enabled (only via environment variable or explicitly created file)
-  # Stub mode should ONLY be enabled if explicitly requested, not by leftover files
-  STUB_MODE_ENABLED=false
-  ORACLE_FILE=""
-  
-  # Check environment variable first (highest priority)
-  if [ "${STUB_MODE:-false}" = "true" ] || [ "${STUB_MODE:-false}" = "1" ]; then
-    STUB_MODE_ENABLED=true
-    echo "[DEBUG] Stub mode enabled via STUB_MODE environment variable"
+  # Check if DEBUG mode is enabled (uses stub to skip actual agent execution)
+  # DEBUG=true enables stub mode for faster development iteration
+  if [ "$DEBUG" = "true" ] || [ "$DEBUG" = "1" ]; then
+    echo ""
+    echo "⚠ DEBUG MODE ENABLED: Using stub instead of actual agent"
+    echo ""
+    
+    # In debug mode, pass STUB_MODE=true to setup_and_run.sh
+    # The stub mode will generate mock outputs for faster development
+    STUB_MODE=true /task_data/setup_and_run.sh "$CONFIG_FILE"
   else
-    # Only check for stub mode file if environment variable is not explicitly false
-    # This allows file-based stub mode when Harbor doesn't pass env vars
-    STUB_MODE_FILE_PATHS=(
-      "/workspace/solution/stub_mode.txt"
-      "/solution/stub_mode.txt"
-      "/workspace/stub_mode.txt"
-    )
-    
-    for stub_file in "${STUB_MODE_FILE_PATHS[@]}"; do
-      if [ -f "$stub_file" ]; then
-        STUB_MODE_ENABLED=true
-        echo "[DEBUG] Found stub mode file at: $stub_file"
-        break
-      fi
-    done
-  fi
-  
-  if [ "$STUB_MODE_ENABLED" = "true" ]; then
-    # Stub mode: use oracle file instead of running actual task
-    ORACLE_FILE="${ORACLE_FILE:-}"
-    
-    if [ -z "$ORACLE_FILE" ]; then
-      # Try to find oracle file in common locations (Harbor mounts solution/ directory)
-      POSSIBLE_ORACLE_PATHS=(
-        "/workspace/solution/oracle.txt"
-        "/solution/oracle.txt"
-        "/workspace/oracle.txt"
-        "./oracle.txt"
-        "oracle.txt"
-      )
-      
-      for path in "${POSSIBLE_ORACLE_PATHS[@]}"; do
-        if [ -f "$path" ]; then
-          ORACLE_FILE="$path"
-          echo "[DEBUG] Found oracle file at: $path"
-          break
-        fi
-      done
-    fi
-    
-    if [ -n "$ORACLE_FILE" ] && [ -f "$ORACLE_FILE" ]; then
-      echo "⚠ STUB MODE: Using oracle file instead of running task"
-      echo "Oracle file: $ORACLE_FILE"
-      STUB_MODE=true ORACLE_FILE="$ORACLE_FILE" /task_data/setup_and_run.sh "$CONFIG_FILE"
-    else
-      echo "Warning: STUB_MODE enabled but oracle file not found"
-      echo "Attempted paths: ${POSSIBLE_ORACLE_PATHS[*]}"
-      echo "Falling back to normal mode..."
-      /task_data/setup_and_run.sh "$CONFIG_FILE"
-    fi
-  else
-    # Normal mode: run the actual task
+    # Normal mode: run the actual task with the agent
     /task_data/setup_and_run.sh "$CONFIG_FILE"
   fi
   

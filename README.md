@@ -58,20 +58,20 @@ Run tasks using the Harbor command with environment variables:
 ```bash
 # Run multiple configs
 EXPERIMENT_NAME=my_experiment TASK_CONFIGS=config_1,config_2 harbor run \
-  -p tasks/memtrack \
+  -d memtrack@1.0 \
   --registry-path datasets/memtrack/registry.json \
   --force-build
 
 # Run a single config
 EXPERIMENT_NAME=baseline_test TASK_CONFIGS=config_vg_15 harbor run \
-  -p tasks/memtrack \
+  -d memtrack@1.0 \
   -a claude-code \
   -m anthropic/claude-sonnet-4-20250514 \
   --registry-path datasets/memtrack/registry.json
 
 # Run with Daytona for cloud scaling
 EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
-  -p tasks/memtrack \
+  -d memtrack@1.0 \
   -a claude-code \
   -m anthropic/claude-sonnet-4-20250514 \
   --registry-path datasets/memtrack/registry.json \
@@ -81,10 +81,21 @@ EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
 
 ### Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `EXPERIMENT_NAME` | Name for grouping results in MongoDB | `baseline_2025` |
-| `TASK_CONFIGS` | Comma-separated list of config names | `config_1,config_2,config_vg_15` |
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `EXPERIMENT_NAME` | Name for grouping results in MongoDB | (none) | `baseline_2025` |
+| `TASK_CONFIGS` | Comma-separated list of config names | `config_1` | `config_1,config_2,config_vg_15` |
+| `DEBUG` | Enable stub mode for faster development (skips agent execution) | `false` | `true` |
+
+**DEBUG Mode**: When `DEBUG=true`, the task uses a stub instead of running the actual agent. This speeds up development iteration by skipping the time-consuming agent execution. Useful for testing the evaluation pipeline, logging, and other infrastructure.
+
+```bash
+# Fast development run with DEBUG mode
+DEBUG=true EXPERIMENT_NAME=dev_test TASK_CONFIGS=config_1 harbor run \
+  -d memtrack@1.0 \
+  --registry-path datasets/memtrack/registry.json \
+  --force-build
+```
 
 To add a new environment variable, you need to define it in the terminal execution command and add it to `services.main.environment` in `tasks/memtrack/environment/docker-compose.yaml`.
 

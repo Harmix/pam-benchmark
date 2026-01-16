@@ -10,6 +10,7 @@ services:
       - TEST_DIR=${TEST_DIR}
       - EXPERIMENT_NAME=${EXPERIMENT_NAME}
       - TASK_CONFIGS=${TASK_CONFIGS}
+      - DEBUG=${DEBUG}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:

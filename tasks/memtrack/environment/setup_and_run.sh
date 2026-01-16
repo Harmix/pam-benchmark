@@ -17,40 +17,84 @@ CONFIG_LOG_DIR="/task_logs/${CONFIG_NAME}_${TIMESTAMP}"
 QUESTIONS_DIR="$CONFIG_LOG_DIR/questions"
 mkdir -p "$QUESTIONS_DIR"
 
-# If stub mode is enabled, parse oracle file and exit
+# If stub mode is enabled (DEBUG=true), use oracle file to generate outputs
 if [ "$STUB_MODE" = "true" ] || [ "$STUB_MODE" = "1" ]; then
-    if [ -z "$ORACLE_FILE" ]; then
-        echo "Error: STUB_MODE enabled but ORACLE_FILE not set"
-        echo "Usage: STUB_MODE=true ORACLE_FILE=/path/to/oracle.txt $0 <config_file>"
-        exit 1
-    fi
-    
-    if [ ! -f "$ORACLE_FILE" ]; then
-        echo "Error: Oracle file not found: $ORACLE_FILE"
-        exit 1
-    fi
-    
     echo "========================================"
-    echo "STUB MODE: Using oracle file"
+    echo "DEBUG/STUB MODE: Using oracle file"
     echo "========================================"
     echo "Config: $CONFIG_NAME"
-    echo "Oracle file: $ORACLE_FILE"
     echo "Output directory: $CONFIG_LOG_DIR"
     echo ""
+    
+    # Look for oracle file in debug directory
+    ORACLE_FILE="/task_data/debug/benchmark__S84U8Q7/agent/oracle.txt"
+    
+    if [ ! -f "$ORACLE_FILE" ]; then
+        echo "Error: Oracle file not found at $ORACLE_FILE"
+        echo "Please ensure the oracle file is copied to agents/debug/ directory"
+        exit 1
+    fi
+    
+    echo "Oracle file: $ORACLE_FILE"
     
     # Use Python script to parse oracle file
     PARSE_SCRIPT="/task_data/parse_oracle_stub.py"
     if [ -f "$PARSE_SCRIPT" ]; then
+        echo "Parsing oracle file..."
         python3 "$PARSE_SCRIPT" "$ORACLE_FILE" "$CONFIG_FILE" "$CONFIG_LOG_DIR" "$QUESTIONS_DIR"
     else
         echo "Error: Parser script not found at $PARSE_SCRIPT"
         exit 1
     fi
     
+    # Record execution time
+    EXECUTION_END_TIME=$(date +%s.%N)
+    EXECUTION_DURATION=$(awk "BEGIN {printf \"%.2f\", $EXECUTION_END_TIME - $EXECUTION_START_TIME}")
+    echo "$EXECUTION_DURATION" > "$CONFIG_LOG_DIR/execution_time.txt"
+    
     echo ""
     echo "========================================"
-    echo "Stub mode complete: $CONFIG_NAME"
+    echo "DEBUG MODE complete: $CONFIG_NAME"
+    echo "Execution time: ${EXECUTION_DURATION} seconds"
     echo "========================================"
+    
+    # Run LLM Judge evaluation
+    echo ""
+    echo "Running LLM Judge Evaluation..."
+    
+    EVAL_SCRIPT=""
+    POSSIBLE_EVAL_PATHS=(
+        "/workspace/solution/llm_judge_eval.py"
+        "/solution/llm_judge_eval.py"
+    )
+    
+    for path in "${POSSIBLE_EVAL_PATHS[@]}"; do
+        if [ -f "$path" ]; then
+            EVAL_SCRIPT="$path"
+            break
+        fi
+    done
+    
+    if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ] && [ -n "${OPENAI_API_KEY:-}" ]; then
+        EVAL_CMD=(
+            python3 "$EVAL_SCRIPT"
+            --output-dir /task_logs
+            --test-configs-dir /task_data/test_configs
+            --config "$CONFIG_NAME"
+            --summary-only
+        )
+        
+        if [ -n "${EXPERIMENT_NAME:-}" ]; then
+            EVAL_CMD+=(--experiment-name "$EXPERIMENT_NAME")
+        fi
+        
+        EXPORT_EXECUTION_TIME="$EXECUTION_DURATION" \
+        HARBOR_PROJECT_NAME="${HARBOR_PROJECT_NAME:-tasks/memtrack}" \
+        "${EVAL_CMD[@]}" || echo "Warning: Evaluation failed"
+    else
+        echo "Skipping evaluation (OPENAI_API_KEY not set or eval script not found)"
+    fi
+    
     exit 0
 fi
 
