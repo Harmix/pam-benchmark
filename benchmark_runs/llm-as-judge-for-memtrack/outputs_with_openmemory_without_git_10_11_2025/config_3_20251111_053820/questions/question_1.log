@@ -1,3 +1,0 @@
-Based on my analysis of the Linear tickets, I can provide you with the complete answer:
-
-[FINAL ANSWER] Social login integration (OAuth with Google, Facebook, and GitHub), Security vulnerabilities including token storage in localStorage vulnerable to XSS, insufficient redirect URI validation, missing state parameter validation, and no PKCE implementation for public clients, Multi-factor authentication system with email verification as the primary method

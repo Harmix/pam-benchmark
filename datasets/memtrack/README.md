@@ -41,4 +41,4 @@ The dataset will be made available to the task at runtime.
 
 ## Integration with Harbor
 
-This dataset follows Harbor's dataset conventions and can be referenced by Harbor tasks. The dataset is copied into the Docker container during build at `/benchmark_data/test_configs/` and `/benchmark_data/test_event_histories/`.
+This dataset follows Harbor's dataset conventions and can be referenced by Harbor tasks. The dataset is copied into the Docker container during build at `/task_data/test_configs/` and `/task_data/test_event_histories/`.

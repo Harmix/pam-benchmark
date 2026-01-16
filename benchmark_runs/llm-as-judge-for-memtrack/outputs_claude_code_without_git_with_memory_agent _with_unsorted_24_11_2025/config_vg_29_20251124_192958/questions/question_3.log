@@ -1,9 +1,0 @@
-Based on the event history data I've processed, I can provide you with the precise answer:
-
-**Performance Metric Threshold:** 38% recall on technical queries
-
-**Enterprise Client:** DataCorp
-
-**Context:** DataCorp had a 500GB technical documentation corpus where their engineering team couldn't find specific API method names using the sparse search. Bob ran diagnostics and discovered the recall had dropped to 38% on technical queries (event_history.json:33). Alice stated this was below their 40% SLA minimum threshold (event_history.json:43), which triggered the decision to abandon pure sparse search and investigate dense embedding approaches.
-
-This 38% recall measurement on DataCorp's use case was the specific data point that forced the architectural shift from pure BM25 sparse search to exploring dense embeddings, ultimately leading to the hybrid architecture that achieved a 78% recall improvement.

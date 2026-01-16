@@ -1,7 +1,0 @@
-**Answer:**
-
-Diana first announced to customers that version 2.4.2 was stable in the **#customer-success** channel on **December 11, 2024 at 14:45:00 UTC**.
-
-The announcement stated: "UPDATE FOR CUSTOMERS: Version 2.4.2 is now stable and resolves all security concerns. Goldman Sachs and JPMorgan deployments proceeding smoothly with enhanced performance."
-
-Notably, this announcement was premature, as evidenced by Bob's immediate response at 15:00:00 in #engineering stating that v2.4.2 was NOT stable for Goldman and was causing $2M+ losses. Diana had already sent the message to 47 enterprise customers by that point.

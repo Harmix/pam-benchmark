@@ -1,0 +1,23 @@
+services:
+  main:
+    build:
+      context: ${CONTEXT_DIR}/../../../  # Set to project root (3 levels up from environment/)
+      dockerfile: ${CONTEXT_DIR}/Dockerfile
+    image: ${MAIN_IMAGE_NAME}
+    command: [ "sh", "-c", "sleep infinity" ]
+    network_mode: ${NETWORK_MODE:-bridge}
+    environment:
+      - TEST_DIR=${TEST_DIR}
+      - EXPERIMENT_NAME=${EXPERIMENT_NAME}
+      - TASK_CONFIGS=${TASK_CONFIGS}
+      - DEBUG=${DEBUG}
+    env_file:
+      - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
+    volumes:
+      - ${HOST_VERIFIER_LOGS_PATH}:${ENV_VERIFIER_LOGS_PATH}
+      - ${HOST_AGENT_LOGS_PATH}:${ENV_AGENT_LOGS_PATH}
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPUS}
+          memory: ${MEMORY}

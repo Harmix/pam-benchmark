@@ -1,6 +1,0 @@
-Perfect! I have found the information. Based on the Linear tickets:
-
-- **TICK-0004** states: "Analysis confirms the advanced monitoring system is causing severe database performance degradation. The comprehensive metrics collection is generating **50x more database queries than anticipated**."
-- **TICK-0005** shows the emergency rollback was executed by the **platform team** (led by alex)
-
-[FINAL ANSWER] database performance degradation from 50x more queries, platform team

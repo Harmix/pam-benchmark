@@ -1,7 +1,0 @@
-Based on the search results, the **first appearance of an email input selector** is in:
-
-**`browser_use/actor/README.md:233`**
-
-This line contains: `'() => document.querySelector("input[name=\\"email\\"]")'`
-
-This is an example showing how to use complex selectors in JavaScript within the browser-use actor documentation.

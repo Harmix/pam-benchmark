@@ -1,1 +1,0 @@
-Based on the event history data, **MegaCorp's extremely restrictive 10 requests/minute API rate limit prevented the evaluation harness from making the frequent API calls needed to track real-time workflow state and multi-agent coordination**, which was fundamental to Solution H's architecture.

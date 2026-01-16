@@ -1,185 +1,153 @@
-# PAM Benchmark Harbor Task
+# PAM Benchmark
 
-This Harbor task structure allows you to run PAM (Proactive AI Manager) benchmark evaluations using the Harbor framework.
+A Harbor-based benchmark for evaluating LLM agents on memory and context management tasks using the PAM (Proactive AI Manager) framework.
 
-## Task Structure
+## Overview
+
+This benchmark evaluates an LLM agent's ability to:
+1. Process event history data (Linear tickets and Slack messages) from JSON files
+2. Organize the data according to the PAM Memory Agent Guide structure
+3. Answer questions about the processed data based on the organized information
+
+## Project Structure
 
 ```
 pam-benchmark/
-├── benchmark/             # Harbor task definition
-│   ├── instruction.md     # Task description and requirements
-│   ├── task.toml         # Harbor task configuration
-│   ├── environment/
-│   │   └── Dockerfile    # Container environment definition
-│   ├── tests/
-│   │   ├── test.sh       # Test verification script
-│   │   └── test_outputs.py # Pytest unit tests
-│   ├── solution/         # Solution scripts
-│   ├── setup_and_run.sh  # Main execution script
-│   ├── init.py           # PAM memory structure generator
-│   ├── INIT.md           # PAM Memory Agent Guide
-│   ├── INTRO_TEMPLATE.md # Company template
-│   └── CLAUDE.md         # Claude Code system context
-└── datasets/
-    └── memtrack/          # Dataset (separate from task)
-        ├── test_configs/  # YAML configuration files
-        ├── test_event_histories/ # JSON event history files
-        └── registry.json  # Dataset registry metadata
+├── tasks/
+│   └── memtrack/                  # Harbor task definition
+│       ├── environment/
+│       │   ├── Dockerfile         # Container environment
+│       │   ├── docker-compose.yaml
+│       │   ├── requirements.txt   # Python dependencies
+│       │   ├── setup_and_run.sh   # Task execution script
+│       │   └── ...                # PAM guide files
+│       ├── solution/
+│       │   ├── solve.sh           # Entry point script
+│       │   └── llm_judge_eval.py  # LLM evaluation script
+│       ├── tests/
+│       │   └── test_outputs.py    # Verification tests
+│       ├── instruction.md         # Task description
+│       └── task.toml              # Harbor task config
+├── datasets/
+│   └── memtrack/                  # Dataset (separate from task)
+│       ├── test_configs/          # YAML configuration files
+│       ├── test_event_histories/  # JSON event history files
+│       └── registry.json          # Dataset registry metadata
+└── secrets.env                    # API keys (gitignored)
 ```
 
 ## Prerequisites
 
-1. Install Harbor framework
-2. Set `ANTHROPIC_API_KEY` environment variable (required for LLM judge evaluation)
-3. Have Docker installed and running
-4. (Optional) Configure MongoDB for results storage:
-   - Set `DB_NAME` in `benchmark/environment/secrets.env`
-   - Set `CONNECTION_STRING` in `benchmark/environment/secrets.env`
+1. Install [Harbor framework](https://harborframework.com/docs)
+2. Have Docker installed and running
+3. Create `secrets.env` in the project root with:
+   ```bash
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   # Optional: MongoDB for results storage
+   DB_NAME=your_database_name
+   CONNECTION_STRING=mongodb://your_connection_string
+   ```
 
-## Usage
+## Quick Start
 
-### Start Interactive Environment
+### Running with Harbor
 
-To start an interactive environment (similar to the original docker-compose setup):
-
-```bash
-harbor tasks start-env -p benchmark -e docker -a -i
-```
-
-This will:
-- Build the Docker image from `environment/Dockerfile`
-- Start an interactive container
-- Mount the task files into the container
-- Give you a shell to work with
-
-### Running a Benchmark
-
-Once inside the interactive environment, you can run benchmarks:
+Run tasks using the Harbor command with environment variables:
 
 ```bash
+# Run multiple configs
+EXPERIMENT_NAME=my_experiment TASK_CONFIGS=config_1,config_2 harbor run \
+  -d memtrack@1.0 \
+  --registry-path datasets/memtrack/registry.json \
+  --force-build
+
 # Run a single config
-/benchmark_data/setup_and_run.sh /benchmark_data/test_configs/config_1.yaml
+EXPERIMENT_NAME=baseline_test TASK_CONFIGS=config_vg_15 harbor run \
+  -d memtrack@1.0 \
+  -a claude-code \
+  -m anthropic/claude-sonnet-4-20250514 \
+  --registry-path datasets/memtrack/registry.json
 
-# Or run a range (if you have the run_range_isolated.sh script)
-# Note: You may need to copy this script into the task directory if needed
+# Run with Daytona for cloud scaling
+EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
+  -d memtrack@1.0 \
+  -a claude-code \
+  -m anthropic/claude-sonnet-4-20250514 \
+  --registry-path datasets/memtrack/registry.json \
+  --env daytona \
+  -n 8
 ```
 
-### Running Tasks Non-Interactively with Configs
+### Environment Variables
 
-**Quick Start: Use the helper script (Recommended)**
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `EXPERIMENT_NAME` | Name for grouping results in MongoDB | (none) | `baseline_2025` |
+| `TASK_CONFIGS` | Comma-separated list of config names | `config_1` | `config_1,config_2,config_vg_15` |
+| `DEBUG` | Enable stub mode for faster development (skips agent execution) | `false` | `true` |
 
-From the project root, use the `run_benchmark.sh` script:
+**DEBUG Mode**: When `DEBUG=true`, the task uses a stub instead of running the actual agent. This speeds up development iteration by skipping the time-consuming agent execution. Useful for testing the evaluation pipeline, logging, and other infrastructure.
 
 ```bash
-# Interactive mode - will prompt for configs
-./run_benchmark.sh
-
-# Or specify configs directly
-./run_benchmark.sh config_1 config_2 config_3
-
-# With Harbor arguments
-./run_benchmark.sh config_1 config_2 -a oracle -m claude-3-5-sonnet-20241022
+# Fast development run with DEBUG mode
+DEBUG=true EXPERIMENT_NAME=dev_test TASK_CONFIGS=config_1 harbor run \
+  -d memtrack@1.0 \
+  --registry-path datasets/memtrack/registry.json \
+  --force-build
 ```
 
-The script will:
-- Validate that configs exist
-- Create `benchmark_configs.txt` automatically
-- Start Harbor with the appropriate settings
+To add a new environment variable, you need to define it in the terminal execution command and add it to `services.main.environment` in `tasks/memtrack/environment/docker-compose.yaml`.
 
-**Manual Method: Create config file**
+### Available Configs
 
-Alternatively, create a `benchmark_configs.txt` file manually:
+List available configs:
+```bash
+ls datasets/memtrack/test_configs/
+```
 
-**Step 1: Create the config file**
+Common configs include:
+- `config_1` through `config_5` - Basic test scenarios
+- `config_vg_1` through `config_vg_32` - Extended validation scenarios
 
-Create `benchmark_configs.txt` in the `benchmark/solution/` directory (Harbor mounts this directory):
+## Build Configuration
+
+The Docker build uses `docker-compose.yaml` with the build context set to the **project root**. This allows direct access to:
+- `datasets/memtrack/` - the dataset files
+- `tasks/memtrack/environment/` - Dockerfile and environment files
+- `secrets.env` - API keys and credentials (at project root)
+
+No dataset copying is required since the build context includes the entire project.
+
+### Manual Build with Docker Compose
 
 ```bash
-# In the benchmark/solution/ directory
-echo "config_1 config_2 config_3" > benchmark/solution/benchmark_configs.txt
+# From the project root
+CONTEXT_DIR=$(pwd)/tasks/memtrack/environment docker-compose -f tasks/memtrack/environment/docker-compose.yaml build
 ```
 
-Or one config per line (comments allowed):
-```bash
-cat > benchmark/solution/benchmark_configs.txt << EOF
-# Run these configs
-config_1
-config_2
-config_3
-EOF
-```
+### Docker Compose Environment Variables
 
-**Step 2: Run Harbor**
+The `docker-compose.yaml` expects these environment variables:
+- `CONTEXT_DIR` - Absolute path to task's environment/ directory
+- `MAIN_IMAGE_NAME` - Name for the built image
+- `EXPERIMENT_NAME` - Experiment name for result grouping
+- `TASK_CONFIGS` - Comma-separated config names to run
+- `CPUS` / `MEMORY` - Resource limits
+- `NETWORK_MODE` - Docker network mode (defaults to "bridge")
 
-```bash
-harbor run -p benchmark -a <agent-name> -m <model>
-```
+## Task Execution Flow
 
-Harbor mounts the `solution/` directory, so the solution script will automatically find and read `benchmark_configs.txt` from `/workspace/solution/benchmark_configs.txt`.
+1. **Initialization**: The agent receives a YAML config file and corresponding event history JSON
+2. **Memory Structure Creation**: Run `init.py` to create the PAM folder structure
+3. **Data Processing**: Process event history JSON and organize it into:
+   - Daily digests (chronological view)
+   - Linear objects (ticket history)
+   - Slack threads (channel conversations)
+4. **Question Answering**: Answer questions based on the organized data
+5. **Evaluation**: LLM judge evaluates answers against expected responses
 
-**Alternative: Environment variable (if supported)**
-
-If your setup supports it, you can also try:
-```bash
-BENCHMARK_CONFIGS="config_1 config_2" harbor run -p benchmark -a <agent-name> -m <model>
-```
-
-**Default behavior**
-
-If no configs are specified (no file and no env var), it defaults to `config_1`.
-
-The `solution/solve.sh` script reads configs in this priority order:
-1. `BENCHMARK_CONFIGS` environment variable (space-separated)
-2. `/workspace/solution/benchmark_configs.txt` file (Harbor mounts solution/ directory here)
-3. Command-line arguments (for direct execution)
-4. Default: `config_1`
-
-It runs `/benchmark_data/setup_and_run.sh` for each config sequentially.
-
-**Execution Workflow:**
-1. For each config:
-   - Benchmark executes (agent processes event history and answers questions)
-   - Execution time is tracked
-   - LLM Judge evaluation runs immediately after completion
-   - Results (metrics + execution time) are saved to MongoDB (if configured)
-2. Process repeats for next config
-
-**Note**: The current setup is optimized for claude-code which is pre-installed in the container. You may need to configure Harbor to use the container's claude-code installation.
-
-## Task Configuration
-
-The task is configured in `task.toml`:
-- **Timeout**: 30 minutes for both agent and verifier
-- **Resources**: 2 CPUs, 4GB RAM, 20GB storage
-- **Difficulty**: Hard
-- **Category**: Multi-modal reasoning
-
-## Dataset
-
-The dataset is stored separately in `datasets/memtrack/` following Harbor's separation of datasets from tasks:
-
-- **datasets/memtrack/test_configs/**: Contains YAML files defining benchmark scenarios
-- **datasets/memtrack/test_event_histories/**: Contains JSON files with Linear and Slack event data
-
-Each config file references an event history file and defines:
-- Agent configuration
-- Benchmark questions
-- Expected answers
-
-See `datasets/memtrack/README.md` for more information about the dataset structure and how to use it with Harbor commands.
-
-**Note**: Before building the Docker image, run `benchmark/prepare_build.sh` to copy the dataset into the task directory so it's available in the Docker build context. See `benchmark/BUILD.md` for build instructions.
-
-## Environment Details
-
-The Docker environment includes:
-- Python 3.11
-- Claude Code v2.0.76 (installed globally)
-- yq for YAML parsing
-- System tools (curl, git, jq, build-essential, tree)
-- Python packages: openai, pyyaml, pydantic, python-dotenv, pymongo
-
-## Evaluation and Results Storage
+## Evaluation and Results
 
 ### LLM-as-Judge Evaluation
 
@@ -189,86 +157,63 @@ After each config execution, the system automatically:
 3. Logs execution time for the config
 4. Saves results to MongoDB (if configured)
 
-### MongoDB Integration
+### MongoDB Results Structure
 
-Results are saved to MongoDB with the following structure (one record per config):
+Results are saved with the following structure:
 
 ```json
 {
-  "experiment_name": "experiment_20250112_143022_config_1_config_2",
+  "experiment_name": "my_experiment",
   "config_name": "config_1",
   "dataset_name": "event_history_1",
   "agent_name": "CodeAgent",
-  "task_name": "config_1",
   "total_questions": 3,
   "correct_count": 2,
   "accuracy": 0.6667,
   "avg_score": 0.85,
   "avg_confidence": 0.92,
   "execution_time_seconds": 245.67,
-  "timestamp": "2025-01-12T14:30:22.123Z",
-  "created_at": "2025-01-12T14:30:22.123456"
+  "timestamp": "2025-01-16T14:30:22.123Z"
 }
 ```
 
-**Experiment Name:**
-- Automatically generated if not provided: `experiment_YYYYMMDD_HHMMSS_<config_summary>`
-- Can be set via `EXPERIMENT_NAME` environment variable when running `run_benchmark.sh`
-- All configs from the same run share the same experiment name, allowing you to group related benchmark runs
-- Example: `EXPERIMENT_NAME=baseline_test_2025 ./run_benchmark.sh config_1 config_2`
-
-**Configuration:**
-Add to `benchmark/environment/secrets.env`:
-```bash
-DB_NAME=your_database_name
-CONNECTION_STRING=mongodb://your_connection_string
-```
-
-### Running in Stub Mode (for fast debugging)
-
-To use the stub mode, which generates logs from a pre-recorded agent output (`oracle.txt`) instead of running the full benchmark:
-
-```bash
-STUB_MODE=true ORACLE_FILE=./jobs/2026-01-12__11-08-06/benchmark__b9NqGZ2/agent/oracle.txt ./run_benchmark.sh config_1
-```
-
-- Set `STUB_MODE=true` environment variable
-- Provide the `ORACLE_FILE` environment variable pointing to the raw agent output file from a previous run
-- The `run_benchmark.sh` script will automatically copy `oracle.txt` to `benchmark/solution/oracle.txt` and create a `benchmark/solution/stub_mode.txt` flag file for the container
-- The `setup_and_run.sh` script will then use `parse_oracle_stub.py` to generate the benchmark logs, allowing the LLM Judge evaluation to run quickly
-- Execution time in stub mode reflects the time to parse the oracle file, not the actual benchmark execution
-
-## Differences from Original Setup
-
-The Harbor version:
-- Uses Harbor's task structure instead of docker-compose
-- Can be run with Harbor's agent system
-- Maintains the same execution flow via `setup_and_run.sh`
-- Test verification uses Harbor's standard test format
-
 ## Output Structure
 
-After running benchmarks, you'll find:
+After running tasks, logs are available at `/task_logs/` inside the container:
 
 ```
-/benchmark_logs/
-├── config_1_20250112_143022/
-│   ├── summary.txt              # Summary of the benchmark run
-│   ├── processing.log            # Initial data processing log
-│   ├── execution_time.txt        # Execution duration in seconds
+/task_logs/
+├── config_1_20250116_143022/
+│   ├── summary.txt              # Summary of the task run
+│   ├── processing.log           # Initial data processing log
+│   ├── execution_time.txt       # Execution duration in seconds
 │   ├── questions/
-│   │   ├── question_1.log        # Agent's answer to question 1
-│   │   ├── question_2.log        # Agent's answer to question 2
+│   │   ├── question_1.log       # Agent's answer to question 1
+│   │   ├── question_2.log       # Agent's answer to question 2
 │   │   └── ...
-│   └── llm_judge_results.json    # Evaluation results (if evaluation ran)
-├── config_2_20250112_143045/
-│   └── ...
+│   └── llm_judge_results.json   # Evaluation results
+└── config_2_20250116_143545/
+    └── ...
 ```
 
-## Next Steps
+## Interactive Environment
 
-1. **View Results**: Check MongoDB for aggregated results across all configs
-2. **Analyze Performance**: Use execution times and accuracy metrics to compare different agents/configurations
-3. **Enhanced Tests**: Update `tests/test_outputs.py` with specific verification logic for your benchmarks
-4. **Agent Configuration**: Configure Harbor to use claude-code if needed for non-interactive runs
+To start an interactive environment for debugging:
 
+```bash
+harbor tasks start-env -p tasks/memtrack -e docker -a -i
+```
+
+Once inside, you can run tasks manually:
+
+```bash
+/task_data/setup_and_run.sh /task_data/test_configs/config_1.yaml
+```
+
+## Container Environment
+
+The Docker environment includes:
+- Python 3.11 with system dependencies (curl, git, jq, build-essential, tree)
+- yq for YAML parsing
+- Node.js 20 and Claude Code v2.0.76
+- Python packages: openai, pyyaml, pydantic, python-dotenv, pymongo

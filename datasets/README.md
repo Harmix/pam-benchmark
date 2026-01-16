@@ -17,7 +17,7 @@ datasets/
 
 Datasets are separate from tasks and can be referenced by multiple tasks. When building a Docker image for a task, the dataset needs to be available in the build context.
 
-For the MemTrack benchmark task, the dataset is copied into the task directory during the build process using `benchmark/prepare_build.sh`.
+For the MemTrack task (`tasks/memtrack`), the Docker build context is set to the project root, so the dataset is directly accessible during the build without any copying.
 
 ## Adding New Datasets
 
