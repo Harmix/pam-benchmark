@@ -1,0 +1,405 @@
+[
+  {
+    "timestamp": "20250515T0900",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "NeMo Run CLI Factory Function Overwrite Integration",
+      "description": "Integrate support for factory function parameter overrides in CLI to enable flexible model configuration workflows. This will allow users to dynamically override specific parameters of factory functions without needing to recreate entire configuration files.",
+      "team": "engineering",
+      "priority": "high",
+      "lead": "sarah_chen",
+      "start_date": "2025-05-15",
+      "expected_finish_date": "2025-05-30",
+      "status": "todo",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["cli", "factory-functions", "configuration", "infrastructure"],
+      "attached_resources": [
+        "/design/cli-factory-override-spec.pdf",
+        "/research/factory-function-requirements.md"
+      ]
+    }
+  },
+  {
+    "timestamp": "20250515T1030",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen",
+      "message": "Starting work on the NeMo Run CLI factory function overwrite feature today. Going to analyze the current lazy.py implementation and test parameter handling."
+    }
+  },
+  {
+    "timestamp": "20250515T1045",
+    "platform": "slack",
+    "generation_type": "manual", 
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "jake_martinez",
+      "message": "Anyone else having trouble with the new coffee machine settings? The interface is more complex than our CLI systems 😅"
+    }
+  },
+  {
+    "timestamp": "20250515T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "mike_rodriguez",
+      "message": "Sarah, for the factory function work, remember the model configuration I created last month has a default batch size of 32. Might be relevant for your testing."
+    }
+  },
+  {
+    "timestamp": "20250515T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "alex_kim",
+      "message": "Deploying security updates to development servers this afternoon. All CLI testing should be completed by 3 PM to avoid conflicts."
+    }
+  },
+  {
+    "timestamp": "20250515T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering", 
+      "sender": "sarah_chen",
+      "message": "Encountering some issues with factory function parameter overwrites. The problem is in that conversion method David mentioned last month - around the area where it processes argument dictionaries."
+    }
+  },
+  {
+    "timestamp": "20250515T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "david_wong",
+      "message": "What specific error are you seeing? The _args_to_dictconfig function has had some edge cases with type conversions."
+    }
+  },
+  {
+    "timestamp": "20250515T1500",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "NeMo Run CLI Factory Function Overwrite Integration",
+      "description": "Integrate support for factory function parameter overrides in CLI to enable flexible model configuration workflows. This will allow users to dynamically override specific parameters of factory functions without needing to recreate entire configuration files.\n\nENCOUNTERED ISSUE: Factory function string conversion bug in lazy.py _args_to_dictconfig method. When overriding parameters on factory functions, string factory references get converted to empty dicts instead of preserving the factory reference.",
+      "team": "engineering",
+      "priority": "high", 
+      "lead": "sarah_chen",
+      "start_date": "2025-05-15",
+      "expected_finish_date": "2025-05-30",
+      "status": "in_progress",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["cli", "factory-functions", "configuration", "infrastructure", "bug-investigation"],
+      "attached_resources": [
+        "/design/cli-factory-override-spec.pdf",
+        "/research/factory-function-requirements.md"
+      ]
+    }
+  },
+  {
+    "timestamp": "20250515T1515",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen", 
+      "message": "The test case shows the problem clearly. When I override parameters, something gets lost. The command pattern is straightforward but the behavior is wrong."
+    }
+  },
+  {
+    "timestamp": "20250515T1545",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "lisa_park",
+      "message": "Team lunch at that new Thai place anyone? They have amazing pad thai and the portions are generous!"
+    }
+  },
+  {
+    "timestamp": "20250515T1600",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Investigate CLI Factory Function Parameter Overwrite Bug",
+      "description": "Critical bug found during factory function integration work. When users specify a factory function and then override its parameters (e.g., model=my_factory model.param=value), the factory reference gets converted to an empty dict instead of preserving the factory with updated parameters.\n\nRoot cause appears to be in nemo_run/cli/lazy.py around line 724 in the _args_to_dictconfig function. Need to investigate string factory preservation logic.",
+      "team": "engineering", 
+      "priority": "urgent",
+      "lead": "david_wong",
+      "start_date": "2025-05-15",
+      "expected_finish_date": "2025-05-17", 
+      "status": "todo",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["bug", "cli", "factory-functions", "urgent"],
+      "attached_resources": []
+    }
+  },
+  {
+    "timestamp": "20250516T0930",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "david_wong",
+      "message": "Good morning team. Taking over the factory function bug investigation. Sarah, can you share the exact command line args you were testing with?"
+    }
+  },
+  {
+    "timestamp": "20250516T0945",
+    "platform": "slack", 
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen",
+      "message": "Hey David, I was testing with the specific case from the ticket. The same issue happens every time."
+    }
+  },
+  {
+    "timestamp": "20250516T1015",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "alex_kim",
+      "message": "Security updates completed successfully. All systems back to normal operation. CLI testing can resume."
+    }
+  },
+  {
+    "timestamp": "20250516T1100",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Investigate CLI Factory Function Parameter Overwrite Bug",
+      "description": "Critical bug found during factory function integration work. When users specify a factory function and then override its parameters, the factory reference gets converted to an empty dict instead of preserving the factory with updated parameters.\n\nRoot cause appears to be in a specific function. The problematic code converts values incorrectly.\n\nUPDATE: Confirmed reproduction. Issue is in type conversion logic where factories are incorrectly handled.",
+      "team": "engineering",
+      "priority": "urgent", 
+      "lead": "david_wong",
+      "start_date": "2025-05-15",
+      "expected_finish_date": "2025-05-17",
+      "status": "in_progress", 
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["bug", "cli", "factory-functions", "urgent"],
+      "attached_resources": []
+    }
+  },
+  {
+    "timestamp": "20250516T1415",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "david_wong",
+      "message": "Found the issue! The problem is in that function that converts arguments to dictconfig. When we encounter a non-dict value during parameter overrides, we're blindly converting it to an empty dict. The line number is in the ticket I'm updating."
+    }
+  },
+  {
+    "timestamp": "20250516T1430",
+    "platform": "slack", 
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen",
+      "message": "That makes sense! So instead of `current[part] = {}` we need to check if it's a string factory and wrap it properly?"
+    }
+  },
+  {
+    "timestamp": "20250516T1445",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering", 
+      "sender": "david_wong",
+      "message": "Exactly! The fix should be: if isinstance(current[part], str): current[part] = {\"_factory_\": current[part]}. Then we can safely apply the parameter overrides."
+    }
+  },
+  {
+    "timestamp": "20250516T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "mike_rodriguez",
+      "message": "Coffee machine update: I figured out the secret - you need to press the espresso button twice for americano. Who designed this thing?!"
+    }
+  },
+  {
+    "timestamp": "20250516T1630",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement CLI Factory Function String Preservation Fix",
+      "description": "Implement the fix for factory function string preservation in CLI parameter overrides. The solution involves modifying the _args_to_dictconfig function in nemo_run/cli/lazy.py to properly handle string factory functions.\n\nSpecific change needed around line 724:\n- Check if current[part] is a string (factory reference)\n- If so, wrap it in {\"_factory_\": current[part]} format\n- Otherwise, convert to empty dict as before\n\nThis will enable commands like `model=my_factory model.param=value` to work correctly.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "david_wong", 
+      "start_date": "2025-05-16",
+      "expected_finish_date": "2025-05-17",
+      "status": "todo",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["bug-fix", "cli", "factory-functions", "urgent"],
+      "attached_resources": []
+    }
+  },
+  {
+    "timestamp": "20250517T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Implement CLI Factory Function String Preservation Fix",
+      "description": "Implement the fix for factory function string preservation in CLI parameter overrides. The solution involves modifying the _args_to_dictconfig function in nemo_run/cli/lazy.py to properly handle string factory functions.\n\nSpecific change needed around line 724:\n- Check if current[part] is a string (factory reference)  \n- If so, wrap it in {\"_factory_\": current[part]} format\n- Otherwise, convert to empty dict as before\n\nThis will enable commands like `model=my_factory model.param=value` to work correctly.\n\nIMPLEMENTED: Fix has been applied and tested successfully. Factory function overwrites now preserve the factory reference correctly.",
+      "team": "engineering",
+      "priority": "urgent",
+      "lead": "david_wong",
+      "start_date": "2025-05-16", 
+      "expected_finish_date": "2025-05-17",
+      "status": "completed",
+      "milestone": "Q2 2025 Engineering", 
+      "labels": ["bug-fix", "cli", "factory-functions", "urgent"],
+      "attached_resources": []
+    }
+  },
+  {
+    "timestamp": "20250517T1115",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "david_wong",
+      "message": "Factory function fix is complete and tested. Added comprehensive test coverage that validates the fix works correctly. The new test method name follows our convention: test_with_factory_and_overwrite."
+    }
+  },
+  {
+    "timestamp": "20250517T1130",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen",
+      "message": "Excellent work David! Can you add the implementation details to the original integration ticket so I can continue with the broader factory function feature work?"
+    }
+  },
+  {
+    "timestamp": "20250517T1200",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "NeMo Run CLI Factory Function Overwrite Integration",
+      "description": "Integrate support for factory function parameter overrides in CLI to enable flexible model configuration workflows. This will allow users to dynamically override specific parameters of factory functions without needing to recreate entire configuration files.\n\nRESOLVED: Factory function string conversion bug has been fixed. The issue was in lazy.py _args_to_dictconfig method where string factory references were being converted to empty dicts. \n\nFix implemented: Added string type checking to preserve factory references with _factory_ wrapper when parameter overrides are applied. This enables commands like `model=my_factory model.param=value` to work correctly.\n\nNext steps: Continue with remaining integration tasks for comprehensive factory function CLI support.",
+      "team": "engineering", 
+      "priority": "high",
+      "lead": "sarah_chen",
+      "start_date": "2025-05-15",
+      "expected_finish_date": "2025-05-30",
+      "status": "in_progress",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["cli", "factory-functions", "configuration", "infrastructure"],
+      "attached_resources": [
+        "/design/cli-factory-override-spec.pdf", 
+        "/research/factory-function-requirements.md"
+      ]
+    }
+  },
+  {
+    "timestamp": "20250517T1415",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "alex_kim",
+      "message": "Code review for PR #235 (CLI factory function fix) is complete. LGTM - clean fix with good test coverage. Ready to merge."
+    }
+  },
+  {
+    "timestamp": "20250517T1430",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "lisa_park", 
+      "message": "Update on Thai restaurant: they're doing 20% off for tech workers this week! Perfect timing for celebrating bug fixes 🎉"
+    }
+  },
+  {
+    "timestamp": "20250518T0900",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "sarah_chen",
+      "message": "Factory function fix has been merged to main branch. Continuing with the broader CLI integration work. Thanks David for the quick turnaround on that critical bug!"
+    }
+  },
+  {
+    "timestamp": "20250518T1000",
+    "platform": "linear",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "title": "Comprehensive CLI Integration Testing",
+      "description": "Perform comprehensive testing of CLI factory function integration across multiple scenarios and edge cases. Ensure all factory function parameter override patterns work correctly with the recent bug fix.\n\nTest scenarios to validate:\n1. Basic factory function overwrites\n2. Nested parameter hierarchies  \n3. Multiple factory functions in single command\n4. Complex data type overwrites (lists, dicts)\n5. Integration with existing CLI workflows",
+      "team": "engineering",
+      "priority": "medium",
+      "lead": "sarah_chen",
+      "start_date": "2025-05-18", 
+      "expected_finish_date": "2025-05-25",
+      "status": "todo",
+      "milestone": "Q2 2025 Engineering",
+      "labels": ["testing", "cli", "factory-functions", "integration"],
+      "attached_resources": []
+    }
+  },
+  {
+    "timestamp": "20250519T1500",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "mike_rodriguez",
+      "message": "Running performance benchmarks on the latest CLI changes. Processing time for factory function overwrites looks good - no significant regression detected."
+    }
+  },
+  {
+    "timestamp": "20250520T1100",
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "david_wong",
+      "message": "For anyone working with CLI factory functions, remember that the fix preserves string factory references with the _factory_ key. This maintains backward compatibility while enabling parameter overwrites."
+    }
+  },
+  {
+    "timestamp": "20250521T0930",
+    "platform": "slack", 
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "jake_martinez",
+      "message": "Anyone know which version of the CLI tools supports nested configuration overwrites? Working on some automation scripts and need the latest features."
+    }
+  },
+  {
+    "timestamp": "20250521T1000",
+    "platform": "slack",
+    "generation_type": "manual", 
+    "generation_meta_data": {
+      "channel": "#engineering",
+      "sender": "alex_kim",
+      "message": "Performance analysis of the recent CLI fixes shows good results. The lazy loading mechanism in the CLI parser is performing well under load."
+    }
+  },
+  {
+    "timestamp": "20250521T1045", 
+    "platform": "slack",
+    "generation_type": "manual",
+    "generation_meta_data": {
+      "channel": "#random",
+      "sender": "lisa_park",
+      "message": "Thai food update: the restaurant now has a 'tech special' - 25% off for anyone who can explain their favorite debugging technique. I got mine with 'print statement debugging' 😄"
+    }
+  }
+]

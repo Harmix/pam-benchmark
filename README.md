@@ -5,21 +5,26 @@ This Harbor task structure allows you to run PAM (Proactive AI Manager) benchmar
 ## Task Structure
 
 ```
-benchmark/
-├── instruction.md          # Task description and requirements
-├── task.toml              # Harbor task configuration
-├── environment/
-│   └── Dockerfile        # Container environment definition
-├── tests/
-│   ├── test.sh           # Test verification script
-│   └── test_outputs.py   # Pytest unit tests
-├── test_configs/         # YAML configuration files
-├── test_event_histories/ # JSON event history files
-├── setup_and_run.sh      # Main execution script
-├── init.py               # PAM memory structure generator
-├── INIT.md               # PAM Memory Agent Guide
-├── INTRO_TEMPLATE.md     # Company template
-└── CLAUDE.md             # Claude Code system context
+pam-benchmark/
+├── benchmark/             # Harbor task definition
+│   ├── instruction.md     # Task description and requirements
+│   ├── task.toml         # Harbor task configuration
+│   ├── environment/
+│   │   └── Dockerfile    # Container environment definition
+│   ├── tests/
+│   │   ├── test.sh       # Test verification script
+│   │   └── test_outputs.py # Pytest unit tests
+│   ├── solution/         # Solution scripts
+│   ├── setup_and_run.sh  # Main execution script
+│   ├── init.py           # PAM memory structure generator
+│   ├── INIT.md           # PAM Memory Agent Guide
+│   ├── INTRO_TEMPLATE.md # Company template
+│   └── CLAUDE.md         # Claude Code system context
+└── datasets/
+    └── memtrack/          # Dataset (separate from task)
+        ├── test_configs/  # YAML configuration files
+        ├── test_event_histories/ # JSON event history files
+        └── registry.json  # Dataset registry metadata
 ```
 
 ## Prerequisites
@@ -149,15 +154,21 @@ The task is configured in `task.toml`:
 - **Difficulty**: Hard
 - **Category**: Multi-modal reasoning
 
-## Test Configs and Event Histories
+## Dataset
 
-- **test_configs/**: Contains YAML files defining benchmark scenarios
-- **test_event_histories/**: Contains JSON files with Linear and Slack event data
+The dataset is stored separately in `datasets/memtrack/` following Harbor's separation of datasets from tasks:
+
+- **datasets/memtrack/test_configs/**: Contains YAML files defining benchmark scenarios
+- **datasets/memtrack/test_event_histories/**: Contains JSON files with Linear and Slack event data
 
 Each config file references an event history file and defines:
 - Agent configuration
 - Benchmark questions
 - Expected answers
+
+See `datasets/memtrack/README.md` for more information about the dataset structure and how to use it with Harbor commands.
+
+**Note**: Before building the Docker image, run `benchmark/prepare_build.sh` to copy the dataset into the task directory so it's available in the Docker build context. See `benchmark/BUILD.md` for build instructions.
 
 ## Environment Details
 
