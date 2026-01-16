@@ -86,6 +86,8 @@ EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
 | `EXPERIMENT_NAME` | Name for grouping results in MongoDB | `baseline_2025` |
 | `TASK_CONFIGS` | Comma-separated list of config names | `config_1,config_2,config_vg_15` |
 
+To add a new environment variable, you need to define it in the terminal execution command and add it to `services.main.environment` in `tasks/memtrack/environment/docker-compose.yaml`.
+
 ### Available Configs
 
 List available configs:

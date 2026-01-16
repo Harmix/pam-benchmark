@@ -22,78 +22,22 @@ echo "[DEBUG] TASK_CONFIGS='${TASK_CONFIGS:-}'"
 echo "[DEBUG] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
 echo "[DEBUG] Command line args: $@"
 echo "[DEBUG] Number of args: $#"
-echo "[DEBUG] Current directory: $(pwd)"
-echo "[DEBUG] Checking for task_configs.txt in common locations..."
-
-# Debug: List files in workspace and current directory
-echo "[DEBUG] Files in /workspace/:"
-ls -la /workspace/ 2>/dev/null | head -10 || echo "  (cannot list /workspace/)"
-echo "[DEBUG] Files in current directory:"
-ls -la . 2>/dev/null | head -10 || echo "  (cannot list current directory)"
 
 # Get configs from (in priority order):
 # 1. Environment variable TASK_CONFIGS (comma-separated)
-# 2. File task_configs.txt (check multiple possible locations)
-# 3. Command line arguments
-# 4. Default (config_1)
-CONFIG_FILE=""
+# 2. Command line arguments
+# 3. Default (config_1)
 if [ -n "${TASK_CONFIGS:-}" ]; then
   # Convert commas to spaces for internal processing
   CONFIGS=$(echo "$TASK_CONFIGS" | tr ',' ' ')
   echo "[DEBUG] Using TASK_CONFIGS env var: $TASK_CONFIGS"
   echo "[DEBUG] Parsed as: $CONFIGS"
+elif [ $# -gt 0 ]; then
+  CONFIGS="$@"
+  echo "[DEBUG] Using command line args: $CONFIGS"
 else
-  # Try to find task_configs.txt in multiple locations
-  # Harbor mounts solution/ directory, so check there first
-  POSSIBLE_PATHS=(
-    "/workspace/solution/task_configs.txt"
-    "/solution/task_configs.txt"
-    "/workspace/task_configs.txt"
-    "./task_configs.txt"
-    "task_configs.txt"
-    "$(pwd)/task_configs.txt"
-  )
-  
-  for path in "${POSSIBLE_PATHS[@]}"; do
-    if [ -f "$path" ]; then
-      CONFIG_FILE="$path"
-      echo "[DEBUG] Found task_configs.txt at: $path"
-      break
-    else
-      echo "[DEBUG] Not found: $path"
-    fi
-  done
-  
-  if [ -n "$CONFIG_FILE" ]; then
-    # Read configs from file, handling both newline-separated and space-separated formats
-    echo "[DEBUG] Reading from: $CONFIG_FILE"
-    echo "[DEBUG] File size: $(wc -c < "$CONFIG_FILE" 2>/dev/null || echo 0) bytes"
-    echo "[DEBUG] File contents:"
-    cat "$CONFIG_FILE" | sed 's/^/  /' || echo "  (error reading file)"
-    
-    # Check if file has any non-whitespace content
-    FILE_CONTENT=$(cat "$CONFIG_FILE" | grep -v '^#' | grep -v '^$' | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-    echo "[DEBUG] Parsed configs: '$FILE_CONTENT'"
-    
-    if [ -z "$FILE_CONTENT" ]; then
-      echo "[WARNING] $CONFIG_FILE exists but is empty or only contains comments"
-      echo "[WARNING] This might mean:"
-      echo "[WARNING]   1. The file wasn't created before Harbor ran"
-      echo "[WARNING]   2. Harbor is using a cached image with an empty file"
-      echo "[WARNING]   3. The file wasn't mounted correctly"
-      echo "[WARNING] Using default: config_1"
-      echo "[WARNING] To fix: Rebuild the Docker image with --force-build flag"
-      CONFIGS="config_1"
-    else
-      CONFIGS="$FILE_CONTENT"
-    fi
-  elif [ $# -gt 0 ]; then
-    CONFIGS="$@"
-    echo "[DEBUG] Using command line args: $CONFIGS"
-  else
-    CONFIGS="config_1"
-    echo "[DEBUG] No config file found and no args provided, using default: $CONFIGS"
-  fi
+  CONFIGS="config_1"
+  echo "[DEBUG] No TASK_CONFIGS env var or args provided, using default: $CONFIGS"
 fi
 
 echo "========================================"

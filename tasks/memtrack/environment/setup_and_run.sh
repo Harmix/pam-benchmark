@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "EXPERIMENT_NAME:"
-echo ${EXPERIMENT_NAME}
-
 CONFIG_FILE="${1:-/task_data/test_configs/config_1.yaml}"
 STUB_MODE="${STUB_MODE:-false}"
 ORACLE_FILE="${ORACLE_FILE:-}"
@@ -475,20 +472,10 @@ if [ -n "$EVAL_SCRIPT" ] && [ -f "$EVAL_SCRIPT" ]; then
                 --summary-only
             )
             
-            # Add experiment name if available (from env or try to read from file)
+            # Add experiment name if available from environment variable
             if [ -n "${EXPERIMENT_NAME:-}" ]; then
                 echo "Experiment name: $EXPERIMENT_NAME"
                 EVAL_CMD+=(--experiment-name "$EXPERIMENT_NAME")
-            else
-                # Try to read from a file if Harbor passed it via file
-                EXPERIMENT_NAME_FILE="/workspace/solution/experiment_name.txt"
-                if [ -f "$EXPERIMENT_NAME_FILE" ]; then
-                    EXPERIMENT_NAME=$(cat "$EXPERIMENT_NAME_FILE" | head -1 | tr -d '\n\r')
-                    if [ -n "$EXPERIMENT_NAME" ]; then
-                        echo "Experiment name (from file): $EXPERIMENT_NAME"
-                        EVAL_CMD+=(--experiment-name "$EXPERIMENT_NAME")
-                    fi
-                fi
             fi
             
             # Run with execution time and Harbor project name in environment
