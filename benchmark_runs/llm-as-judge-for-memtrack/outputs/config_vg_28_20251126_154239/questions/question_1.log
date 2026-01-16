@@ -1,1 +1,0 @@
-Based on the processed data, the specific customer complaint pattern was: **customers could not trace which tool call in the reasoning chain caused citation errors and fact-check failures, forcing the migration from simple request-response logging to DAG-based observability infrastructure with tool call dependency tracking.**

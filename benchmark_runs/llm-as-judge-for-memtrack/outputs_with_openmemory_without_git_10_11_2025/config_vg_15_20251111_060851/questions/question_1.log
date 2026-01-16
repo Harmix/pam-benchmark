@@ -1,7 +1,0 @@
-Based on the Slack messages from the engineering channel, the three specific technical shortcuts Bob implemented between January 20-22 that directly caused the HealthSystem Corp demo failure on January 28 were:
-
-1. **Disabled input validation** (January 20) - Bob disabled input validation on patient forms to prevent edge case failures
-2. **Hardcoded API credentials** (January 21) - Bob hardcoded HealthSystem Corp's API credentials directly in the code instead of implementing proper credential management
-3. **Removed transaction rollbacks** (January 22) - Bob removed all database transaction rollbacks to prevent timeouts during data imports
-
-These shortcuts backfired during the January 28 demo when the disabled input validation allowed malformed patient data through, the hardcoded credentials expired mid-demo, and without transaction rollbacks, corrupt data spread throughout the system.

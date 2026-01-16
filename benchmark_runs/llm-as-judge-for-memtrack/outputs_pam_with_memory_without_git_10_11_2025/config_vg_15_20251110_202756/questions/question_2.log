@@ -1,7 +1,0 @@
-Based on the Slack messages from the #engineering channel, I found the conversation from January 15th regarding the patient data encryption vulnerability.
-
-Alice's exact three-word reasoning for overriding the security concern was:
-
-**"ship or die"**
-
-This appears in her message at 08:30:00 on January 15th where she acknowledged the encryption issue raised by diana and supported by charlie, but stated: "I hear you but we have 16 days. Fixing encryption properly will take a week we don't have. Decision: ship or die."

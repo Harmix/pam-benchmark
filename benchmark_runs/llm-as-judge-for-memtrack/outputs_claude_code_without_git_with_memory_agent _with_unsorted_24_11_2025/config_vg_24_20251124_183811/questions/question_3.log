@@ -1,7 +1,0 @@
-Based on the event history data, when Charlie analyzed the epoch training inconsistencies during the final crisis week (October 24, 2024), the checkpoint analysis revealed this specific technical bug:
-
-**PyTorch DataLoader Shuffling Bug with Filtered Datasets**
-
-The root cause was that the dataset length calculation was incorrect - it reported the full dataset size but only iterated through approximately 30% of the filtered data before resetting. The logging systems displayed "epoch complete" messages, but training actually stopped at only 0.3 epochs.
-
-This bug caused training runs to appear successful in the logs while only processing 30% of Diana's filtered dataset, which explained why post-training RLHF runs were failing due to inconsistent model states from the incomplete multi-epoch checkpoints.

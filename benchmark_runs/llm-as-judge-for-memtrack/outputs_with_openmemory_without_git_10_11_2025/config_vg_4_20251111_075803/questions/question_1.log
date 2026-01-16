@@ -1,1 +1,0 @@
-Database optimizations likely improved query execution time (tracked metric) but degraded tail latency or added lock contention that caused timeout cascades/retries under real user load patterns, which monitoring missed because it only tracked successful query performance rather than user-perceived end-to-end transaction completion rates or timeout frequencies.

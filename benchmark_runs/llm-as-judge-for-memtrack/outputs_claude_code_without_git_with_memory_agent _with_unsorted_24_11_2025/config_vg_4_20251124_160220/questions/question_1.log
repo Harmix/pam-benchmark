@@ -1,3 +1,0 @@
-Based on the event history data, the answer is:
-
-**Aggressive timeout settings optimized for internal sub-second microservice responses were applied globally to external third-party webhooks (Stripe, email providers, notifications) that required 5-10 second windows, causing silent failures that internal monitoring didn't track because it only measured internal service health.**
