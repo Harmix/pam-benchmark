@@ -8,10 +8,9 @@ services:
     network_mode: ${NETWORK_MODE:-bridge}
     environment:
       - TEST_DIR=${TEST_DIR}
-      - EXPERIMENT_NAME=${EXPERIMENT_NAME:-default}
-      - TASK_CONFIGS=${TASK_CONFIGS:-}
-      - DEBUG=${DEBUG:-false}
-      - HARBOR_TASK_NAME=${HARBOR_TASK_NAME:-}
+      - EXPERIMENT_NAME=${EXPERIMENT_NAME}
+      - TASK_CONFIGS=${TASK_CONFIGS}
+      - DEBUG=${DEBUG}
       - DATASET_NAME=memtrack@1.0
       - TASK_NAME=memtrack
       - PAM_AGENT_NAME=PAM@2.0
