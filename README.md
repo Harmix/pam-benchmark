@@ -88,8 +88,6 @@ EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
 | `EXPERIMENT_NAME` | Name for grouping results in MongoDB | (none) | `baseline_2025` |
 | `TASK_CONFIGS` | Comma-separated list of config names | `config_1` | `config_1,config_2,config_vg_15` |
 | `DEBUG` | Enable stub mode for faster development (skips agent execution) | `false` | `true` |
-| `DATASET_NAME` | Dataset identifier saved in MongoDB | `memtrack@1.0` | `memtrack@2.0` |
-| `TASK_NAME` | Task name saved in MongoDB | `memtrack` | `memtrack` |
 
 **DEBUG Mode**: When `DEBUG=true`, the task uses a stub instead of running the actual agent. This speeds up development iteration by skipping the time-consuming agent execution. Useful for testing the evaluation pipeline, logging, and other infrastructure.
 
@@ -132,16 +130,18 @@ CONTEXT_DIR=$(pwd)/tasks/memtrack/environment docker-compose -f tasks/memtrack/e
 
 ### Docker Compose Environment Variables
 
-The `docker-compose.yaml` expects these environment variables:
+The `docker-compose.yaml` expects these environment variables from Harbor:
 - `CONTEXT_DIR` - Absolute path to task's environment/ directory
 - `MAIN_IMAGE_NAME` - Name for the built image
 - `EXPERIMENT_NAME` - Experiment name for result grouping
 - `TASK_CONFIGS` - Comma-separated config names to run
-- `DATASET_NAME` - Dataset identifier for MongoDB (defaults to "memtrack@1.0")
-- `TASK_NAME` - Task name for MongoDB (defaults to "memtrack")
-- `PAM_AGENT_NAME` - Agent name for MongoDB (defaults to "PAM@2.0")
 - `CPUS` / `MEMORY` - Resource limits
 - `NETWORK_MODE` - Docker network mode (defaults to "bridge")
+
+The following are hardcoded in `docker-compose.yaml` for MongoDB metadata:
+- `DATASET_NAME=memtrack@1.0`
+- `TASK_NAME=memtrack`
+- `PAM_AGENT_NAME=PAM@2.0`
 
 ## Task Execution Flow
 
