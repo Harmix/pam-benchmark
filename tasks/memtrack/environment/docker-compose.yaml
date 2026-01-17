@@ -11,8 +11,8 @@ services:
       - EXPERIMENT_NAME=${EXPERIMENT_NAME}
       - TASK_CONFIGS=${TASK_CONFIGS}
       - DEBUG=${DEBUG}
-      - DATASET_NAME=${DATASET_NAME:-memtrack@1.0}
-      - TASK_NAME=${TASK_NAME:-memtrack}
+      - DATASET_NAME=memtrack@1.0
+      - TASK_NAME=memtrack
       - PAM_AGENT_NAME=PAM@2.0
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
