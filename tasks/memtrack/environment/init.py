@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Company Information Structure Generator
 Generates standardized folder structure for organizing company information,

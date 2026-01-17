@@ -26,6 +26,8 @@ pam-benchmark/
 │       │   └── llm_judge_eval.py  # LLM evaluation script
 │       ├── tests/
 │       │   └── test_outputs.py    # Verification tests
+│       ├── reports/               # Generated HTML reports
+│       ├── generate_report.py     # Report generation script
 │       ├── instruction.md         # Task description
 │       └── task.toml              # Harbor task config
 ├── datasets/
@@ -86,6 +88,8 @@ EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
 | `EXPERIMENT_NAME` | Name for grouping results in MongoDB | (none) | `baseline_2025` |
 | `TASK_CONFIGS` | Comma-separated list of config names | `config_1` | `config_1,config_2,config_vg_15` |
 | `DEBUG` | Enable stub mode for faster development (skips agent execution) | `false` | `true` |
+| `DATASET_NAME` | Dataset identifier saved in MongoDB | `memtrack@1.0` | `memtrack@2.0` |
+| `TASK_NAME` | Task name saved in MongoDB | `memtrack` | `memtrack` |
 
 **DEBUG Mode**: When `DEBUG=true`, the task uses a stub instead of running the actual agent. This speeds up development iteration by skipping the time-consuming agent execution. Useful for testing the evaluation pipeline, logging, and other infrastructure.
 
@@ -133,6 +137,9 @@ The `docker-compose.yaml` expects these environment variables:
 - `MAIN_IMAGE_NAME` - Name for the built image
 - `EXPERIMENT_NAME` - Experiment name for result grouping
 - `TASK_CONFIGS` - Comma-separated config names to run
+- `DATASET_NAME` - Dataset identifier for MongoDB (defaults to "memtrack@1.0")
+- `TASK_NAME` - Task name for MongoDB (defaults to "memtrack")
+- `PAM_AGENT_NAME` - Agent name for MongoDB (defaults to "PAM@2.0")
 - `CPUS` / `MEMORY` - Resource limits
 - `NETWORK_MODE` - Docker network mode (defaults to "bridge")
 
@@ -165,17 +172,51 @@ Results are saved with the following structure:
 {
   "experiment_name": "my_experiment",
   "config_name": "config_1",
-  "dataset_name": "event_history_1",
-  "agent_name": "CodeAgent",
+  "dataset_name": "memtrack@1.0",
+  "agent_name": "PAM@2.0",
+  "task_name": "memtrack",
   "total_questions": 3,
   "correct_count": 2,
   "accuracy": 0.6667,
   "avg_score": 0.85,
   "avg_confidence": 0.92,
   "execution_time_seconds": 245.67,
-  "timestamp": "2025-01-16T14:30:22.123Z"
+  "timestamp": "2025-01-16T14:30:22.123Z",
+  "incorrect_responses": [
+    {
+      "question_num": 2,
+      "question": "Who is the lead of that oldest reassigned ticket?",
+      "expected_answer": "charlie",
+      "agent_answer": "alice",
+      "score": 0.0,
+      "reasoning": "The agent provided the wrong lead name."
+    }
+  ]
 }
 ```
+
+Note: The `incorrect_responses` array is only populated with questions that were marked as incorrect by the LLM judge, to save storage space.
+
+### Generating HTML Reports
+
+After running experiments, you can generate HTML reports from MongoDB data:
+
+```bash
+# Generate report for a specific experiment
+python tasks/memtrack/generate_report.py --experiment-name my_experiment
+
+# Or using environment variable
+EXPERIMENT_NAME=my_experiment python tasks/memtrack/generate_report.py
+
+# Specify custom output directory
+python tasks/memtrack/generate_report.py --experiment-name my_experiment --output-dir ./my_reports
+```
+
+Reports are saved to `tasks/memtrack/reports/` by default and include:
+- **Header**: Experiment name, dataset name, agent name, generation timestamp
+- **Summary Cards**: Total configs, total questions, overall accuracy, correct/total counts
+- **Results Table**: Per-config metrics including accuracy, execution time, and execution timestamp
+- **Incorrect Responses**: Detailed view of all incorrect answers with questions, expected answers, agent answers, and judge reasoning
 
 ## Output Structure
 

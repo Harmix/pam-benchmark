@@ -11,6 +11,7 @@ __pycache__/
 jobs/**
 secrets.env
 pam-agent-credentials.json
+tasks/memtrack/reports/*.html
 benchmark/solution/benchmark_configs.txt
 benchmark/solution/experiment_name.txt
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/claude-config/**

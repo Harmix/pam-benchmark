@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Unified LLM-as-Judge Evaluation Pipeline
 Extracts Q/A pairs from configs and runs evaluation automatically
@@ -345,15 +344,19 @@ def extract_base_config_name(config_name: str) -> str:
 
 def extract_metadata_from_config(config: Dict, config_name: str, yaml_filename: str = None) -> Dict[str, str]:
     """Extract metadata fields from config YAML"""
-    agent_name = config.get("agent", {}).get("name", "unknown")
+    # Agent name: use PAM_AGENT_NAME env var, or default to "PAM@2.0"
+    agent_name = os.environ.get("PAM_AGENT_NAME", "PAM@2.0")
     
-    # Extract dataset name from event_history path
-    benchmark = config.get("benchmark", {})
-    event_history = benchmark.get("event_history", "")
-    dataset_name = "unknown"
-    if event_history:
-        # Extract filename without extension (e.g., "event_history_1" from "test_event_histories/event_history_1.json")
-        dataset_name = Path(event_history).stem
+    # Dataset name: use DATASET_NAME env var (e.g., "memtrack@1.0"), or fall back to event_history filename
+    dataset_name = os.environ.get("DATASET_NAME")
+    if not dataset_name:
+        benchmark = config.get("benchmark", {})
+        event_history = benchmark.get("event_history", "")
+        if event_history:
+            # Extract filename without extension (e.g., "event_history_1" from "test_event_histories/event_history_1.json")
+            dataset_name = Path(event_history).stem
+        else:
+            dataset_name = "unknown"
     
     # Extract base config name (without timestamp suffix)
     # Prefer yaml filename if available, otherwise try to extract from config_name
@@ -362,9 +365,8 @@ def extract_metadata_from_config(config: Dict, config_name: str, yaml_filename: 
     else:
         base_config_name = extract_base_config_name(config_name)
     
-    # Task name is the Harbor project name (default: "benchmark")
-    # Can be overridden via HARBOR_PROJECT_NAME environment variable
-    task_name = os.environ.get("HARBOR_PROJECT_NAME", "benchmark")
+    # Task name: use TASK_NAME env var, or default to "memtrack"
+    task_name = os.environ.get("TASK_NAME", "memtrack")
     
     return {
         "config_name": base_config_name,
@@ -374,8 +376,28 @@ def extract_metadata_from_config(config: Dict, config_name: str, yaml_filename: 
     }
 
 
+def extract_incorrect_responses(results: Dict, questions: List[str], expected_answers: List[str]) -> List[Dict]:
+    """Extract incorrect responses for storage in MongoDB"""
+    incorrect_responses = []
+    
+    for q_num, result in results.items():
+        if not result.get("is_correct", False):
+            q_idx = int(q_num) - 1  # Convert 1-based to 0-based index
+            incorrect_responses.append({
+                "question_num": int(q_num),
+                "question": questions[q_idx] if q_idx < len(questions) else "Unknown",
+                "expected_answer": expected_answers[q_idx] if q_idx < len(expected_answers) else "Unknown",
+                "agent_answer": result.get("agent_answer", ""),
+                "score": result.get("score", 0.0),
+                "reasoning": result.get("reasoning", "")
+            })
+    
+    return incorrect_responses
+
+
 def save_to_mongodb(experiment_name: str, metadata: Dict[str, str], metrics: Dict, 
-                   db_name: str, connection_string: str, execution_time: float = None) -> bool:
+                   db_name: str, connection_string: str, execution_time: float = None,
+                   incorrect_responses: List[Dict] = None) -> bool:
     """Save evaluation results to MongoDB - one record per config"""
     try:
         # Create document with experiment name and metadata
@@ -391,6 +413,10 @@ def save_to_mongodb(experiment_name: str, metadata: Dict[str, str], metrics: Dic
         # Add execution time if provided
         if execution_time is not None:
             mongo_data["execution_time_seconds"] = float(execution_time)
+        
+        # Add incorrect responses if provided (only save incorrect ones to save storage)
+        if incorrect_responses:
+            mongo_data["incorrect_responses"] = incorrect_responses
         
         # Add timestamp
         timestamp = datetime.utcnow()
@@ -474,15 +500,18 @@ def save_config_results(config_dir: Path, config_name: str, config_yaml: str, mo
         else:
             # Fallback if config not provided
             base_config_name = extract_base_config_name(config_name)
-            task_name = os.environ.get("HARBOR_PROJECT_NAME", "benchmark")
             metadata = {
                 "config_name": base_config_name,
-                "dataset_name": "unknown",
-                "agent_name": "unknown",
-                "task_name": task_name
+                "dataset_name": os.environ.get("DATASET_NAME", "memtrack@1.0"),
+                "agent_name": os.environ.get("PAM_AGENT_NAME", "PAM@2.0"),
+                "task_name": os.environ.get("TASK_NAME", "memtrack")
             }
         
-        save_to_mongodb(experiment_name, metadata, metrics, db_name, connection_string, execution_time)
+        # Extract incorrect responses for MongoDB storage
+        incorrect_responses = extract_incorrect_responses(results, questions, expected_answers)
+        
+        save_to_mongodb(experiment_name, metadata, metrics, db_name, connection_string, 
+                       execution_time, incorrect_responses)
     elif connection_string or db_name:
         if not experiment_name:
             print("⚠ Warning: EXPERIMENT_NAME not set, skipping MongoDB save")

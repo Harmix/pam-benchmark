@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Verify that questions in config files match those in split.json.
 If mismatches are found, save corrected configs to output directory.
