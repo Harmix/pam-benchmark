@@ -1,0 +1,20 @@
+version = "1.0"
+
+[metadata]
+author_name = "Denys Herasymuk"
+author_email = "denys@harmix.ai"
+difficulty = "medium"
+category = "long-context-memory"
+tags = ["locomo", "memory-evaluation", "question-answering", "long-context", "conversation"]
+
+[verifier]
+timeout_sec = 3600.0  # 60 minutes for processing and answering questions
+
+[agent]
+timeout_sec = 3600.0  # 60 minutes for agent execution
+
+[environment]
+build_timeout_sec = 900.0  # 15 minutes for Docker build (needs to download many packages)
+cpus = 4
+memory = "8G"
+storage = "30G"
