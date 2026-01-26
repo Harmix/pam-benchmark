@@ -2,6 +2,12 @@
 
 This task evaluates the long-context memory capabilities of Large Language Models (LLMs) through question answering over extended conversation histories.
 
+**Original Paper**: [Evaluating Very Long-Term Conversational Memory of LLM Agents](https://snap-research.github.io/locomo/) (ACL 2024)
+
+**GitHub**: https://github.com/snap-research/locomo
+
+**Project Page**: https://snap-research.github.io/locomo/
+
 ## Task Overview
 
 The LoCoMo (Long Context Memory) benchmark tests an LLM's ability to:
