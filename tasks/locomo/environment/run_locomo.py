@@ -79,18 +79,41 @@ def parse_args():
     return parser.parse_args()
 
 
-def calculate_metrics(out_samples: Dict, model_key: str) -> Dict:
-    """Calculate aggregate metrics from evaluation results."""
+def calculate_metrics(out_samples: Dict, model_key: str, prediction_key: str) -> tuple:
+    """Calculate aggregate metrics from evaluation results and extract incorrect responses."""
     total_questions = 0
     total_f1 = 0.0
+    correct_count = 0
     category_counts = {}
     category_f1_sums = {}
+    incorrect_responses = []
+    question_num = 0
+    
+    # F1 threshold for considering an answer "correct"
+    F1_THRESHOLD = 0.5
     
     for sample_id, sample in out_samples.items():
         for qa in sample.get('qa', []):
+            question_num += 1
             total_questions += 1
             f1_score = qa.get(f'{model_key}_f1', 0.0)
             total_f1 += f1_score
+            
+            # Count as correct if F1 >= threshold
+            if f1_score >= F1_THRESHOLD:
+                correct_count += 1
+            else:
+                # Extract incorrect response for report
+                incorrect_responses.append({
+                    "question_num": question_num,
+                    "sample_id": sample_id,
+                    "question": qa.get('question', 'N/A'),
+                    "expected_answer": str(qa.get('answer', 'N/A')),
+                    "model_answer": qa.get(prediction_key, 'N/A'),
+                    "f1_score": round(f1_score, 3),
+                    "category": qa.get('category', 0),
+                    "evidence": qa.get('evidence', [])
+                })
             
             category = qa.get('category', 0)
             if category not in category_counts:
@@ -105,21 +128,26 @@ def calculate_metrics(out_samples: Dict, model_key: str) -> Dict:
     # Calculate per-category accuracy
     category_accuracy = {}
     for cat, count in category_counts.items():
-        category_accuracy[f'category_{cat}_accuracy'] = category_f1_sums[cat] / count if count > 0 else 0.0
+        category_accuracy[f'category_{cat}_accuracy'] = round(category_f1_sums[cat] / count, 4) if count > 0 else 0.0
         category_accuracy[f'category_{cat}_count'] = count
     
-    return {
+    metrics = {
         'total_questions': total_questions,
+        'correct_count': correct_count,
+        'incorrect_count': len(incorrect_responses),
         'overall_accuracy': round(overall_accuracy, 4),
         'total_f1_sum': round(total_f1, 4),
         **category_accuracy
     }
+    
+    return metrics, incorrect_responses
 
 
 def save_to_mongodb(experiment_name: str, model: str, metrics: Dict, 
                    db_name: str, connection_string: str,
                    execution_time: float = None,
-                   config: Dict = None) -> bool:
+                   config: Dict = None,
+                   incorrect_responses: List[Dict] = None) -> bool:
     """Save evaluation results to MongoDB."""
     if not MONGODB_AVAILABLE:
         print("⚠ Warning: pymongo not available, skipping MongoDB save")
@@ -145,6 +173,10 @@ def save_to_mongodb(experiment_name: str, model: str, metrics: Dict,
             mongo_data["use_rag"] = config.get("use_rag", False)
             mongo_data["max_questions"] = config.get("max_questions", 0)
         
+        # Add incorrect responses if provided (for report generation)
+        if incorrect_responses:
+            mongo_data["incorrect_responses"] = incorrect_responses
+        
         # Add timestamp
         timestamp = datetime.utcnow()
         mongo_data["timestamp"] = timestamp
@@ -162,6 +194,7 @@ def save_to_mongodb(experiment_name: str, model: str, metrics: Dict,
         # Insert document
         result = collection.insert_one(mongo_data)
         print(f"✓ Results saved to MongoDB: experiment='{experiment_name}', model='{model}', ID={result.inserted_id}")
+        print(f"  Saved {len(incorrect_responses) if incorrect_responses else 0} incorrect responses for report generation")
         
         client.close()
         return True
@@ -287,10 +320,12 @@ def main():
     # Calculate execution time
     execution_time = time.time() - start_time
     
-    # Calculate metrics for MongoDB
-    metrics = calculate_metrics(out_samples, model_key)
+    # Calculate metrics and extract incorrect responses for MongoDB
+    metrics, incorrect_responses = calculate_metrics(out_samples, model_key, prediction_key)
     print(f"\nMetrics Summary:")
     print(f"  Total questions: {metrics['total_questions']}")
+    print(f"  Correct answers: {metrics['correct_count']}")
+    print(f"  Incorrect answers: {metrics['incorrect_count']}")
     print(f"  Overall accuracy (F1): {metrics['overall_accuracy']}")
     
     # Save to MongoDB if configured
@@ -306,7 +341,7 @@ def main():
             "max_questions": args.max_questions
         }
         save_to_mongodb(experiment_name, args.model, metrics, db_name, connection_string,
-                       execution_time, config)
+                       execution_time, config, incorrect_responses)
     else:
         if not experiment_name:
             print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")

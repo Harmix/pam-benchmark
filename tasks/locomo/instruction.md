@@ -158,9 +158,32 @@ The results are saved to the `locomo_results` collection with the following fiel
 - `dataset_name` - Dataset identifier (locomo@1.0)
 - `task_name` - Task identifier (locomo)
 - `total_questions` - Total number of questions evaluated
+- `correct_count` - Number of correct answers (F1 >= 0.5)
+- `incorrect_count` - Number of incorrect answers
 - `overall_accuracy` - Overall F1 accuracy
 - `category_X_accuracy` - Accuracy for each question category
 - `category_X_count` - Number of questions per category
 - `execution_time_seconds` - Total execution time
 - `batch_size`, `use_rag`, `max_questions` - Configuration settings
+- `incorrect_responses` - List of incorrect answers with questions, expected answers, and model answers
 - `timestamp`, `created_at` - Timestamps
+
+## Generating Reports
+
+After running evaluations, you can generate an HTML report from MongoDB results:
+
+```bash
+# From project root
+python tasks/locomo/generate_report.py --experiment-name my_experiment
+
+# Or with environment variables
+EXPERIMENT_NAME=my_experiment python tasks/locomo/generate_report.py
+```
+
+The report includes:
+- Overall accuracy summary
+- Accuracy breakdown by question category (Single-hop, Temporal, Open-domain, Multi-hop, Adversarial)
+- Detailed list of incorrect responses with questions, expected answers, and model answers
+- Execution time statistics
+
+Reports are saved to `tasks/locomo/reports/`
