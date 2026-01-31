@@ -44,6 +44,7 @@ MODEL=claude-sonnet EXPERIMENT_NAME=my_experiment harbor run \
 | `BATCH_SIZE` | `20` | Number of questions per batch |
 | `USE_RAG` | `false` | Enable RAG-based evaluation |
 | `OVERWRITE` | `false` | Overwrite existing predictions |
+| `MAX_QUESTIONS` | `0` | Maximum questions per sample (0 = all questions) |
 | `EXPERIMENT_NAME` | - | Name for the experiment run |
 
 ### Examples
@@ -67,6 +68,22 @@ MODEL=claude-sonnet EXPERIMENT_NAME=locomo_claude harbor run \
 Evaluate with smaller batch size:
 ```bash
 MODEL=gpt-4-turbo BATCH_SIZE=10 EXPERIMENT_NAME=locomo_small_batch harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+```
+
+Run on a subset of questions (e.g., first 10 questions per sample):
+```bash
+MAX_QUESTIONS=10 EXPERIMENT_NAME=locomo_subset harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+```
+
+Quick test run (5 questions, small batch):
+```bash
+MODEL=gpt-4-turbo MAX_QUESTIONS=5 BATCH_SIZE=5 EXPERIMENT_NAME=locomo_quick_test harbor run \
   -d locomo@1.0 \
   --registry-path datasets/locomo/registry.json \
   --force-build
@@ -128,3 +145,22 @@ API keys are loaded from `secrets.env` at the project root. Required keys depend
 - `OPENAI_API_KEY` - for GPT models
 - `ANTHROPIC_API_KEY` - for Claude models
 - `GOOGLE_API_KEY` - for Gemini models
+
+## MongoDB Integration
+
+Results are automatically saved to MongoDB when the following environment variables are configured in `secrets.env`:
+- `DB_NAME` - MongoDB database name
+- `CONNECTION_STRING` - MongoDB connection string
+
+The results are saved to the `locomo_results` collection with the following fields:
+- `experiment_name` - Name of the experiment
+- `model` - Model used for evaluation
+- `dataset_name` - Dataset identifier (locomo@1.0)
+- `task_name` - Task identifier (locomo)
+- `total_questions` - Total number of questions evaluated
+- `overall_accuracy` - Overall F1 accuracy
+- `category_X_accuracy` - Accuracy for each question category
+- `category_X_count` - Number of questions per category
+- `execution_time_seconds` - Total execution time
+- `batch_size`, `use_rag`, `max_questions` - Configuration settings
+- `timestamp`, `created_at` - Timestamps

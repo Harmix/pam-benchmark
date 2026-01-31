@@ -13,6 +13,11 @@ services:
       - DEBUG=${DEBUG}
       - DATASET_NAME=locomo@1.0
       - TASK_NAME=locomo
+      - MODEL=${MODEL}
+      - BATCH_SIZE=${BATCH_SIZE}
+      - USE_RAG=${USE_RAG}
+      - OVERWRITE=${OVERWRITE}
+      - MAX_QUESTIONS=${MAX_QUESTIONS}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:

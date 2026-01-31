@@ -7,10 +7,11 @@ set -e
 #   - Default: runs gpt-4-turbo with batch-size 20
 #
 # Environment variables:
-#   MODEL        - Model to evaluate (default: gpt-4-turbo)
-#   BATCH_SIZE   - Batch size for evaluation (default: 20)
-#   USE_RAG      - Enable RAG mode (default: false)
-#   OVERWRITE    - Overwrite existing predictions (default: false)
+#   MODEL         - Model to evaluate (default: gpt-4-turbo)
+#   BATCH_SIZE    - Batch size for evaluation (default: 20)
+#   USE_RAG       - Enable RAG mode (default: false)
+#   OVERWRITE     - Overwrite existing predictions (default: false)
+#   MAX_QUESTIONS - Maximum questions per sample, 0 = all (default: 0)
 
 # Source secrets.env if available (for non-interactive Harbor runs)
 if [ -f /workspace/secrets.env ]; then
@@ -25,6 +26,7 @@ MODEL="${MODEL:-gpt-4-turbo}"
 BATCH_SIZE="${BATCH_SIZE:-20}"
 USE_RAG="${USE_RAG:-false}"
 OVERWRITE="${OVERWRITE:-false}"
+MAX_QUESTIONS="${MAX_QUESTIONS:-0}"
 
 # Show configuration
 echo "========================================"
@@ -34,6 +36,7 @@ echo "[INFO] MODEL='${MODEL}'"
 echo "[INFO] BATCH_SIZE='${BATCH_SIZE}'"
 echo "[INFO] USE_RAG='${USE_RAG}'"
 echo "[INFO] OVERWRITE='${OVERWRITE}'"
+echo "[INFO] MAX_QUESTIONS='${MAX_QUESTIONS}'"
 echo "[INFO] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
 echo ""
 
@@ -48,6 +51,11 @@ fi
 if [ "$OVERWRITE" = "true" ] || [ "$OVERWRITE" = "1" ]; then
   ARGS="${ARGS} --overwrite"
   echo "[INFO] Overwrite mode enabled"
+fi
+
+if [ "$MAX_QUESTIONS" != "0" ] && [ -n "$MAX_QUESTIONS" ]; then
+  ARGS="${ARGS} --max-questions ${MAX_QUESTIONS}"
+  echo "[INFO] Limiting to ${MAX_QUESTIONS} questions per sample"
 fi
 
 echo ""

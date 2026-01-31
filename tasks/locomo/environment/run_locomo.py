@@ -11,6 +11,8 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Optional
 
 # Add task_data to path for imports
 sys.path.insert(0, '/task_data')
@@ -23,6 +25,14 @@ from task_eval.claude_utils import get_claude_answers
 from task_eval.gemini_utils import get_gemini_answers
 
 import google.generativeai as genai
+
+# MongoDB import (optional)
+try:
+    from pymongo import MongoClient
+    MONGODB_AVAILABLE = True
+except ImportError:
+    MONGODB_AVAILABLE = False
+    print("Warning: pymongo not installed, MongoDB saving disabled")
 
 
 def load_secrets():
@@ -64,10 +74,107 @@ def parse_args():
                         help='Retriever model for RAG')
     parser.add_argument('--overwrite', action='store_true',
                         help='Overwrite existing predictions')
+    parser.add_argument('--max-questions', type=int, default=0,
+                        help='Maximum number of questions per sample (0 = all questions)')
     return parser.parse_args()
 
 
+def calculate_metrics(out_samples: Dict, model_key: str) -> Dict:
+    """Calculate aggregate metrics from evaluation results."""
+    total_questions = 0
+    total_f1 = 0.0
+    category_counts = {}
+    category_f1_sums = {}
+    
+    for sample_id, sample in out_samples.items():
+        for qa in sample.get('qa', []):
+            total_questions += 1
+            f1_score = qa.get(f'{model_key}_f1', 0.0)
+            total_f1 += f1_score
+            
+            category = qa.get('category', 0)
+            if category not in category_counts:
+                category_counts[category] = 0
+                category_f1_sums[category] = 0.0
+            category_counts[category] += 1
+            category_f1_sums[category] += f1_score
+    
+    # Calculate overall metrics
+    overall_accuracy = total_f1 / total_questions if total_questions > 0 else 0.0
+    
+    # Calculate per-category accuracy
+    category_accuracy = {}
+    for cat, count in category_counts.items():
+        category_accuracy[f'category_{cat}_accuracy'] = category_f1_sums[cat] / count if count > 0 else 0.0
+        category_accuracy[f'category_{cat}_count'] = count
+    
+    return {
+        'total_questions': total_questions,
+        'overall_accuracy': round(overall_accuracy, 4),
+        'total_f1_sum': round(total_f1, 4),
+        **category_accuracy
+    }
+
+
+def save_to_mongodb(experiment_name: str, model: str, metrics: Dict, 
+                   db_name: str, connection_string: str,
+                   execution_time: float = None,
+                   config: Dict = None) -> bool:
+    """Save evaluation results to MongoDB."""
+    if not MONGODB_AVAILABLE:
+        print("⚠ Warning: pymongo not available, skipping MongoDB save")
+        return False
+    
+    try:
+        # Create document
+        mongo_data = {
+            "experiment_name": experiment_name,
+            "model": model,
+            "dataset_name": os.environ.get("DATASET_NAME", "locomo@1.0"),
+            "task_name": os.environ.get("TASK_NAME", "locomo"),
+            **metrics
+        }
+        
+        # Add execution time if provided
+        if execution_time is not None:
+            mongo_data["execution_time_seconds"] = float(execution_time)
+        
+        # Add config details if provided
+        if config:
+            mongo_data["batch_size"] = config.get("batch_size", 20)
+            mongo_data["use_rag"] = config.get("use_rag", False)
+            mongo_data["max_questions"] = config.get("max_questions", 0)
+        
+        # Add timestamp
+        timestamp = datetime.utcnow()
+        mongo_data["timestamp"] = timestamp
+        mongo_data["created_at"] = timestamp.isoformat()
+        
+        # Connect to MongoDB
+        client = MongoClient(connection_string, serverSelectionTimeoutMS=5000)
+        
+        # Test connection
+        client.admin.command('ping')
+        
+        db = client[db_name]
+        collection = db["locomo_results"]
+        
+        # Insert document
+        result = collection.insert_one(mongo_data)
+        print(f"✓ Results saved to MongoDB: experiment='{experiment_name}', model='{model}', ID={result.inserted_id}")
+        
+        client.close()
+        return True
+    except Exception as e:
+        print(f"⚠ Warning: Failed to save to MongoDB: {str(e)}")
+        print(f"   Database: {db_name}, Connection: {'configured' if connection_string else 'not set'}")
+        return False
+
+
 def main():
+    import time
+    start_time = time.time()
+    
     # Load API keys from secrets.env
     load_secrets()
     
@@ -79,6 +186,8 @@ def main():
     print(f"Model: {args.model}")
     print(f"Data file: {args.data_file}")
     print(f"Output file: {args.out_file}")
+    if args.max_questions > 0:
+        print(f"Max questions per sample: {args.max_questions}")
     print("=" * 60)
     
     # Ensure output directory exists
@@ -126,9 +235,16 @@ def main():
     for data in samples:
         print(f"\nProcessing sample: {data['sample_id']}")
         
+        # Limit questions if max_questions is specified
+        if args.max_questions > 0:
+            data['qa'] = data['qa'][:args.max_questions]
+            print(f"  Limited to {len(data['qa'])} questions (max_questions={args.max_questions})")
+        
         out_data = {'sample_id': data['sample_id']}
         if data['sample_id'] in out_samples:
             out_data['qa'] = out_samples[data['sample_id']]['qa'].copy()
+            if args.max_questions > 0:
+                out_data['qa'] = out_data['qa'][:args.max_questions]
         else:
             out_data['qa'] = data['qa'].copy()
         
@@ -168,8 +284,38 @@ def main():
         rag=args.use_rag
     )
     
+    # Calculate execution time
+    execution_time = time.time() - start_time
+    
+    # Calculate metrics for MongoDB
+    metrics = calculate_metrics(out_samples, model_key)
+    print(f"\nMetrics Summary:")
+    print(f"  Total questions: {metrics['total_questions']}")
+    print(f"  Overall accuracy (F1): {metrics['overall_accuracy']}")
+    
+    # Save to MongoDB if configured
+    experiment_name = os.environ.get("EXPERIMENT_NAME")
+    db_name = os.environ.get("DB_NAME")
+    connection_string = os.environ.get("CONNECTION_STRING")
+    
+    if experiment_name and db_name and connection_string:
+        print(f"\nSaving to MongoDB (experiment: {experiment_name})...")
+        config = {
+            "batch_size": args.batch_size,
+            "use_rag": args.use_rag,
+            "max_questions": args.max_questions
+        }
+        save_to_mongodb(experiment_name, args.model, metrics, db_name, connection_string,
+                       execution_time, config)
+    else:
+        if not experiment_name:
+            print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")
+        elif not db_name or not connection_string:
+            print("\n⚠ MongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), skipping save")
+    
     print("\n" + "=" * 60)
-    print("LoCoMo evaluation completed successfully!")
+    print(f"LoCoMo evaluation completed successfully!")
+    print(f"Execution time: {execution_time:.2f} seconds")
     print("=" * 60)
 
 

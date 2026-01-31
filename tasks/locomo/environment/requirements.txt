@@ -29,3 +29,7 @@ regex==2022.10.31
 # Utilities
 tqdm==4.64.1
 icrawler
+
+# Database
+pymongo>=4.0.0
+python-dotenv
