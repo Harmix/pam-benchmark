@@ -18,6 +18,8 @@ services:
       - USE_RAG=${USE_RAG}
       - OVERWRITE=${OVERWRITE}
       - MAX_QUESTIONS=${MAX_QUESTIONS}
+      - SAMPLE_INDEX=${SAMPLE_INDEX}
+      - PAM_DEBUG=${PAM_DEBUG}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:

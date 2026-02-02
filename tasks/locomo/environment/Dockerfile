@@ -6,10 +6,23 @@ RUN apt-get update && apt-get install -y \
     git \
     jq \
     build-essential \
+    tree \
     && rm -rf /var/lib/apt/lists/*
 
+# Install yq for YAML parsing (needed for PAM scripts)
+RUN curl -L "https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64" \
+    -o /usr/local/bin/yq && \
+    chmod +x /usr/local/bin/yq
+
+# Install Node.js for Claude Code (needed for PAM agent)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
+# Install Claude Code globally (for PAM agent)
+RUN npm install -g @anthropic-ai/claude-code@2.0.76
+
 # Create working directories
-RUN mkdir -p /workspace/solution /task_data /outputs /logs/verifier
+RUN mkdir -p /workspace/solution /task_data /outputs /task_logs /logs/verifier
 
 # Copy requirements and install Python packages
 COPY tasks/locomo/environment/requirements.txt /tmp/requirements.txt
@@ -26,9 +39,24 @@ COPY tasks/locomo/environment/prompt_examples/ /task_data/prompt_examples/
 # Copy dataset
 COPY datasets/locomo/data/ /task_data/data/
 
-# Copy the run script
+# Copy the main run script
 COPY tasks/locomo/environment/run_locomo.py /task_data/run_locomo.py
 RUN chmod +x /task_data/run_locomo.py
+
+# Copy PAM guide files
+COPY tasks/locomo/environment/INIT.md /task_data/INIT.md
+COPY tasks/locomo/environment/init.py /task_data/init.py
+COPY tasks/locomo/environment/INTRO_TEMPLATE.md /task_data/INTRO_TEMPLATE.md
+COPY tasks/locomo/environment/CLAUDE.md /task_data/CLAUDE.md
+
+# Copy PAM utility scripts
+COPY tasks/locomo/environment/pam_utils.py /task_data/pam_utils.py
+COPY tasks/locomo/environment/pam_evaluate.py /task_data/pam_evaluate.py
+COPY tasks/locomo/environment/pam_setup.sh /task_data/pam_setup.sh
+COPY tasks/locomo/environment/pam_process.sh /task_data/pam_process.sh
+COPY tasks/locomo/environment/pam_answer.sh /task_data/pam_answer.sh
+COPY tasks/locomo/environment/run_pam_locomo.sh /task_data/run_pam_locomo.sh
+RUN chmod +x /task_data/pam_*.sh /task_data/run_pam_locomo.sh
 
 # Copy the solution script
 COPY tasks/locomo/solution/solve.sh /workspace/solution/solve.sh
@@ -53,6 +81,7 @@ WORKDIR /workspace
 
 # Set Python path to include task_data for imports
 ENV PYTHONPATH=/task_data
+ENV NODE_ENV=production
 
 # Default CMD runs the solution script (Harbor mounts it at /workspace/solution/solve.sh)
 CMD ["/workspace/solution/solve.sh"]

@@ -25,6 +25,7 @@ from task_eval.claude_utils import get_claude_answers
 from task_eval.gemini_utils import get_gemini_answers
 
 import google.generativeai as genai
+import subprocess
 
 # MongoDB import (optional)
 try:
@@ -33,6 +34,113 @@ try:
 except ImportError:
     MONGODB_AVAILABLE = False
     print("Warning: pymongo not installed, MongoDB saving disabled")
+
+
+# PAM Agent Functions
+def run_pam_for_sample(sample: Dict, sample_index: int, args, data_file: str) -> Dict:
+    """
+    Run PAM agent for a single sample.
+    
+    PAM processes the conversation history into a memory structure,
+    then answers questions based on that memory.
+    """
+    sample_id = sample.get('sample_id', f'sample_{sample_index}')
+    
+    print(f"\n{'='*60}")
+    print(f"Running PAM Agent for sample: {sample_id}")
+    print(f"{'='*60}")
+    
+    # Set environment variables for PAM scripts
+    env = os.environ.copy()
+    env['DATA_FILE'] = data_file
+    env['SAMPLE_INDEX'] = str(sample_index)
+    env['MAX_QUESTIONS'] = str(args.max_questions)
+    
+    # Run the main PAM orchestrator script
+    pam_script = '/task_data/run_pam_locomo.sh'
+    
+    if os.path.exists(pam_script):
+        try:
+            result = subprocess.run(
+                ['bash', pam_script],
+                env=env,
+                cwd='/workspace',
+                capture_output=False,
+                timeout=3600  # 1 hour timeout
+            )
+            
+            if result.returncode != 0:
+                print(f"Warning: PAM script returned non-zero exit code: {result.returncode}")
+        except subprocess.TimeoutExpired:
+            print("Error: PAM script timed out")
+        except Exception as e:
+            print(f"Error running PAM script: {e}")
+    else:
+        print(f"Error: PAM script not found at {pam_script}")
+        return None
+    
+    # Find and read PAM answers
+    answers = load_pam_answers(sample_id)
+    
+    return answers
+
+
+def load_pam_answers(sample_id: str) -> Optional[Dict]:
+    """Load PAM answers from the output file."""
+    import glob
+    
+    # Find the latest answers file for this sample
+    pattern = f'/task_logs/{sample_id}_*/pam_answers.json'
+    answer_files = sorted(glob.glob(pattern), reverse=True)
+    
+    if not answer_files:
+        print(f"Warning: No PAM answers file found for sample {sample_id}")
+        return None
+    
+    answers_file = answer_files[0]
+    print(f"Loading PAM answers from: {answers_file}")
+    
+    try:
+        with open(answers_file, 'r') as f:
+            answers = json.load(f)
+        return answers
+    except Exception as e:
+        print(f"Error loading PAM answers: {e}")
+        return None
+
+
+def get_pam_answers(data: Dict, out_data: Dict, prediction_key: str, args, sample_index: int, data_file: str) -> Dict:
+    """
+    Get answers from PAM agent for a locomo sample.
+    
+    This is the PAM equivalent of get_gpt_answers().
+    """
+    sample_id = data.get('sample_id', f'sample_{sample_index}')
+    
+    # Run PAM for this sample
+    pam_answers = run_pam_for_sample(data, sample_index, args, data_file)
+    
+    if pam_answers is None:
+        print("Warning: PAM returned no answers, using empty predictions")
+        pam_answers = []
+    
+    # Map PAM answers to the out_data format
+    for i, qa in enumerate(out_data['qa']):
+        # Find matching PAM answer by question number
+        pam_answer = None
+        for pa in pam_answers:
+            if pa.get('question_num') == i + 1:
+                pam_answer = pa.get('pam_answer', '')
+                break
+        
+        if pam_answer is None:
+            pam_answer = ''
+            print(f"Warning: No PAM answer found for question {i + 1}")
+        
+        # Store the PAM prediction
+        out_data['qa'][i][prediction_key] = pam_answer
+    
+    return out_data
 
 
 def load_secrets():
@@ -57,7 +165,7 @@ def parse_args():
     parser.add_argument('--out-file', type=str, default='/outputs/locomo10_qa.json',
                         help='Path to output file')
     parser.add_argument('--model', type=str, default='gpt-4-turbo',
-                        help='Model to evaluate (gpt-4-turbo, gpt-3.5-turbo, claude-sonnet, gemini-pro-1.0)')
+                        help='Model to evaluate (gpt-4-turbo, gpt-3.5-turbo, claude-sonnet, gemini-pro-1.0, pam)')
     parser.add_argument('--batch-size', type=int, default=20,
                         help='Batch size for evaluation')
     parser.add_argument('--use-rag', action='store_true',
@@ -76,6 +184,8 @@ def parse_args():
                         help='Overwrite existing predictions')
     parser.add_argument('--max-questions', type=int, default=0,
                         help='Maximum number of questions per sample (0 = all questions)')
+    parser.add_argument('--sample-index', type=int, default=-1,
+                        help='Process only this sample index (-1 = all samples)')
     return parser.parse_args()
 
 
@@ -229,7 +339,12 @@ def main():
     # Initialize model-specific settings
     gemini_model = None
     
-    if 'gpt' in args.model:
+    if args.model == 'pam':
+        # PAM uses Claude Code - no special API initialization needed
+        print(f"Initialized PAM agent (using Claude Code)")
+        print("Note: PAM processes conversations into memory structure before answering")
+        
+    elif 'gpt' in args.model:
         set_openai_key()
         print(f"Initialized OpenAI API for model: {args.model}")
         
@@ -264,9 +379,19 @@ def main():
     else:
         out_samples = {}
     
+    # Filter samples if sample-index is specified
+    if args.sample_index >= 0:
+        if args.sample_index >= len(samples):
+            print(f"Error: sample-index {args.sample_index} out of range (max: {len(samples) - 1})")
+            return
+        samples_to_process = [(args.sample_index, samples[args.sample_index])]
+        print(f"Processing only sample index {args.sample_index}")
+    else:
+        samples_to_process = list(enumerate(samples))
+    
     # Process each sample
-    for data in samples:
-        print(f"\nProcessing sample: {data['sample_id']}")
+    for sample_index, data in samples_to_process:
+        print(f"\nProcessing sample: {data['sample_id']} (index: {sample_index})")
         
         # Limit questions if max_questions is specified
         if args.max_questions > 0:
@@ -282,7 +407,9 @@ def main():
             out_data['qa'] = data['qa'].copy()
         
         # Get answers based on model type
-        if 'gpt' in args.model:
+        if args.model == 'pam':
+            answers = get_pam_answers(data, out_data, prediction_key, args, sample_index, args.data_file)
+        elif 'gpt' in args.model:
             answers = get_gpt_answers(data, out_data, prediction_key, args)
         elif 'claude' in args.model:
             answers = get_claude_answers(data, out_data, prediction_key, args)
@@ -328,25 +455,28 @@ def main():
     print(f"  Incorrect answers: {metrics['incorrect_count']}")
     print(f"  Overall accuracy (F1): {metrics['overall_accuracy']}")
     
-    # Save to MongoDB if configured
-    experiment_name = os.environ.get("EXPERIMENT_NAME")
-    db_name = os.environ.get("DB_NAME")
-    connection_string = os.environ.get("CONNECTION_STRING")
-    
-    if experiment_name and db_name and connection_string:
-        print(f"\nSaving to MongoDB (experiment: {experiment_name})...")
-        config = {
-            "batch_size": args.batch_size,
-            "use_rag": args.use_rag,
-            "max_questions": args.max_questions
-        }
-        save_to_mongodb(experiment_name, args.model, metrics, db_name, connection_string,
-                       execution_time, config, incorrect_responses)
+    # Save to MongoDB if configured (skip for PAM - it saves via pam_evaluate.py)
+    if args.model == 'pam':
+        print("\n⚠ Skipping MongoDB save in run_locomo.py (PAM saves via pam_evaluate.py)")
     else:
-        if not experiment_name:
-            print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")
-        elif not db_name or not connection_string:
-            print("\n⚠ MongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), skipping save")
+        experiment_name = os.environ.get("EXPERIMENT_NAME")
+        db_name = os.environ.get("DB_NAME")
+        connection_string = os.environ.get("CONNECTION_STRING")
+        
+        if experiment_name and db_name and connection_string:
+            print(f"\nSaving to MongoDB (experiment: {experiment_name})...")
+            config = {
+                "batch_size": args.batch_size,
+                "use_rag": args.use_rag,
+                "max_questions": args.max_questions
+            }
+            save_to_mongodb(experiment_name, args.model, metrics, db_name, connection_string,
+                           execution_time, config, incorrect_responses)
+        else:
+            if not experiment_name:
+                print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")
+            elif not db_name or not connection_string:
+                print("\n⚠ MongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), skipping save")
     
     print("\n" + "=" * 60)
     print(f"LoCoMo evaluation completed successfully!")

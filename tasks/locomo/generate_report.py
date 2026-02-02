@@ -352,8 +352,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         
         <div class="summary-cards">
             <div class="summary-card">
-                <div class="summary-card-value">{total_runs}</div>
-                <div class="summary-card-label">Evaluation Runs</div>
+                <div class="summary-card-value">{total_samples}</div>
+                <div class="summary-card-label">Samples Evaluated</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-value">{total_questions}</div>
@@ -376,11 +376,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         {category_stats_html}
         
         <div class="section">
-            <h2 class="section-title">Results by Run</h2>
+            <h2 class="section-title">Results by Sample</h2>
             <table>
                 <thead>
                     <tr>
                         <th>Model</th>
+                        <th>Sample</th>
                         <th>Questions</th>
                         <th>Correct</th>
                         <th>F1 Accuracy</th>
@@ -411,6 +412,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 RESULT_ROW_TEMPLATE = """
 <tr>
     <td><strong>{model}</strong></td>
+    <td>{sample_id}</td>
     <td>{total_questions}</td>
     <td>{correct_count}</td>
     <td><span class="accuracy-badge {accuracy_class}">{accuracy}%</span></td>
@@ -565,6 +567,7 @@ def generate_result_rows(results: List[Dict]) -> str:
     
     for result in results:
         model = result.get("model", "Unknown")
+        sample_id = result.get("sample_id", "N/A")
         total_questions = result.get("total_questions", 0)
         correct_count = result.get("correct_count", 0)
         accuracy = result.get("overall_accuracy", 0) * 100
@@ -573,6 +576,7 @@ def generate_result_rows(results: List[Dict]) -> str:
         
         row = RESULT_ROW_TEMPLATE.format(
             model=model,
+            sample_id=sample_id,
             total_questions=total_questions,
             correct_count=correct_count,
             accuracy=f"{accuracy:.1f}",
@@ -588,35 +592,72 @@ def generate_result_rows(results: List[Dict]) -> str:
 def generate_category_stats_html(results: List[Dict]) -> str:
     """Generate HTML for category statistics"""
     # Aggregate category stats across all results
+    # Handle both numbered categories (category_1_accuracy) and named categories (single_hop_accuracy)
     category_totals = {}
     category_counts = {}
+    category_question_counts = {}
+    
+    # Named category mapping
+    NAMED_CATEGORIES = {
+        "single_hop": "Single-hop",
+        "temporal": "Temporal",
+        "open_domain": "Open-domain", 
+        "multi_hop": "Multi-hop",
+        "adversarial": "Adversarial"
+    }
     
     for result in results:
         for key, value in result.items():
-            if key.startswith("category_") and key.endswith("_accuracy"):
-                cat_num = key.replace("category_", "").replace("_accuracy", "")
-                if cat_num not in category_totals:
-                    category_totals[cat_num] = 0.0
-                    category_counts[cat_num] = 0
-                category_totals[cat_num] += value
-                category_counts[cat_num] += 1
+            if key.endswith("_accuracy"):
+                # Handle numbered categories (category_1_accuracy)
+                if key.startswith("category_"):
+                    cat_name = key.replace("category_", "").replace("_accuracy", "")
+                    if cat_name.isdigit():
+                        cat_int = int(cat_name)
+                        display_name = CATEGORY_NAMES.get(cat_int, f"Category {cat_name}")
+                    else:
+                        display_name = cat_name.replace("_", " ").title()
+                    count_key = f"category_{cat_name}_count"
+                # Handle named categories (single_hop_accuracy, multi_hop_accuracy)
+                else:
+                    cat_name = key.replace("_accuracy", "")
+                    if cat_name in NAMED_CATEGORIES:
+                        display_name = NAMED_CATEGORIES[cat_name]
+                        count_key = f"{cat_name}_count"
+                    else:
+                        continue  # Skip unknown categories
+                
+                if display_name not in category_totals:
+                    category_totals[display_name] = 0.0
+                    category_counts[display_name] = 0
+                    category_question_counts[display_name] = 0
+                
+                category_totals[display_name] += value
+                category_counts[display_name] += 1
+                category_question_counts[display_name] += result.get(count_key, 0)
     
     if not category_totals:
         return ""
     
+    # Sort categories in a logical order
+    category_order = ["Single-hop", "Temporal", "Open-domain", "Multi-hop", "Adversarial"]
+    sorted_categories = []
+    for cat in category_order:
+        if cat in category_totals:
+            sorted_categories.append(cat)
+    # Add any remaining categories not in the predefined order
+    for cat in category_totals.keys():
+        if cat not in sorted_categories:
+            sorted_categories.append(cat)
+    
     # Generate category items
     items = []
-    for cat_num in sorted(category_totals.keys(), key=lambda x: int(x) if x.isdigit() else 0):
-        avg_accuracy = (category_totals[cat_num] / category_counts[cat_num] * 100) if category_counts[cat_num] > 0 else 0
-        cat_int = int(cat_num) if cat_num.isdigit() else 0
-        category_name = CATEGORY_NAMES.get(cat_int, f"Category {cat_num}")
-        
-        # Get count from results
-        count_key = f"category_{cat_num}_count"
-        total_count = sum(r.get(count_key, 0) for r in results)
+    for display_name in sorted_categories:
+        avg_accuracy = (category_totals[display_name] / category_counts[display_name] * 100) if category_counts[display_name] > 0 else 0
+        total_count = category_question_counts[display_name]
         
         item = CATEGORY_ITEM_TEMPLATE.format(
-            category_name=category_name,
+            category_name=display_name,
             accuracy=f"{avg_accuracy:.1f}",
             count=total_count
         )
@@ -632,6 +673,7 @@ def generate_incorrect_responses_html(results: List[Dict]) -> str:
     
     for result in results:
         model = result.get("model", "Unknown")
+        result_sample_id = result.get("sample_id", "?")  # Sample ID at result level
         incorrect_responses = result.get("incorrect_responses", [])
         
         if not incorrect_responses:
@@ -652,20 +694,37 @@ def generate_incorrect_responses_html(results: List[Dict]) -> str:
         <div class="evidence-box">{evidence_str}</div>
     </div>'''
             
+            # Get sample_id from response or from result level
+            sample_id = resp.get("sample_id", result_sample_id)
+            
+            # Get model answer - handle both 'model_answer' and 'pam_answer' keys
+            model_answer = resp.get("model_answer") or resp.get("pam_answer") or "No answer provided"
+            
+            # Get category - handle both numbered and named
+            category = resp.get("category", "?")
+            category_name = resp.get("category_name", "")
+            if category_name:
+                category_display = f"{category} ({category_name})"
+            else:
+                category_display = str(category)
+            
             card = ERROR_CARD_TEMPLATE.format(
                 question_num=resp.get("question_num", "?"),
                 f1_score=f"{resp.get('f1_score', 0):.3f}",
-                category=resp.get("category", "?"),
-                sample_id=resp.get("sample_id", "?"),
+                category=category_display,
+                sample_id=sample_id,
                 question=resp.get("question", "N/A"),
                 expected_answer=resp.get("expected_answer", "N/A"),
-                model_answer=resp.get("model_answer", "N/A") or "No answer provided",
+                model_answer=model_answer,
                 evidence_html=evidence_html
             )
             error_cards.append(card)
         
+        # Include sample_id in the model errors title for PAM
+        model_display = f"{model} ({result_sample_id})" if result_sample_id != "?" else model
+        
         model_section = MODEL_ERRORS_TEMPLATE.format(
-            model=model,
+            model=model_display,
             error_count=len(incorrect_responses),
             error_cards="\n".join(error_cards)
         )
@@ -687,18 +746,29 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
     dataset_name = results[0].get("dataset_name", "locomo@1.0")
     model_name = results[0].get("model", "Unknown")
     
+    # Get list of samples processed
+    sample_ids = [r.get("sample_id", "N/A") for r in results]
+    unique_samples = len(set(sample_ids))
+    
     # Calculate overall metrics
     total_runs = len(results)
     total_questions = sum(r.get("total_questions", 0) for r in results)
     total_correct = sum(r.get("correct_count", 0) for r in results)
-    total_incorrect = sum(len(r.get("incorrect_responses", [])) for r in results)
+    total_incorrect = sum(r.get("incorrect_count", 0) for r in results)
     total_execution_time = sum(r.get("execution_time_seconds", 0) or 0 for r in results)
     
-    # Calculate average accuracy
-    if results:
-        avg_accuracy = sum(r.get("overall_accuracy", 0) for r in results) / len(results) * 100
+    # Calculate weighted average accuracy (by number of questions per sample)
+    if total_questions > 0:
+        # Weighted average: sum of (accuracy * questions) / total questions
+        weighted_sum = sum(r.get("overall_accuracy", 0) * r.get("total_questions", 0) for r in results)
+        avg_accuracy = (weighted_sum / total_questions) * 100
     else:
         avg_accuracy = 0
+    
+    print(f"  Samples: {unique_samples}")
+    print(f"  Total questions: {total_questions}")
+    print(f"  Total correct: {total_correct}")
+    print(f"  Weighted average accuracy: {avg_accuracy:.2f}%")
     
     # Generate HTML sections
     result_rows = generate_result_rows(results)
@@ -711,7 +781,7 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
         dataset_name=dataset_name,
         model_name=model_name,
         report_generated=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        total_runs=total_runs,
+        total_samples=unique_samples,
         total_questions=total_questions,
         total_correct=total_correct,
         total_incorrect=total_incorrect,

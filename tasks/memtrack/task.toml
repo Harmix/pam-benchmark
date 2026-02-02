@@ -8,13 +8,13 @@ category = "multi-modal-reasoning"
 tags = ["pam", "memory-agent", "linear", "slack", "event-history", "temporal-reasoning"]
 
 [verifier]
-timeout_sec = 1800.0  # 30 minutes for processing and answering questions
+timeout_sec = 259200.0  # 72 hours (effectively no timeout)
 
 [agent]
-timeout_sec = 1800.0  # 30 minutes for agent execution
+timeout_sec = 259200.0  # 72 hours (effectively no timeout)
 
 [environment]
-build_timeout_sec = 600.0  # 10 minutes for Docker build
+build_timeout_sec = 3600.0  # 1 hour for Docker build
 cpus = 2
 memory = "4G"
 storage = "20G"

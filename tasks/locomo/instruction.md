@@ -45,6 +45,7 @@ MODEL=claude-sonnet EXPERIMENT_NAME=my_experiment harbor run \
 | `USE_RAG` | `false` | Enable RAG-based evaluation |
 | `OVERWRITE` | `false` | Overwrite existing predictions |
 | `MAX_QUESTIONS` | `0` | Maximum questions per sample (0 = all questions) |
+| `SAMPLE_INDEX` | `0` | Sample index to process (PAM only, for testing single samples) |
 | `EXPERIMENT_NAME` | - | Name for the experiment run |
 
 ### Examples
@@ -114,10 +115,23 @@ tasks/locomo/
 │   ├── prompt_examples/       # Prompt templates and examples
 │   ├── requirements.txt       # Python dependencies
 │   ├── run_locomo.py          # Main evaluation script
-│   └── task_eval/             # Evaluation modules
+│   ├── task_eval/             # Evaluation modules
+│   │
+│   │   # PAM Agent files
+│   ├── INIT.md                # PAM Memory Agent Guide
+│   ├── init.py                # PAM structure generator
+│   ├── INTRO_TEMPLATE.md      # Company template
+│   ├── CLAUDE.md              # PAM system context
+│   ├── pam_utils.py           # PAM utility functions
+│   ├── pam_setup.sh           # PAM setup phase
+│   ├── pam_process.sh         # PAM processing phase
+│   ├── pam_answer.sh          # PAM answering phase
+│   └── run_pam_locomo.sh      # PAM main orchestrator
 ├── instruction.md             # This file
 ├── solution/
 │   └── solve.sh               # Entry point script for Harbor
+├── generate_report.py         # HTML report generator
+├── reports/                   # Generated reports directory
 └── task.toml                  # Task configuration
 ```
 
@@ -126,6 +140,76 @@ tasks/locomo/
 - **OpenAI**: gpt-4-turbo, gpt-3.5-turbo, gpt-3.5-turbo-16k
 - **Anthropic**: claude-sonnet, claude-haiku
 - **Google**: gemini-pro-1.0
+- **PAM Agent**: pam (Proactive AI Manager with memory structure)
+
+### PAM Agent
+
+PAM (Proactive AI Manager) is a memory-augmented agent that:
+1. **Processes conversations** into a structured memory format (person profiles, session digests, topic files)
+2. **Creates a knowledge base** from conversation history
+3. **Answers questions** by referencing the organized memory structure
+
+To run with PAM:
+```bash
+MODEL=pam MAX_QUESTIONS=10 EXPERIMENT_NAME=locomo_pam harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+```
+
+PAM uses Claude Code internally and creates the following memory structure:
+- `02_people/` - Person profiles for each speaker
+- `09_activity_streams/daily_digests/` - Session-by-session conversation summaries
+- `09_activity_streams/linear_objects/` - Topic/event files
+- `processed_data.md` - Overall conversation summary
+
+### Parallel Execution for PAM
+
+Since PAM takes ~960 seconds per sample, you can run multiple samples in parallel using separate terminal sessions.
+
+**Recommended approach - Multiple Terminal Sessions:**
+
+```bash
+# Terminal 1: Build image with first sample (use --force-build)
+EXPERIMENT_NAME=locomo_pam MODEL=pam SAMPLE_INDEX=0 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+
+# Terminal 2: Run sample 1 (no --force-build, reuses built image)
+EXPERIMENT_NAME=locomo_pam MODEL=pam SAMPLE_INDEX=1 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json
+
+# Terminal 3: Run sample 2
+EXPERIMENT_NAME=locomo_pam MODEL=pam SAMPLE_INDEX=2 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json
+
+# ... continue for samples 3-9 in additional terminals
+```
+
+**Quick test with limited questions:**
+
+```bash
+# Terminal 1 (with --force-build)
+EXPERIMENT_NAME=locomo_pam_test MODEL=pam SAMPLE_INDEX=0 MAX_QUESTIONS=5 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+
+# Terminal 2 (without --force-build)
+EXPERIMENT_NAME=locomo_pam_test MODEL=pam SAMPLE_INDEX=1 MAX_QUESTIONS=5 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json
+```
+
+**Important notes:**
+- Use `--force-build` only on the **first** terminal to build the Docker image
+- Subsequent terminals should **omit** `--force-build` to reuse the existing image
+- Start Terminal 2+ after Terminal 1 has finished building (you'll see evaluation starting)
+- All samples share the **same EXPERIMENT_NAME** in MongoDB for easy querying
+- Each sample's results are saved to MongoDB with `sample_id` and `sample_index` fields
 
 ## Output
 

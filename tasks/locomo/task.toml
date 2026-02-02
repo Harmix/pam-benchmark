@@ -8,13 +8,13 @@ category = "long-context-memory"
 tags = ["locomo", "memory-evaluation", "question-answering", "long-context", "conversation"]
 
 [verifier]
-timeout_sec = 3600.0  # 60 minutes for processing and answering questions
+timeout_sec = 259200.0  # 72 hours (effectively no timeout)
 
 [agent]
-timeout_sec = 3600.0  # 60 minutes for agent execution
+timeout_sec = 259200.0  # 72 hours (effectively no timeout)
 
 [environment]
-build_timeout_sec = 900.0  # 15 minutes for Docker build (needs to download many packages)
+build_timeout_sec = 3600.0  # 1 hour for Docker build
 cpus = 4
 memory = "8G"
 storage = "30G"
