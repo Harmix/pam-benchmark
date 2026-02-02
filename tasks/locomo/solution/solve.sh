@@ -33,11 +33,20 @@ fi
 
 # Set defaults
 MODEL="${MODEL:-gpt-4-turbo}"
-BATCH_SIZE="${BATCH_SIZE:-20}"
 USE_RAG="${USE_RAG:-false}"
 OVERWRITE="${OVERWRITE:-false}"
 MAX_QUESTIONS="${MAX_QUESTIONS:-0}"
 SAMPLE_INDEX="${SAMPLE_INDEX:--1}"
+
+# Set batch size based on model (PAM uses 10 for question batching to avoid rate limits, others use 20 for API calls)
+if [ "$MODEL" = "pam" ]; then
+  BATCH_SIZE="${BATCH_SIZE:-10}"
+else
+  BATCH_SIZE="${BATCH_SIZE:-20}"
+fi
+
+# Export BATCH_SIZE for PAM scripts
+export BATCH_SIZE
 
 # Show configuration
 echo "========================================"

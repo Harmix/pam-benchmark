@@ -163,6 +163,31 @@ PAM uses Claude Code internally and creates the following memory structure:
 - `09_activity_streams/linear_objects/` - Topic/event files
 - `processed_data.md` - Overall conversation summary
 
+### PAM Debug Mode
+
+Debug mode skips the memory creation phase (which takes ~15 minutes) and answers questions directly from raw conversation data. Useful for testing answer extraction and evaluation logic.
+
+```bash
+# Debug mode - skip memory creation, answer from raw conversation
+EXPERIMENT_NAME=locomo_pam_debug MODEL=pam SAMPLE_INDEX=0 PAM_DEBUG=true MAX_QUESTIONS=10 harbor run \
+  -d locomo@1.0 \
+  --registry-path datasets/locomo/registry.json \
+  --force-build
+```
+
+**What debug mode does:**
+- Skips Phase 1 (Setup) - No PAM folder structure creation
+- Skips Phase 2 (Processing) - No memory organization by Claude
+- Creates minimal context - Extracts raw conversation to `/workspace/processed_data.md`
+- Runs Phase 3 (Answering) - Claude answers questions based on raw conversation
+- Runs Phase 4 (Evaluation) - Metrics are still calculated and saved to MongoDB
+
+**When to use debug mode:**
+- Testing answer extraction and parsing logic
+- Testing evaluation/F1 calculation
+- Testing MongoDB saving
+- Quick iteration without waiting for memory creation
+
 ### Parallel Execution for PAM
 
 Since PAM takes ~960 seconds per sample, you can run multiple samples in parallel using separate terminal sessions.

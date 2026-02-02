@@ -10,12 +10,14 @@ __pycache__/
 
 jobs/**
 secrets.env
+service-account-harmix-pam-rnd.json
 pam-agent-credentials.json
 tasks/memtrack/reports/*.html
 benchmark/solution/benchmark_configs.txt
 benchmark/solution/experiment_name.txt
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/claude-config/**
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/outputs/**
+scripts/view_conversation.py
 
 # Distribution / packaging
 .Python

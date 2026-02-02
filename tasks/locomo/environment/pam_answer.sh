@@ -1,14 +1,14 @@
 #!/bin/bash
 # PAM Answer Script for LoCoMo
 # Phase 3: Answer questions using processed memory
-# Uses batching (20 questions per Claude call) for faster execution
+# Uses batching (50 questions per Claude call) for faster execution
 
 set -e
 
 SAMPLE_ID="${1:-sample_0}"
 LOG_DIR="${2:-/task_logs}"
 QUESTIONS_FILE="${3:-/workspace/questions.json}"
-BATCH_SIZE="${BATCH_SIZE:-20}"
+BATCH_SIZE="${BATCH_SIZE:-10}"
 
 CONTEXT_DIR="${SAMPLE_ID}_context_context"
 QUESTIONS_DIR="$LOG_DIR/questions"
@@ -58,6 +58,7 @@ for batch_num in $(seq 0 $((NUM_BATCHES - 1))); do
     echo ""
     
     BATCH_LOG_FILE="$QUESTIONS_DIR/batch_$((batch_num + 1)).log"
+    BATCH_RESPONSE_FILE="$QUESTIONS_DIR/batch_$((batch_num + 1))_response.txt"
     
     # Build the questions list for this batch
     QUESTIONS_LIST=$(python3 << EOF
@@ -109,17 +110,31 @@ Now answer all ${BATCH_QUESTIONS_COUNT} questions."
     echo "Asking PAM (Claude) for batch of $BATCH_QUESTIONS_COUNT questions..." | tee "$BATCH_LOG_FILE"
     cd /workspace
     
-    RESPONSE=$(claude --verbose -p "$BATCH_PROMPT" --allowedTools "Read(/workspace/**)" "Bash(ls:/workspace/*)" "Bash(cat:/workspace/*)" "Bash(find:/workspace/*)" "Bash(head:/workspace/*)" "Bash(tail:/workspace/*)" "Bash(tree:/workspace/*)" < /dev/null 2>&1 | tee -a "$BATCH_LOG_FILE")
+    # Run Claude and save response to file
+    claude --verbose -p "$BATCH_PROMPT" --allowedTools "Read(/workspace/**)" "Bash(ls:/workspace/*)" "Bash(cat:/workspace/*)" "Bash(find:/workspace/*)" "Bash(head:/workspace/*)" "Bash(tail:/workspace/*)" "Bash(tree:/workspace/*)" < /dev/null 2>&1 | tee "$BATCH_LOG_FILE" > "$BATCH_RESPONSE_FILE"
     
     echo ""
     echo "Extracting answers from response..."
     
-    # Parse the batch response and extract individual answers
-    python3 << EOF
+    # Parse the batch response and extract individual answers using the response file
+    python3 << PYEOF
 import json
 import re
 
-response = '''$RESPONSE'''
+# Read response from file
+with open('$BATCH_RESPONSE_FILE', 'r') as f:
+    response = f.read()
+
+print(f"Response length: {len(response)} characters")
+print("")
+print("=" * 60)
+print("RAW RESPONSE (first 3000 chars):")
+print("=" * 60)
+print(response[:3000])
+if len(response) > 3000:
+    print(f"\n... [{len(response) - 3000} more characters] ...")
+print("=" * 60)
+print("")
 
 # Load current answers
 with open('$ANSWERS_FILE', 'r') as f:
@@ -129,35 +144,55 @@ with open('$ANSWERS_FILE', 'r') as f:
 with open('$QUESTIONS_FILE', 'r') as f:
     all_questions = json.load(f)
 
-# Extract answers using regex pattern A1:, A2:, etc.
-# Handle various formats: "A1:", "A1.", "A1)", "Answer 1:"
-answer_patterns = [
-    r'A(\d+):\s*(.+?)(?=\nA\d+[:\.\)]|\n\n|\Z)',
-    r'A(\d+)\.\s*(.+?)(?=\nA\d+[:\.\)]|\n\n|\Z)',
-    r'Answer\s*(\d+):\s*(.+?)(?=\nAnswer\s*\d+|\n\n|\Z)',
-]
-
 extracted = {}
 
-for pattern in answer_patterns:
-    matches = re.findall(pattern, response, re.IGNORECASE | re.DOTALL)
-    for match in matches:
-        q_num = int(match[0])
-        answer = match[1].strip()
-        # Clean up the answer
-        answer = answer.split('\n')[0].strip()  # Take first line only
-        if q_num not in extracted or not extracted[q_num]:
-            extracted[q_num] = answer
-
-# Also try line-by-line extraction for simple format
+# Method 1: Line by line extraction (most reliable)
 for line in response.split('\n'):
     line = line.strip()
+    # Match patterns like: A1: answer, A1. answer, A1) answer
     match = re.match(r'^A(\d+)[:\.\)]\s*(.+)$', line, re.IGNORECASE)
     if match:
         q_num = int(match.group(1))
         answer = match.group(2).strip()
-        if q_num not in extracted or not extracted[q_num]:
+        extracted[q_num] = answer
+        
+# Method 2: Look for "Answer X:" format
+for line in response.split('\n'):
+    line = line.strip()
+    match = re.match(r'^Answer\s*(\d+)[:\.\)]\s*(.+)$', line, re.IGNORECASE)
+    if match:
+        q_num = int(match.group(1))
+        answer = match.group(2).strip()
+        if q_num not in extracted:
             extracted[q_num] = answer
+
+# Method 3: Multi-line pattern matching
+pattern = r'A(\d+)[:\.\)]\s*([^\n]+)'
+matches = re.findall(pattern, response, re.IGNORECASE)
+for match in matches:
+    q_num = int(match[0])
+    answer = match[1].strip()
+    if q_num not in extracted:
+        extracted[q_num] = answer
+
+# Method 4: Look for numbered list format (1. answer, 2. answer)
+if len(extracted) == 0:
+    print("Trying numbered list format...")
+    for line in response.split('\n'):
+        line = line.strip()
+        match = re.match(r'^(\d+)[:\.\)]\s*(.+)$', line)
+        if match:
+            q_num = int(match.group(1))
+            answer = match.group(2).strip()
+            # Adjust for batch offset
+            if 1 <= q_num <= $BATCH_QUESTIONS_COUNT:
+                actual_q_num = $START_IDX + q_num
+                if actual_q_num not in extracted:
+                    extracted[actual_q_num] = answer
+
+print(f"Extracted {len(extracted)} answers")
+if extracted:
+    print(f"Question numbers found: {sorted(extracted.keys())}")
 
 # Process each question in the batch
 for i in range($START_IDX, $END_IDX + 1):
@@ -173,16 +208,18 @@ for i in range($START_IDX, $END_IDX + 1):
         'pam_answer': answer
     })
     
-    print(f"Q{q_num}: {question[:60]}...")
-    print(f"A{q_num}: {answer}")
-    print()
+    status = "✓" if answer != "No answer extracted" else "✗"
+    print(f"{status} Q{q_num}: {question[:50]}...")
+    print(f"   A{q_num}: {answer[:80] if answer else 'No answer'}")
 
 # Save updated answers
 with open('$ANSWERS_FILE', 'w') as f:
     json.dump(answers, f, indent=2)
 
-print(f"Extracted {len(extracted)} answers from batch")
-EOF
+# Report extraction success rate
+success_count = sum(1 for i in range($START_IDX, $END_IDX + 1) if (i + 1) in extracted)
+print(f"\nExtraction success: {success_count}/{$BATCH_QUESTIONS_COUNT} questions")
+PYEOF
 
     echo ""
     echo "Batch $((batch_num + 1)) completed. Log: $BATCH_LOG_FILE"
@@ -208,11 +245,16 @@ python3 -c "
 import json
 with open('$ANSWERS_FILE') as f:
     answers = json.load(f)
-print(f'Total answers: {len(answers)}')
+
+total = len(answers)
+extracted = sum(1 for a in answers if a['pam_answer'] != 'No answer extracted')
+print(f'Total answers: {total}')
+print(f'Successfully extracted: {extracted} ({100*extracted/total:.1f}%)')
 print()
 for a in answers[:5]:
-    print(f\"Q{a['question_num']}: {a['question'][:50]}...\")
-    print(f\"A: {a['pam_answer'][:100]}\")
+    status = '✓' if a['pam_answer'] != 'No answer extracted' else '✗'
+    print(f\"{status} Q{a['question_num']}: {a['question'][:50]}...\")
+    print(f\"   A: {a['pam_answer'][:80]}\")
     print()
 if len(answers) > 5:
     print(f'... and {len(answers) - 5} more answers')
