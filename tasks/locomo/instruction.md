@@ -252,7 +252,7 @@ The task produces:
 
 API keys are loaded from `secrets.env` at the project root. Required keys depend on the model:
 - `OPENAI_API_KEY` - for GPT models
-- `ANTHROPIC_API_KEY` - for Claude models
+- `ANTHROPIC_API_KEY` - for Claude models (not needed for PAM, only used for direct Claude API models (claude-sonnet, claude-haiku))
 - `GOOGLE_API_KEY` - for Gemini models
 
 ## MongoDB Integration

@@ -10,7 +10,6 @@ __pycache__/
 
 jobs/**
 secrets.env
-service-account-harmix-pam-rnd.json
 pam-agent-credentials.json
 tasks/memtrack/reports/*.html
 benchmark/solution/benchmark_configs.txt

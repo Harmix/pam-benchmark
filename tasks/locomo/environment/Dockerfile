@@ -7,7 +7,18 @@ RUN apt-get update && apt-get install -y \
     jq \
     build-essential \
     tree \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Google Cloud SDK
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+    | tee /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+    | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
+    apt-get update && apt-get install -y google-cloud-cli && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install yq for YAML parsing (needed for PAM scripts)
 RUN curl -L "https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64" \
@@ -65,6 +76,18 @@ RUN chmod +x /workspace/solution/solve.sh
 # Copy secrets.env file from project root
 COPY secrets.env /workspace/secrets.env
 
+# Copy GCP service account credentials for Vertex AI
+COPY pam-agent-credentials.json /workspace/pam-agent-credentials.json
+
+# Authenticate gcloud with service account
+RUN gcloud config set project harmix-pam-rnd && \
+    gcloud auth activate-service-account --key-file=/workspace/pam-agent-credentials.json
+
+# Configure Claude Code to use Vertex AI
+RUN mkdir -p /root/.claude && \
+    echo '{"env":{"CLAUDE_CODE_USE_VERTEX":"1","CLOUD_ML_REGION":"europe-west1","ANTHROPIC_VERTEX_PROJECT_ID":"harmix-pam-rnd"},"permissions":{"allow":["Read(**)","Edit(**)","Write(**)","Bash(**)"]},"autoUpdaterStatus":"disabled"}' \
+    > /root/.claude/settings.local.json
+
 # Create .bashrc that sources secrets.env for interactive shells
 RUN echo '' >> /root/.bashrc && \
     echo '# Source secrets.env for environment variables' >> /root/.bashrc && \
@@ -82,6 +105,12 @@ WORKDIR /workspace
 # Set Python path to include task_data for imports
 ENV PYTHONPATH=/task_data
 ENV NODE_ENV=production
+
+# Vertex AI environment variables for Claude Code
+ENV CLAUDE_CODE_USE_VERTEX=1
+ENV CLOUD_ML_REGION=europe-west1
+ENV ANTHROPIC_VERTEX_PROJECT_ID=harmix-pam-rnd
+ENV GOOGLE_APPLICATION_CREDENTIALS=/workspace/pam-agent-credentials.json
 
 # Default CMD runs the solution script (Harbor mounts it at /workspace/solution/solve.sh)
 CMD ["/workspace/solution/solve.sh"]

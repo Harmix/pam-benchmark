@@ -20,6 +20,11 @@ services:
       - MAX_QUESTIONS=${MAX_QUESTIONS}
       - SAMPLE_INDEX=${SAMPLE_INDEX}
       - PAM_DEBUG=${PAM_DEBUG}
+      # Vertex AI / Claude Code via GCP
+      - CLAUDE_CODE_USE_VERTEX=1
+      - CLOUD_ML_REGION=europe-west1
+      - ANTHROPIC_VERTEX_PROJECT_ID=harmix-pam-rnd
+      - GOOGLE_APPLICATION_CREDENTIALS=/workspace/pam-agent-credentials.json
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:
