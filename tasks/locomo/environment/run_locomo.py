@@ -189,57 +189,63 @@ def parse_args():
     return parser.parse_args()
 
 
-def calculate_metrics(out_samples: Dict, model_key: str, prediction_key: str) -> tuple:
-    """Calculate aggregate metrics from evaluation results and extract incorrect responses."""
+# Category number to name mapping
+CATEGORY_NAMES = {
+    1: "single_hop",
+    2: "temporal",
+    3: "open_domain",
+    4: "multi_hop",
+    5: "adversarial"
+}
+
+
+def calculate_metrics_for_sample(sample_id: str, sample: Dict, model_key: str, prediction_key: str) -> tuple:
+    """Calculate metrics for a single sample and extract incorrect responses."""
     total_questions = 0
     total_f1 = 0.0
     correct_count = 0
     category_counts = {}
     category_f1_sums = {}
     incorrect_responses = []
-    question_num = 0
     
-    # F1 threshold for considering an answer "correct"
     F1_THRESHOLD = 0.5
     
-    for sample_id, sample in out_samples.items():
-        for qa in sample.get('qa', []):
-            question_num += 1
-            total_questions += 1
-            f1_score = qa.get(f'{model_key}_f1', 0.0)
-            total_f1 += f1_score
-            
-            # Count as correct if F1 >= threshold
-            if f1_score >= F1_THRESHOLD:
-                correct_count += 1
-            else:
-                # Extract incorrect response for report
-                incorrect_responses.append({
-                    "question_num": question_num,
-                    "sample_id": sample_id,
-                    "question": qa.get('question', 'N/A'),
-                    "expected_answer": str(qa.get('answer', 'N/A')),
-                    "model_answer": qa.get(prediction_key, 'N/A'),
-                    "f1_score": round(f1_score, 3),
-                    "category": qa.get('category', 0),
-                    "evidence": qa.get('evidence', [])
-                })
-            
-            category = qa.get('category', 0)
-            if category not in category_counts:
-                category_counts[category] = 0
-                category_f1_sums[category] = 0.0
-            category_counts[category] += 1
-            category_f1_sums[category] += f1_score
+    for i, qa in enumerate(sample.get('qa', [])):
+        question_num = i + 1
+        total_questions += 1
+        f1_score = qa.get(f'{model_key}_f1', 0.0)
+        total_f1 += f1_score
+        
+        category = qa.get('category', 0)
+        category_name = CATEGORY_NAMES.get(category, f"category_{category}")
+        
+        if f1_score >= F1_THRESHOLD:
+            correct_count += 1
+        else:
+            incorrect_responses.append({
+                "question_num": question_num,
+                "question": qa.get('question', 'N/A'),
+                "expected_answer": str(qa.get('answer', 'N/A')),
+                "pam_answer": qa.get(prediction_key, 'N/A'),
+                "f1_score": round(f1_score, 4),
+                "category": category,
+                "category_name": category_name
+            })
+        
+        if category not in category_counts:
+            category_counts[category] = 0
+            category_f1_sums[category] = 0.0
+        category_counts[category] += 1
+        category_f1_sums[category] += f1_score
     
-    # Calculate overall metrics
     overall_accuracy = total_f1 / total_questions if total_questions > 0 else 0.0
     
-    # Calculate per-category accuracy
-    category_accuracy = {}
+    # Use named categories
+    category_metrics = {}
     for cat, count in category_counts.items():
-        category_accuracy[f'category_{cat}_accuracy'] = round(category_f1_sums[cat] / count, 4) if count > 0 else 0.0
-        category_accuracy[f'category_{cat}_count'] = count
+        cat_name = CATEGORY_NAMES.get(cat, f"category_{cat}")
+        category_metrics[f'{cat_name}_accuracy'] = round(category_f1_sums[cat] / count, 4) if count > 0 else 0.0
+        category_metrics[f'{cat_name}_count'] = count
     
     metrics = {
         'total_questions': total_questions,
@@ -247,18 +253,20 @@ def calculate_metrics(out_samples: Dict, model_key: str, prediction_key: str) ->
         'incorrect_count': len(incorrect_responses),
         'overall_accuracy': round(overall_accuracy, 4),
         'total_f1_sum': round(total_f1, 4),
-        **category_accuracy
+        **category_metrics
     }
     
     return metrics, incorrect_responses
 
 
-def save_to_mongodb(experiment_name: str, model: str, metrics: Dict, 
+def save_to_mongodb(experiment_name: str, model: str, metrics: Dict,
                    db_name: str, connection_string: str,
+                   sample_id: str = None,
+                   sample_index: int = None,
                    execution_time: float = None,
                    config: Dict = None,
                    incorrect_responses: List[Dict] = None) -> bool:
-    """Save evaluation results to MongoDB."""
+    """Save evaluation results to MongoDB (one record per sample)."""
     if not MONGODB_AVAILABLE:
         print("⚠ Warning: pymongo not available, skipping MongoDB save")
         return False
@@ -273,14 +281,18 @@ def save_to_mongodb(experiment_name: str, model: str, metrics: Dict,
             **metrics
         }
         
+        # Add sample identification
+        if sample_id is not None:
+            mongo_data["sample_id"] = sample_id
+        if sample_index is not None:
+            mongo_data["sample_index"] = sample_index
+        
         # Add execution time if provided
         if execution_time is not None:
             mongo_data["execution_time_seconds"] = float(execution_time)
         
         # Add config details if provided
         if config:
-            mongo_data["batch_size"] = config.get("batch_size", 20)
-            mongo_data["use_rag"] = config.get("use_rag", False)
             mongo_data["max_questions"] = config.get("max_questions", 0)
         
         # Add incorrect responses if provided (for report generation)
@@ -303,8 +315,8 @@ def save_to_mongodb(experiment_name: str, model: str, metrics: Dict,
         
         # Insert document
         result = collection.insert_one(mongo_data)
-        print(f"✓ Results saved to MongoDB: experiment='{experiment_name}', model='{model}', ID={result.inserted_id}")
-        print(f"  Saved {len(incorrect_responses) if incorrect_responses else 0} incorrect responses for report generation")
+        print(f"✓ Results saved to MongoDB: experiment='{experiment_name}', model='{model}', sample='{sample_id}', ID={result.inserted_id}")
+        print(f"  Metrics: accuracy={metrics.get('overall_accuracy', 'N/A')}, correct={metrics.get('correct_count', 0)}/{metrics.get('total_questions', 0)}")
         
         client.close()
         return True
@@ -447,36 +459,50 @@ def main():
     # Calculate execution time
     execution_time = time.time() - start_time
     
-    # Calculate metrics and extract incorrect responses for MongoDB
-    metrics, incorrect_responses = calculate_metrics(out_samples, model_key, prediction_key)
-    print(f"\nMetrics Summary:")
-    print(f"  Total questions: {metrics['total_questions']}")
-    print(f"  Correct answers: {metrics['correct_count']}")
-    print(f"  Incorrect answers: {metrics['incorrect_count']}")
-    print(f"  Overall accuracy (F1): {metrics['overall_accuracy']}")
+    # Calculate and print per-sample metrics, save to MongoDB
+    experiment_name = os.environ.get("EXPERIMENT_NAME")
+    db_name = os.environ.get("DB_NAME")
+    connection_string = os.environ.get("CONNECTION_STRING")
     
-    # Save to MongoDB if configured (skip for PAM - it saves via pam_evaluate.py)
-    if args.model == 'pam':
-        print("\n⚠ Skipping MongoDB save in run_locomo.py (PAM saves via pam_evaluate.py)")
-    else:
-        experiment_name = os.environ.get("EXPERIMENT_NAME")
-        db_name = os.environ.get("DB_NAME")
-        connection_string = os.environ.get("CONNECTION_STRING")
+    # Build sample_index lookup
+    all_samples = json.load(open(args.data_file))
+    sample_id_to_index = {s['sample_id']: i for i, s in enumerate(all_samples)}
+    
+    print(f"\n{'='*60}")
+    print("Per-Sample Metrics Summary")
+    print(f"{'='*60}")
+    
+    for sample_id, sample in out_samples.items():
+        metrics, incorrect_responses = calculate_metrics_for_sample(sample_id, sample, model_key, prediction_key)
+        s_index = sample_id_to_index.get(sample_id, -1)
+        
+        print(f"\n  Sample: {sample_id} (index: {s_index})")
+        print(f"    Questions: {metrics['total_questions']}")
+        print(f"    Correct: {metrics['correct_count']}")
+        print(f"    Incorrect: {metrics['incorrect_count']}")
+        print(f"    Accuracy (F1): {metrics['overall_accuracy']}")
+        
+        # Save per-sample to MongoDB (skip for PAM - it saves via pam_evaluate.py)
+        if args.model == 'pam':
+            continue
         
         if experiment_name and db_name and connection_string:
-            print(f"\nSaving to MongoDB (experiment: {experiment_name})...")
-            config = {
-                "batch_size": args.batch_size,
-                "use_rag": args.use_rag,
-                "max_questions": args.max_questions
-            }
-            save_to_mongodb(experiment_name, args.model, metrics, db_name, connection_string,
-                           execution_time, config, incorrect_responses)
-        else:
-            if not experiment_name:
-                print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")
-            elif not db_name or not connection_string:
-                print("\n⚠ MongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), skipping save")
+            config = {"max_questions": args.max_questions}
+            save_to_mongodb(
+                experiment_name, args.model, metrics, db_name, connection_string,
+                sample_id=sample_id,
+                sample_index=s_index,
+                execution_time=execution_time / len(out_samples),  # Split evenly
+                config=config,
+                incorrect_responses=incorrect_responses
+            )
+    
+    if args.model == 'pam':
+        print("\n⚠ Skipping MongoDB save in run_locomo.py (PAM saves via pam_evaluate.py)")
+    elif not experiment_name:
+        print("\n⚠ EXPERIMENT_NAME not set, skipping MongoDB save")
+    elif not db_name or not connection_string:
+        print("\n⚠ MongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), skipping save")
     
     print("\n" + "=" * 60)
     print(f"LoCoMo evaluation completed successfully!")
