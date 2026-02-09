@@ -107,12 +107,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }}
         
         .summary-card-value {{
             font-size: 2rem;
             font-weight: 700;
             color: var(--primary-color);
+            white-space: nowrap;
+            line-height: 2.5rem;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .summary-card-value.fraction {{
+            font-size: 1.6rem;
         }}
         
         .summary-card-value.success {{
@@ -293,6 +307,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-top: 1px solid var(--border-color);
         }}
         
+        .filter-bar {{
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }}
+        
+        .filter-bar-label {{
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }}
+        
+        .filter-btn {{
+            padding: 0.35rem 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }}
+        
+        .filter-btn:hover {{
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }}
+        
+        .filter-btn.active {{
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }}
+        
+        .filter-count {{
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }}
+        
         .no-errors {{
             text-align: center;
             padding: 2rem;
@@ -356,16 +414,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <div class="summary-card-label">Samples Evaluated</div>
             </div>
             <div class="summary-card">
+                <div class="summary-card-value">{execution_time}</div>
+                <div class="summary-card-label">Total Time</div>
+            </div>
+            <div class="summary-card">
                 <div class="summary-card-value {accuracy_class}">{overall_accuracy}%</div>
                 <div class="summary-card-label">Overall F1 Score</div>
             </div>
             <div class="summary-card">
-                <div class="summary-card-value">{total_correct}/{total_questions}</div>
-                <div class="summary-card-label">Correct Answers</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-value">{execution_time}</div>
-                <div class="summary-card-label">Total Time</div>
+                <div class="summary-card-value fraction">{total_correct}/{total_questions}</div>
+                <div class="summary-card-label">Correct Answers (F1)</div>
             </div>
             {llm_judge_summary_card}
         </div>
@@ -393,8 +451,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </table>
         </div>
         
-        <div class="section incorrect-section">
+        <div class="section incorrect-section" id="incorrect-section">
             <h2 class="section-title">Incorrect Responses ({total_incorrect} errors)</h2>
+            <div class="filter-bar">
+                <span class="filter-bar-label">LLM Judge:</span>
+                <button class="filter-btn active" data-filter-group="llm" data-filter="all" onclick="setFilter('llm','all')">All</button>
+                <button class="filter-btn" data-filter-group="llm" data-filter="correct" onclick="setFilter('llm','correct')">CORRECT</button>
+                <button class="filter-btn" data-filter-group="llm" data-filter="wrong" onclick="setFilter('llm','wrong')">WRONG</button>
+            </div>
+            <div class="filter-bar">
+                <span class="filter-bar-label">Category:</span>
+                <button class="filter-btn active" data-filter-group="category" data-filter="all" onclick="setFilter('category','all')">All</button>
+                <button class="filter-btn" data-filter-group="category" data-filter="1" onclick="setFilter('category','1')">1 Single-hop</button>
+                <button class="filter-btn" data-filter-group="category" data-filter="2" onclick="setFilter('category','2')">2 Temporal</button>
+                <button class="filter-btn" data-filter-group="category" data-filter="3" onclick="setFilter('category','3')">3 Open-domain</button>
+                <button class="filter-btn" data-filter-group="category" data-filter="4" onclick="setFilter('category','4')">4 Multi-hop</button>
+                <button class="filter-btn" data-filter-group="category" data-filter="5" onclick="setFilter('category','5')">5 Adversarial</button>
+                <span class="filter-count" id="filter-count"></span>
+            </div>
             {incorrect_responses_html}
         </div>
         
@@ -403,6 +477,43 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <a href="https://github.com/snap-research/locomo" target="_blank">LoCoMo: Evaluating Very Long-Term Conversational Memory of LLM Agents</a>
         </div>
     </div>
+    <script>
+    var activeFilters = {{ llm: 'all', category: 'all' }};
+    
+    function setFilter(group, value) {{
+        activeFilters[group] = value;
+        // Update active button in this group
+        document.querySelectorAll('.filter-btn[data-filter-group="' + group + '"]').forEach(function(btn) {{
+            btn.classList.remove('active');
+        }});
+        document.querySelector('.filter-btn[data-filter-group="' + group + '"][data-filter="' + value + '"]').classList.add('active');
+        applyFilters();
+    }}
+    
+    function applyFilters() {{
+        var cards = document.querySelectorAll('.error-card');
+        var shown = 0;
+        var total = cards.length;
+        cards.forEach(function(card) {{
+            var llmStatus = card.getAttribute('data-llm-judge');
+            var catStatus = card.getAttribute('data-category');
+            var llmMatch = (activeFilters.llm === 'all' || llmStatus === activeFilters.llm);
+            var catMatch = (activeFilters.category === 'all' || catStatus === activeFilters.category);
+            if (llmMatch && catMatch) {{
+                card.style.display = '';
+                shown++;
+            }} else {{
+                card.style.display = 'none';
+            }}
+        }});
+        var countEl = document.getElementById('filter-count');
+        if (activeFilters.llm === 'all' && activeFilters.category === 'all') {{
+            countEl.textContent = '';
+        }} else {{
+            countEl.textContent = 'Showing ' + shown + ' of ' + total;
+        }}
+    }}
+    </script>
 </body>
 </html>
 """
@@ -428,7 +539,7 @@ MODEL_ERRORS_TEMPLATE = """
 """
 
 ERROR_CARD_TEMPLATE = """
-<div class="error-card">
+<div class="error-card" data-llm-judge="{llm_judge_status}" data-category="{category_num}">
     <div class="error-card-header">
         <span class="error-card-title">Question {question_num}</span>
         <div class="error-card-meta">
@@ -457,7 +568,7 @@ ERROR_CARD_TEMPLATE = """
 CATEGORY_STATS_TEMPLATE = """
 <div class="section">
     <h2 class="section-title">Accuracy by Question Category</h2>
-    <p style="text-align: center; color: var(--text-muted); margin-top: -8px; margin-bottom: 16px; font-size: 0.9rem;">F1 Score (large) &amp; LLM Judge (where available)</p>
+    <p style="text-align: center; color: var(--text-muted); margin-top: -8px; margin-bottom: 16px; font-size: 0.9rem;">F1 Score (<span style="color: var(--primary-color); font-weight: 600;">blue</span>) &amp; LLM Judge (<span style="color: var(--text-muted); font-weight: 600;">gray</span>)</p>
     <div class="category-stats">
         {category_items}
     </div>
@@ -468,8 +579,8 @@ CATEGORY_ITEM_TEMPLATE = """
 <div class="category-stat">
     <div class="category-stat-label">{category_name}</div>
     <div class="category-stat-value">{accuracy}%</div>
+    <div class="category-stat-value">({f1_correct}/{count})</div>
     {llm_judge_line}
-    <div class="category-stat-label">({count} questions)</div>
 </div>
 """
 
@@ -611,6 +722,9 @@ def generate_category_stats_html(results: List[Dict]) -> str:
     category_counts = {}
     category_question_counts = {}
     
+    # F1 per-category correct count (derived from incorrect_responses)
+    category_f1_incorrect = {}
+    
     # LLM Judge per-category tracking
     category_llm_totals = {}
     category_llm_counts = {}
@@ -679,6 +793,16 @@ def generate_category_stats_html(results: List[Dict]) -> str:
                 category_llm_counts[display_name] += 1
                 category_llm_correct[display_name] += result.get(f"{cat_name}_llm_judge_correct", 0)
                 category_llm_question_counts[display_name] += result.get(f"{cat_name}_llm_judge_total", 0)
+        
+        # Count F1 incorrect responses per category
+        for resp in result.get("incorrect_responses", []):
+            cat_name = resp.get("category_name", "")
+            if cat_name in NAMED_CATEGORIES:
+                disp = NAMED_CATEGORIES[cat_name]
+            else:
+                cat_num = resp.get("category", 0)
+                disp = CATEGORY_NAMES.get(cat_num, f"Category {cat_num}")
+            category_f1_incorrect[disp] = category_f1_incorrect.get(disp, 0) + 1
     
     if not category_totals:
         return ""
@@ -716,9 +840,13 @@ def generate_category_stats_html(results: List[Dict]) -> str:
         else:
             llm_judge_line = ""
         
+        f1_incorrect = category_f1_incorrect.get(display_name, 0)
+        f1_correct = total_count - f1_incorrect
+        
         item = CATEGORY_ITEM_TEMPLATE.format(
             category_name=display_name,
             accuracy=f"{avg_accuracy:.1f}",
+            f1_correct=f1_correct,
             llm_judge_line=llm_judge_line,
             count=total_count
         )
@@ -775,13 +903,17 @@ def generate_incorrect_responses_html(results: List[Dict]) -> str:
                 llm_label = "CORRECT" if llm_judge_score == 1 else "WRONG"
                 llm_color = "color: var(--success-color)" if llm_judge_score == 1 else "color: var(--error-color)"
                 llm_judge_html = f'<span style="{llm_color}; font-weight: 600">LLM Judge: {llm_label}</span>'
+                llm_judge_status = "correct" if llm_judge_score == 1 else "wrong"
             else:
                 llm_judge_html = ""
+                llm_judge_status = "unknown"
             
             card = ERROR_CARD_TEMPLATE.format(
                 question_num=resp.get("question_num", "?"),
                 f1_score=f"{resp.get('f1_score', 0):.3f}",
                 llm_judge_html=llm_judge_html,
+                llm_judge_status=llm_judge_status,
+                category_num=resp.get("category", "0"),
                 category=category_display,
                 sample_id=sample_id,
                 question=resp.get("question", "N/A"),
@@ -858,7 +990,7 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
                 <div class="summary-card-label">LLM Judge Score</div>
             </div>
             <div class="summary-card">
-                <div class="summary-card-value">{llm_judge_correct}/{llm_judge_total}</div>
+                <div class="summary-card-value fraction">{llm_judge_correct}/{llm_judge_total}</div>
                 <div class="summary-card-label">LLM Judge Correct</div>
             </div>"""
     else:
