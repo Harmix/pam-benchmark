@@ -149,13 +149,17 @@ def extract_questions(sample: Dict, output_file: str) -> List[Dict]:
     
     questions_data = []
     for i, qa in enumerate(questions):
-        questions_data.append({
+        q_data = {
             'question_num': i + 1,
             'question': qa.get('question', ''),
             'expected_answer': str(qa.get('answer', '')),
             'category': qa.get('category', 0),
             'evidence': qa.get('evidence', [])
-        })
+        }
+        # Include adversarial_answer for category 5 questions
+        if qa.get('category') == 5:
+            q_data['adversarial_answer'] = qa.get('adversarial_answer', '')
+        questions_data.append(q_data)
     
     with open(output_file, 'w') as f:
         json.dump(questions_data, f, indent=2)

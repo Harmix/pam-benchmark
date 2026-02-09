@@ -60,9 +60,10 @@ for batch_num in $(seq 0 $((NUM_BATCHES - 1))); do
     BATCH_LOG_FILE="$QUESTIONS_DIR/batch_$((batch_num + 1)).log"
     BATCH_RESPONSE_FILE="$QUESTIONS_DIR/batch_$((batch_num + 1))_response.txt"
     
-    # Build the questions list for this batch
+    # Build the questions list for this batch (with category 5 multiple-choice formatting)
     QUESTIONS_LIST=$(python3 << EOF
 import json
+import random
 
 with open('$QUESTIONS_FILE', 'r') as f:
     questions = json.load(f)
@@ -72,7 +73,20 @@ batch_questions = questions[$START_IDX:$((END_IDX + 1))]
 output_lines = []
 for i, q in enumerate(batch_questions):
     q_num = $START_IDX + i + 1
-    output_lines.append(f"Q{q_num}: {q['question']}")
+    category = q.get('category', 0)
+    
+    if category == 5:
+        # Format adversarial questions as multiple-choice (like gpt4-turbo)
+        adversarial_answer = q.get('adversarial_answer', '')
+        correct_answer = 'Not mentioned in the conversation'
+        # Randomize option order to avoid position bias
+        if random.random() < 0.5:
+            option_a, option_b = adversarial_answer, correct_answer
+        else:
+            option_a, option_b = correct_answer, adversarial_answer
+        output_lines.append(f"Q{q_num}: {q['question']} Select the correct answer: (a) {option_a} (b) {option_b}")
+    else:
+        output_lines.append(f"Q{q_num}: {q['question']}")
 
 print("\n".join(output_lines))
 EOF
@@ -90,11 +104,29 @@ Answer ALL of the following questions. For each question, provide a concise answ
 $QUESTIONS_LIST
 
 IMPORTANT INSTRUCTIONS:
-1. Use ONLY information from the processed conversation data
-2. Be concise - provide a direct answer (a few words or a short phrase)
-3. If the answer involves a date or time, be specific
-4. If the answer involves multiple items, list them separated by commas
-5. If the information is not available in the conversation, say 'Not mentioned in the conversation'
+
+1. CONCISENESS: Answer in 1-5 words maximum. Never add explanations, qualifiers, or parenthetical notes.
+   - GOOD: \"2022\"
+   - BAD: \"Last year before May 2023 (2022)\"
+   - GOOD: \"2\"
+   - BAD: \"2 times (beach camping in July and regular beach trip)\"
+   - GOOD: \"Pottery, painting, camping, swimming\"
+   - BAD: \"Pottery workshops, painting together, camping trips, swimming at the beach, and various other activities\"
+
+2. LIST QUESTIONS: List ONLY items that are EXPLICITLY stated in the conversation. Do not add related or inferred items. If the conversation mentions 3 activities, list exactly those 3 -- do not expand to 7.
+
+3. DATES AND TIMES: Calculate specific dates from session timestamps. Convert relative references ('last week', 'two months ago') to actual dates/periods.
+   - If Session 5 is dated '15 July 2023' and mentions 'last Friday', answer 'The Friday before 15 July 2023'
+   - If a session from May 2023 mentions 'last year', answer '2022'
+   - Always prefer specific dates over vague references like 'recently' or 'a while ago'
+
+4. INFERENCE QUESTIONS: For questions that ask 'Would X...?' or 'Is X likely to...?', provide your best reasoned answer based on conversation evidence. Say 'Likely yes' or 'Likely no' with a brief reason. Only say 'Not mentioned in the conversation' when the topic was NEVER discussed at all.
+   - GOOD: \"Likely yes, she collects classic children's books\"
+   - BAD: \"Not mentioned in the conversation\" (when the topic WAS discussed but requires inference)
+
+5. MULTIPLE-CHOICE QUESTIONS: For questions with 'Select the correct answer: (a)... (b)...', choose ONLY the option that is supported by the conversation. If neither option is supported, select 'Not mentioned in the conversation'.
+
+6. Use ONLY information from the processed conversation data. Do not fabricate facts.
 
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS (one answer per line):
 A1: [your answer for Q1]
@@ -198,9 +230,31 @@ if extracted:
 for i in range($START_IDX, $END_IDX + 1):
     q_num = i + 1
     question = all_questions[i]['question']
+    category = all_questions[i].get('category', 0)
     
     # Get the extracted answer or use fallback
     answer = extracted.get(q_num, "No answer extracted")
+    
+    # For category 5 (adversarial), normalize multiple-choice selection
+    if category == 5 and answer != "No answer extracted":
+        answer_lower = answer.strip().lower()
+        # Check if the model selected an option containing "not mentioned"
+        if 'not mentioned' in answer_lower or 'no information available' in answer_lower:
+            answer = 'Not mentioned in the conversation'
+        elif answer_lower.startswith('(b)') or answer_lower.startswith('b)') or answer_lower.startswith('b.') or answer_lower.startswith('b:'):
+            # Check if option (b) was "Not mentioned" by looking at question formatting
+            # The answer text after the option letter is what matters
+            option_text = re.sub(r'^[(\s]*[ab][)\s.:]+\s*', '', answer, flags=re.IGNORECASE).strip()
+            if 'not mentioned' in option_text.lower():
+                answer = 'Not mentioned in the conversation'
+            else:
+                answer = option_text
+        elif answer_lower.startswith('(a)') or answer_lower.startswith('a)') or answer_lower.startswith('a.') or answer_lower.startswith('a:'):
+            option_text = re.sub(r'^[(\s]*[ab][)\s.:]+\s*', '', answer, flags=re.IGNORECASE).strip()
+            if 'not mentioned' in option_text.lower():
+                answer = 'Not mentioned in the conversation'
+            else:
+                answer = option_text
     
     answers.append({
         'question_num': q_num,

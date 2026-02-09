@@ -356,12 +356,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <div class="summary-card-label">Samples Evaluated</div>
             </div>
             <div class="summary-card">
-                <div class="summary-card-value">{total_questions}</div>
-                <div class="summary-card-label">Total Questions</div>
-            </div>
-            <div class="summary-card">
                 <div class="summary-card-value {accuracy_class}">{overall_accuracy}%</div>
-                <div class="summary-card-label">Overall F1 Accuracy</div>
+                <div class="summary-card-label">Overall F1 Score</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-value">{total_correct}/{total_questions}</div>
@@ -371,6 +367,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <div class="summary-card-value">{execution_time}</div>
                 <div class="summary-card-label">Total Time</div>
             </div>
+            {llm_judge_summary_card}
         </div>
         
         {category_stats_html}
@@ -382,9 +379,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <tr>
                         <th>Model</th>
                         <th>Sample</th>
-                        <th>Questions</th>
-                        <th>Correct</th>
-                        <th>F1 Accuracy</th>
+                        <th>Correct (F1)</th>
+                        <th>F1 Score</th>
+                        <th>LLM Judge Correct</th>
+                        <th>LLM Judge</th>
                         <th>Execution Time</th>
                         <th>Executed At</th>
                     </tr>
@@ -413,9 +411,10 @@ RESULT_ROW_TEMPLATE = """
 <tr>
     <td><strong>{model}</strong></td>
     <td>{sample_id}</td>
-    <td>{total_questions}</td>
-    <td>{correct_count}</td>
+    <td>{correct_f1}</td>
     <td><span class="accuracy-badge {accuracy_class}">{accuracy}%</span></td>
+    <td>{llm_judge_correct}</td>
+    <td>{llm_judge_cell}</td>
     <td>{execution_time}</td>
     <td>{executed_at}</td>
 </tr>
@@ -434,6 +433,7 @@ ERROR_CARD_TEMPLATE = """
         <span class="error-card-title">Question {question_num}</span>
         <div class="error-card-meta">
             <span>F1: {f1_score}</span>
+            {llm_judge_html}
             <span class="category-badge">Category {category}</span>
             <span>Sample: {sample_id}</span>
         </div>
@@ -457,6 +457,7 @@ ERROR_CARD_TEMPLATE = """
 CATEGORY_STATS_TEMPLATE = """
 <div class="section">
     <h2 class="section-title">Accuracy by Question Category</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-top: -8px; margin-bottom: 16px; font-size: 0.9rem;">F1 Score (large) &amp; LLM Judge (where available)</p>
     <div class="category-stats">
         {category_items}
     </div>
@@ -467,6 +468,7 @@ CATEGORY_ITEM_TEMPLATE = """
 <div class="category-stat">
     <div class="category-stat-label">{category_name}</div>
     <div class="category-stat-value">{accuracy}%</div>
+    {llm_judge_line}
     <div class="category-stat-label">({count} questions)</div>
 </div>
 """
@@ -574,13 +576,25 @@ def generate_result_rows(results: List[Dict]) -> str:
         execution_time = result.get("execution_time_seconds")
         timestamp = result.get("timestamp")
         
+        # LLM Judge metrics
+        llm_correct = result.get("llm_judge_correct", None)
+        llm_total = result.get("llm_judge_total", None)
+        if llm_correct is not None and llm_total is not None and llm_total > 0:
+            llm_accuracy = (llm_correct / llm_total) * 100
+            llm_judge_correct = f"{llm_correct}/{llm_total}"
+            llm_judge_cell = f'<span class="accuracy-badge {get_accuracy_class(llm_accuracy)}">{llm_accuracy:.1f}%</span>'
+        else:
+            llm_judge_correct = "N/A"
+            llm_judge_cell = "N/A"
+        
         row = RESULT_ROW_TEMPLATE.format(
             model=model,
             sample_id=sample_id,
-            total_questions=total_questions,
-            correct_count=correct_count,
+            correct_f1=f"{correct_count}/{total_questions}",
             accuracy=f"{accuracy:.1f}",
             accuracy_class=get_accuracy_class(accuracy),
+            llm_judge_correct=llm_judge_correct,
+            llm_judge_cell=llm_judge_cell,
             execution_time=format_execution_time(execution_time),
             executed_at=format_timestamp(timestamp)
         )
@@ -590,12 +604,18 @@ def generate_result_rows(results: List[Dict]) -> str:
 
 
 def generate_category_stats_html(results: List[Dict]) -> str:
-    """Generate HTML for category statistics"""
+    """Generate HTML for category statistics (F1 and LLM Judge)"""
     # Aggregate category stats across all results
     # Handle both numbered categories (category_1_accuracy) and named categories (single_hop_accuracy)
     category_totals = {}
     category_counts = {}
     category_question_counts = {}
+    
+    # LLM Judge per-category tracking
+    category_llm_totals = {}
+    category_llm_counts = {}
+    category_llm_correct = {}
+    category_llm_question_counts = {}
     
     # Named category mapping
     NAMED_CATEGORIES = {
@@ -608,6 +628,10 @@ def generate_category_stats_html(results: List[Dict]) -> str:
     
     for result in results:
         for key, value in result.items():
+            # Skip LLM judge keys in this loop (handled separately below)
+            if '_llm_judge_accuracy' in key:
+                continue
+            
             if key.endswith("_accuracy"):
                 # Handle numbered categories (category_1_accuracy)
                 if key.startswith("category_"):
@@ -635,6 +659,26 @@ def generate_category_stats_html(results: List[Dict]) -> str:
                 category_totals[display_name] += value
                 category_counts[display_name] += 1
                 category_question_counts[display_name] += result.get(count_key, 0)
+        
+        # Collect LLM judge per-category metrics (e.g., single_hop_llm_judge_accuracy)
+        for key, value in result.items():
+            if key.endswith("_llm_judge_accuracy"):
+                cat_name = key.replace("_llm_judge_accuracy", "")
+                if cat_name in NAMED_CATEGORIES:
+                    display_name = NAMED_CATEGORIES[cat_name]
+                else:
+                    continue
+                
+                if display_name not in category_llm_totals:
+                    category_llm_totals[display_name] = 0.0
+                    category_llm_counts[display_name] = 0
+                    category_llm_correct[display_name] = 0
+                    category_llm_question_counts[display_name] = 0
+                
+                category_llm_totals[display_name] += value
+                category_llm_counts[display_name] += 1
+                category_llm_correct[display_name] += result.get(f"{cat_name}_llm_judge_correct", 0)
+                category_llm_question_counts[display_name] += result.get(f"{cat_name}_llm_judge_total", 0)
     
     if not category_totals:
         return ""
@@ -656,9 +700,26 @@ def generate_category_stats_html(results: List[Dict]) -> str:
         avg_accuracy = (category_totals[display_name] / category_counts[display_name] * 100) if category_counts[display_name] > 0 else 0
         total_count = category_question_counts[display_name]
         
+        # Build LLM judge line if data is available for this category
+        if display_name in category_llm_totals and category_llm_counts[display_name] > 0:
+            llm_avg = (category_llm_totals[display_name] / category_llm_counts[display_name] * 100)
+            llm_correct = category_llm_correct.get(display_name, 0)
+            llm_total = category_llm_question_counts.get(display_name, 0)
+            if llm_total > 0:
+                llm_count_str = f' ({llm_correct}/{llm_total})'
+            else:
+                llm_count_str = ''
+            llm_judge_line = (
+                f'<div class="category-stat-value" style="font-size: 1.1rem; color: var(--text-muted);">'
+                f'LLM Judge: {llm_avg:.1f}%{llm_count_str}</div>'
+            )
+        else:
+            llm_judge_line = ""
+        
         item = CATEGORY_ITEM_TEMPLATE.format(
             category_name=display_name,
             accuracy=f"{avg_accuracy:.1f}",
+            llm_judge_line=llm_judge_line,
             count=total_count
         )
         items.append(item)
@@ -708,9 +769,19 @@ def generate_incorrect_responses_html(results: List[Dict]) -> str:
             else:
                 category_display = str(category)
             
+            # LLM judge badge if available
+            llm_judge_score = resp.get("llm_judge_score")
+            if llm_judge_score is not None:
+                llm_label = "CORRECT" if llm_judge_score == 1 else "WRONG"
+                llm_color = "color: var(--success-color)" if llm_judge_score == 1 else "color: var(--error-color)"
+                llm_judge_html = f'<span style="{llm_color}; font-weight: 600">LLM Judge: {llm_label}</span>'
+            else:
+                llm_judge_html = ""
+            
             card = ERROR_CARD_TEMPLATE.format(
                 question_num=resp.get("question_num", "?"),
                 f1_score=f"{resp.get('f1_score', 0):.3f}",
+                llm_judge_html=llm_judge_html,
                 category=category_display,
                 sample_id=sample_id,
                 question=resp.get("question", "N/A"),
@@ -775,6 +846,24 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
     category_stats_html = generate_category_stats_html(results)
     incorrect_responses_html = generate_incorrect_responses_html(results)
     
+    # Generate LLM Judge summary card if data is available
+    llm_judge_total = sum(r.get("llm_judge_total", 0) for r in results)
+    llm_judge_correct = sum(r.get("llm_judge_correct", 0) for r in results)
+    if llm_judge_total > 0:
+        llm_judge_accuracy = (llm_judge_correct / llm_judge_total) * 100
+        llm_judge_class = get_summary_class(llm_judge_accuracy)
+        llm_judge_summary_card = f"""
+            <div class="summary-card">
+                <div class="summary-card-value {llm_judge_class}">{llm_judge_accuracy:.1f}%</div>
+                <div class="summary-card-label">LLM Judge Score</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-value">{llm_judge_correct}/{llm_judge_total}</div>
+                <div class="summary-card-label">LLM Judge Correct</div>
+            </div>"""
+    else:
+        llm_judge_summary_card = ""
+    
     # Generate final HTML
     html = HTML_TEMPLATE.format(
         experiment_name=experiment_name,
@@ -790,7 +879,8 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
         execution_time=format_execution_time(total_execution_time),
         category_stats_html=category_stats_html,
         result_rows=result_rows,
-        incorrect_responses_html=incorrect_responses_html
+        incorrect_responses_html=incorrect_responses_html,
+        llm_judge_summary_card=llm_judge_summary_card
     )
     
     # Ensure output directory exists

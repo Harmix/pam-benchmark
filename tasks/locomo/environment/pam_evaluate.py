@@ -3,12 +3,14 @@
 PAM Evaluation Script for LoCoMo
 
 Evaluates PAM answers against ground truth, calculates metrics, and saves to MongoDB.
+Supports both token-based F1 scoring and LLM-as-a-Judge evaluation.
 This is run after PAM answers all questions for a sample.
 """
 
 import os
 import sys
 import json
+import re
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -26,6 +28,102 @@ try:
 except ImportError:
     MONGODB_AVAILABLE = False
     print("Warning: pymongo not installed, MongoDB saving disabled")
+
+# OpenAI import (optional, for LLM judge)
+# Supports both old SDK (openai==0.28.x) and new SDK (openai>=1.0)
+OPENAI_AVAILABLE = False
+OPENAI_NEW_SDK = False
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+    OPENAI_NEW_SDK = True
+except ImportError:
+    try:
+        import openai as openai_module
+        OPENAI_AVAILABLE = True
+        OPENAI_NEW_SDK = False
+    except ImportError:
+        pass
+
+
+# LLM-as-a-Judge prompt (adapted from agents/mem0/metrics/llm_judge.py)
+LLM_JUDGE_PROMPT = """Your task is to label an answer to a question as 'CORRECT' or 'WRONG'. You will be given the following data:
+    (1) a question (posed by one user to another user),
+    (2) a 'gold' (ground truth) answer,
+    (3) a generated answer
+which you will score as CORRECT/WRONG.
+
+The point of the question is to ask about something one user should know about the other user based on their prior conversations.
+The gold answer will usually be a concise and short answer that includes the referenced topic, for example:
+Question: Do you remember what I got the last time I went to Hawaii?
+Gold answer: A shell necklace
+The generated answer might be much longer, but you should be generous with your grading - as long as it touches on the same topic as the gold answer, it should be counted as CORRECT.
+
+For time related questions, the gold answer will be a specific date, month, year, etc. The generated answer might be much longer or use relative time references (like "last Tuesday" or "next month"), but you should be generous with your grading - as long as it refers to the same date or time period as the gold answer, it should be counted as CORRECT. Even if the format differs (e.g., "May 7th" vs "7 May"), consider it CORRECT if it's the same date.
+
+For questions where the gold answer is a list of items, the generated answer should contain the key items from the gold answer. It is acceptable if the generated answer includes additional correct items, as long as the core items from the gold answer are present.
+
+Now it's time for the real question:
+Question: {question}
+Gold answer: {gold_answer}
+Generated answer: {generated_answer}
+
+First, provide a short (one sentence) explanation of your reasoning, then finish with CORRECT or WRONG.
+Do NOT include both CORRECT and WRONG in your response, or it will break the evaluation script.
+
+Just return the label CORRECT or WRONG in a json format with the key as "label"."""
+
+
+def evaluate_with_llm_judge(question: str, gold_answer: str, generated_answer: str) -> int:
+    """
+    Evaluate a single answer using LLM-as-a-Judge.
+    Supports both old OpenAI SDK (v0.28.x) and new SDK (v1.0+).
+    
+    Returns:
+        1 if CORRECT, 0 if WRONG, -1 if error
+    """
+    if not OPENAI_AVAILABLE:
+        print("Warning: openai not available, skipping LLM judge")
+        return -1
+    
+    prompt_content = LLM_JUDGE_PROMPT.format(
+        question=question,
+        gold_answer=gold_answer,
+        generated_answer=generated_answer
+    )
+    
+    try:
+        if OPENAI_NEW_SDK:
+            # New SDK (openai >= 1.0)
+            client = OpenAI()
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt_content}],
+                response_format={"type": "json_object"},
+                temperature=0.0,
+            )
+            content = response.choices[0].message.content
+        else:
+            # Old SDK (openai == 0.28.x)
+            import openai as openai_module
+            openai_module.api_key = os.environ.get('OPENAI_API_KEY', '')
+            response = openai_module.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt_content}],
+                temperature=0.0,
+            )
+            content = response['choices'][0]['message']['content']
+        
+        # Extract JSON from response (handle potential extra text)
+        json_match = re.search(r'\{[^}]+\}', content)
+        if json_match:
+            label = json.loads(json_match.group())["label"]
+        else:
+            label = json.loads(content)["label"]
+        return 1 if label == "CORRECT" else 0
+    except Exception as e:
+        print(f"  Warning: LLM judge failed for question: {e}")
+        return -1
 
 
 def load_secrets():
@@ -85,10 +183,18 @@ def evaluate_pam_answers(
     pam_answers_file: str,
     data_file: str,
     sample_index: int,
-    max_questions: int = 0
+    max_questions: int = 0,
+    use_llm_judge: bool = False
 ) -> Tuple[Dict, List[Dict]]:
     """
     Evaluate PAM answers against ground truth.
+    
+    Args:
+        pam_answers_file: Path to PAM answers JSON
+        data_file: Path to LoCoMo data file
+        sample_index: Index of sample to evaluate
+        max_questions: Max questions to evaluate (0 = all)
+        use_llm_judge: Whether to also run LLM-as-a-Judge evaluation
     
     Returns:
         Tuple of (metrics dict, incorrect_responses list)
@@ -113,6 +219,11 @@ def evaluate_pam_answers(
     correct_count = 0
     incorrect_responses = []
     
+    # LLM judge tracking
+    total_llm_judge = 0.0
+    llm_judge_count = 0
+    category_llm_judge_sums = {}
+    
     # Category tracking
     category_counts = {}
     category_f1_sums = {}
@@ -128,6 +239,10 @@ def evaluate_pam_answers(
         5: "adversarial"
     }
     
+    if use_llm_judge and not OPENAI_AVAILABLE:
+        print("Warning: openai package not available, disabling LLM judge")
+        use_llm_judge = False
+    
     for i, qa in enumerate(qa_pairs):
         question = qa.get('question', '')
         expected_answer = str(qa.get('answer', ''))
@@ -140,9 +255,28 @@ def evaluate_pam_answers(
                 pam_answer = pa.get('pam_answer', '')
                 break
         
-        # Calculate F1
-        f1_score = calculate_f1_score(pam_answer, expected_answer)
+        # Calculate F1 (with special handling for adversarial category 5)
+        if category == 5:
+            # Adversarial: correct if model says "not mentioned" or "no information available"
+            pam_lower = pam_answer.lower()
+            if 'not mentioned' in pam_lower or 'no information available' in pam_lower:
+                f1_score = 1.0
+            else:
+                f1_score = 0.0
+        else:
+            f1_score = calculate_f1_score(pam_answer, expected_answer)
         total_f1 += f1_score
+        
+        # LLM judge evaluation (skip category 5 -- use binary check above)
+        llm_judge_score = None
+        if use_llm_judge and category != 5:
+            llm_judge_score = evaluate_with_llm_judge(question, expected_answer, pam_answer)
+            if llm_judge_score >= 0:
+                total_llm_judge += llm_judge_score
+                llm_judge_count += 1
+                if category not in category_llm_judge_sums:
+                    category_llm_judge_sums[category] = 0.0
+                category_llm_judge_sums[category] += llm_judge_score
         
         # Track category metrics
         if category not in category_counts:
@@ -155,7 +289,7 @@ def evaluate_pam_answers(
         if f1_score >= F1_THRESHOLD:
             correct_count += 1
         else:
-            incorrect_responses.append({
+            error_entry = {
                 'question_num': i + 1,
                 'question': question,
                 'expected_answer': expected_answer,
@@ -163,7 +297,10 @@ def evaluate_pam_answers(
                 'f1_score': round(f1_score, 4),
                 'category': category,
                 'category_name': category_names.get(category, f"category_{category}")
-            })
+            }
+            if llm_judge_score is not None:
+                error_entry['llm_judge_score'] = llm_judge_score
+            incorrect_responses.append(error_entry)
     
     # Calculate overall metrics
     overall_accuracy = total_f1 / total_questions if total_questions > 0 else 0.0
@@ -183,6 +320,26 @@ def evaluate_pam_answers(
         'total_f1_sum': round(total_f1, 4),
         **category_metrics
     }
+    
+    # Add LLM judge metrics if enabled
+    if use_llm_judge and llm_judge_count > 0:
+        llm_judge_accuracy = total_llm_judge / llm_judge_count
+        metrics['llm_judge_accuracy'] = round(llm_judge_accuracy, 4)
+        metrics['llm_judge_correct'] = int(total_llm_judge)
+        metrics['llm_judge_total'] = llm_judge_count
+        
+        # Per-category LLM judge accuracy and counts
+        for cat, llm_sum in category_llm_judge_sums.items():
+            cat_name = category_names.get(cat, f"category_{cat}")
+            cat_count = category_counts.get(cat, 0)
+            # For cat 5, llm_judge is not used, so cat_count here excludes cat 5
+            cat_llm_count = cat_count  # All non-cat-5 questions were judged
+            if cat_llm_count > 0:
+                metrics[f'{cat_name}_llm_judge_accuracy'] = round(llm_sum / cat_llm_count, 4)
+                metrics[f'{cat_name}_llm_judge_correct'] = int(llm_sum)
+                metrics[f'{cat_name}_llm_judge_total'] = cat_llm_count
+        
+        print(f"\n  LLM Judge Accuracy: {llm_judge_accuracy:.4f} ({int(total_llm_judge)}/{llm_judge_count})")
     
     return metrics, incorrect_responses
 
@@ -267,6 +424,8 @@ def main():
                         help='Execution time in seconds')
     parser.add_argument('--output-file', type=str, default=None,
                         help='Output file for metrics JSON')
+    parser.add_argument('--use-llm-judge', action='store_true',
+                        help='Enable LLM-as-a-Judge evaluation (requires OPENAI_API_KEY)')
     
     args = parser.parse_args()
     
@@ -284,6 +443,7 @@ def main():
     print(f"Sample: {sample_id} (index: {args.sample_index})")
     print(f"PAM Answers: {args.pam_answers}")
     print(f"Max Questions: {args.max_questions if args.max_questions > 0 else 'all'}")
+    print(f"LLM Judge: {'enabled' if args.use_llm_judge else 'disabled'}")
     print("")
     
     # Evaluate
@@ -291,7 +451,8 @@ def main():
         args.pam_answers,
         args.data_file,
         args.sample_index,
-        args.max_questions
+        args.max_questions,
+        use_llm_judge=args.use_llm_judge
     )
     
     # Print metrics

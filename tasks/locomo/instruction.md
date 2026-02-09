@@ -2,7 +2,7 @@
 
 This task evaluates the long-context memory capabilities of Large Language Models (LLMs) through question answering over extended conversation histories.
 
-**Original Paper**: [Evaluating Very Long-Term Conversational Memory of LLM Agents](https://snap-research.github.io/locomo/) (ACL 2024)
+**Original Paper**: [Evaluating Very Long-Term Conversational Memory of LLM Agents](https://aclanthology.org/2024.acl-long.747.pdf) (ACL 2024)
 
 **GitHub**: https://github.com/snap-research/locomo
 
@@ -46,6 +46,7 @@ MODEL=claude-sonnet EXPERIMENT_NAME=my_experiment harbor run \
 | `OVERWRITE` | `false` | Overwrite existing predictions |
 | `MAX_QUESTIONS` | `0` | Maximum questions per sample (0 = all questions) |
 | `SAMPLE_INDEX` | `0` | Sample index to process (PAM only, for testing single samples) |
+| `USE_LLM_JUDGE` | `true` | Enable LLM-as-a-Judge evaluation alongside F1 (PAM only, requires OPENAI_API_KEY) |
 | `EXPERIMENT_NAME` | - | Name for the experiment run |
 
 ### Examples

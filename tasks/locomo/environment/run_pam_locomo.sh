@@ -13,6 +13,7 @@ DATA_FILE="${DATA_FILE:-/task_data/data/locomo10.json}"
 SAMPLE_INDEX="${SAMPLE_INDEX:-0}"
 MAX_QUESTIONS="${MAX_QUESTIONS:-0}"
 PAM_DEBUG="${PAM_DEBUG:-false}"
+USE_LLM_JUDGE="${USE_LLM_JUDGE:-true}"
 
 # Get sample ID from data
 SAMPLE_ID=$(python3 -c "import json; print(json.load(open('$DATA_FILE'))[$SAMPLE_INDEX].get('sample_id', 'sample_$SAMPLE_INDEX'))")
@@ -174,6 +175,10 @@ if [ -f "$PAM_ANSWERS_FILE" ]; then
     
     if [ "$MAX_QUESTIONS" -gt 0 ]; then
         EVAL_ARGS="$EVAL_ARGS --max-questions $MAX_QUESTIONS"
+    fi
+    
+    if [ "$USE_LLM_JUDGE" = "true" ] || [ "$USE_LLM_JUDGE" = "1" ]; then
+        EVAL_ARGS="$EVAL_ARGS --use-llm-judge"
     fi
     
     python3 /task_data/pam_evaluate.py $EVAL_ARGS

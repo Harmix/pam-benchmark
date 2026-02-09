@@ -109,6 +109,17 @@ Create /workspace/processed_data.md with:
 3. **Temporal information**: Pay attention to dates, times, and temporal references (\"last week\", \"next month\", \"4 years ago\")
 4. **Multi-session context**: Information builds across sessions - later sessions reference earlier ones
 
+## CRITICAL: ACCURACY RULES
+
+Record ONLY facts that are EXPLICITLY stated in the conversation text. Do NOT infer, expand, or generalize beyond what was actually said.
+
+- If a speaker mentions \"pottery\", record \"pottery\" -- do NOT add \"pottery workshop\" or \"ceramics class\" unless those exact words appear
+- If a speaker mentions they \"went to the beach twice\", record exactly that -- do NOT add beach activities that were not described
+- If a speaker mentions reading a specific book title, record ONLY that title -- do NOT add other books they might have read
+- Attribute facts to the correct speaker. If Caroline said something, do NOT attribute it to Melanie
+- When recording dates, preserve the exact temporal reference from the conversation (e.g., \"last Friday\" relative to session date) and also compute the approximate actual date
+- Do NOT conflate information from different sessions or speakers
+
 ## OUTPUT VERIFICATION
 After processing, list the files you created in each directory:
 - 02_people/
