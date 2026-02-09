@@ -1,0 +1,35 @@
+# Core AI/LLM packages
+openai==0.28.0
+anthropic==0.32.0
+google-generativeai==0.7.2
+
+# Transformers and HuggingFace
+transformers==4.35.0
+huggingface-hub==0.17.3
+torch
+accelerate==0.24.1
+sentencepiece==0.1.99
+safetensors==0.4.0
+
+# Evaluation metrics
+bert-score==0.3.13
+rouge==1.0.1
+nltk==3.8.1
+
+# Tokenization
+tiktoken==0.5.2
+
+# Scientific computing
+numpy
+scipy==1.11.3
+
+# Text processing
+regex==2022.10.31
+
+# Utilities
+tqdm==4.64.1
+icrawler
+
+# Database
+pymongo>=4.0.0
+python-dotenv
