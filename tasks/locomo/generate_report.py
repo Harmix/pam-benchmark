@@ -11,7 +11,7 @@ Usage:
 import os
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -671,7 +671,9 @@ def format_timestamp(timestamp) -> str:
         except:
             return timestamp
     
-    return timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    if timestamp.tzinfo is not None:
+        return timestamp.strftime("%Y-%m-%d %H:%M:%S %Z")
+    return timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 def generate_result_rows(results: List[Dict]) -> str:
@@ -1001,7 +1003,7 @@ def generate_report(results: List[Dict], experiment_name: str, output_path: Path
         experiment_name=experiment_name,
         dataset_name=dataset_name,
         model_name=model_name,
-        report_generated=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        report_generated=datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
         total_samples=unique_samples,
         total_questions=total_questions,
         total_correct=total_correct,
