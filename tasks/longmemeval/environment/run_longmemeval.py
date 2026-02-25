@@ -3,6 +3,7 @@ LongMemEval Benchmark Runner
 
 Runs the LongMemEval benchmark: sends full conversation history to an LLM,
 generates answers, then evaluates with an LLM-as-judge.
+Saves per-category results to MongoDB.
 
 Based on agents/LongMemEval by Di Wu (2024).
 """
@@ -12,7 +13,6 @@ import sys
 import json
 import time
 import argparse
-from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -22,6 +22,8 @@ import openai
 from openai import OpenAI
 import tiktoken
 from tqdm import tqdm
+
+from pymongo import MongoClient
 
 
 def load_secrets():
@@ -142,8 +144,8 @@ def build_prompt(entry, history_format='nl', cot=False, tokenizer=None, max_cont
     return template.format(history, entry['question_date'], entry['question'])
 
 
-def generate_answers(client, data, args, tokenizer):
-    """Generate answers for all questions."""
+def generate_answers(client, data, args, tokenizer, qid2type):
+    """Generate answers for all questions. Returns predictions with per-question timing."""
     model_name = args.model
     gen_length = 800 if args.cot else 500
     model_max = MODEL_MAX_LENGTHS.get(model_name, 128000)
@@ -162,6 +164,7 @@ def generate_answers(client, data, args, tokenizer):
             max_context_tokens=max_context_tokens,
         )
 
+        q_start = time.time()
         try:
             kwargs = {
                 'model': model_name,
@@ -177,7 +180,9 @@ def generate_answers(client, data, args, tokenizer):
 
             predictions.append({
                 'question_id': entry['question_id'],
+                'question_type': qid2type.get(entry['question_id'], 'unknown'),
                 'hypothesis': answer,
+                'generation_duration_sec': round(time.time() - q_start, 2),
             })
             print(f"  [{entry['question_id']}] Q: {entry['question'][:80]}...")
             print(f"  A: {answer[:120]}...")
@@ -185,7 +190,9 @@ def generate_answers(client, data, args, tokenizer):
             print(f"  Error for {entry['question_id']}: {repr(e)}")
             predictions.append({
                 'question_id': entry['question_id'],
+                'question_type': qid2type.get(entry['question_id'], 'unknown'),
                 'hypothesis': '',
+                'generation_duration_sec': round(time.time() - q_start, 2),
             })
 
     print(f"\nToken usage — prompt: {total_prompt_tokens}, completion: {total_completion_tokens}")
@@ -252,10 +259,23 @@ def get_eval_prompt(task, question, answer, response, abstention=False):
     return template.format(question, answer, response)
 
 
+def get_explanation_prompt(question, expected_answer, model_response, question_type):
+    """Ask the judge to explain why the model's answer is incorrect."""
+    return (
+        "A model was asked the following question and gave an incorrect response. "
+        "Briefly explain why the model's response is wrong (2-3 sentences max)."
+        f"\n\nQuestion type: {question_type}"
+        f"\n\nQuestion: {question}"
+        f"\n\nExpected Answer: {expected_answer}"
+        f"\n\nModel Response: {model_response}"
+        f"\n\nExplanation:"
+    )
+
+
 def evaluate_predictions(client, predictions, ref_data, eval_model):
-    """Run LLM-as-judge evaluation on predictions."""
+    """Run LLM-as-judge evaluation. Returns evaluated entries with judge explanation for incorrect ones."""
     qid2ref = {e['question_id']: e for e in ref_data}
-    type2acc = {t: [] for t in QUESTION_TYPES}
+    type2results = {t: [] for t in QUESTION_TYPES}
     evaluated = []
 
     for entry in tqdm(predictions, desc="Evaluating"):
@@ -273,6 +293,8 @@ def evaluate_predictions(client, predictions, ref_data, eval_model):
         abstention = '_abs' in qid
         prompt = get_eval_prompt(qtype, question, answer, hypothesis, abstention=abstention)
 
+        eval_start = time.time()
+        eval_explanation = ""
         try:
             kwargs = {
                 'model': eval_model,
@@ -284,20 +306,149 @@ def evaluate_predictions(client, predictions, ref_data, eval_model):
             completion = chat_completions_with_backoff(client, **kwargs)
             eval_response = completion.choices[0].message.content.strip()
             label = 'yes' in eval_response.lower()
+
+            if not label:
+                expl_prompt = get_explanation_prompt(question, answer, hypothesis, qtype)
+                expl_kwargs = {
+                    'model': eval_model,
+                    'messages': [{"role": "user", "content": expl_prompt}],
+                    'n': 1,
+                    'temperature': 0,
+                    'max_tokens': 200,
+                }
+                expl_completion = chat_completions_with_backoff(client, **expl_kwargs)
+                eval_explanation = expl_completion.choices[0].message.content.strip()
         except Exception as e:
             print(f"  Eval error for {qid}: {repr(e)}")
             label = False
+            eval_explanation = f"Evaluation error: {repr(e)}"
 
-        entry['autoeval_label'] = {'model': eval_model, 'label': label}
+        eval_duration = round(time.time() - eval_start, 2)
+
+        entry['autoeval_label'] = {
+            'model': eval_model,
+            'label': label,
+            'eval_duration_sec': eval_duration,
+        }
+        if not label:
+            entry['autoeval_label']['explanation'] = eval_explanation
+
+        entry['question_type'] = qtype
+        entry['question'] = question
+        entry['expected_answer'] = answer
         evaluated.append(entry)
 
-        if qtype in type2acc:
-            type2acc[qtype].append(1 if label else 0)
+        if qtype in type2results:
+            type2results[qtype].append({
+                'question_id': qid,
+                'label': label,
+                'generation_duration_sec': entry.get('generation_duration_sec', 0),
+                'eval_duration_sec': eval_duration,
+            })
 
-    return evaluated, type2acc
+    return evaluated, type2results
 
 
-def print_metrics(type2acc):
+def build_category_records(type2results, evaluated, args, total_execution_time):
+    """Build one MongoDB record per question category."""
+    experiment_name = os.environ.get("EXPERIMENT_NAME", "")
+    records = []
+
+    evaluated_by_qid = {e['question_id']: e for e in evaluated}
+
+    for qtype in QUESTION_TYPES:
+        results = type2results.get(qtype, [])
+        if not results:
+            continue
+
+        correct = sum(1 for r in results if r['label'])
+        incorrect = len(results) - correct
+        accuracy = round(correct / len(results), 4) if results else 0.0
+
+        total_gen_duration = sum(r['generation_duration_sec'] for r in results)
+        total_eval_duration = sum(r['eval_duration_sec'] for r in results)
+        total_duration = round(total_gen_duration + total_eval_duration, 2)
+        avg_duration = round(total_duration / len(results), 2) if results else 0.0
+
+        correct_answers = []
+        incorrect_answers = []
+        for r in results:
+            entry = evaluated_by_qid.get(r['question_id'], {})
+            answer_record = {
+                'question_id': r['question_id'],
+                'question': entry.get('question', ''),
+                'expected_answer': entry.get('expected_answer', ''),
+                'model_answer': entry.get('hypothesis', ''),
+                'generation_duration_sec': r['generation_duration_sec'],
+            }
+            if r['label']:
+                correct_answers.append(answer_record)
+            else:
+                answer_record['judge_explanation'] = (
+                    entry.get('autoeval_label', {}).get('explanation', '')
+                )
+                incorrect_answers.append(answer_record)
+
+        record = {
+            'experiment_name': experiment_name,
+            'model': args.model,
+            'eval_model': args.eval_model,
+            'dataset_name': os.environ.get('DATASET_NAME', 'longmemeval@1.0'),
+            'task_name': os.environ.get('TASK_NAME', 'longmemeval'),
+            'question_category': qtype,
+            'total_questions': len(results),
+            'correct_count': correct,
+            'incorrect_count': incorrect,
+            'accuracy': accuracy,
+            'total_duration_sec': total_duration,
+            'avg_duration_sec': avg_duration,
+            'total_generation_duration_sec': round(total_gen_duration, 2),
+            'total_eval_duration_sec': round(total_eval_duration, 2),
+            'correct_answers': correct_answers,
+            'incorrect_answers': incorrect_answers,
+            'config': {
+                'history_format': args.history_format,
+                'cot': args.cot,
+                'max_questions': args.max_questions,
+            },
+            'total_execution_time_sec': round(total_execution_time, 2),
+            'timestamp': datetime.utcnow(),
+            'created_at': datetime.utcnow().isoformat(),
+        }
+        records.append(record)
+
+    return records
+
+
+def save_to_mongodb(records: List[Dict], db_name: str, connection_string: str) -> bool:
+    """Save per-category records to MongoDB."""
+    if not records:
+        print("Warning: no records to save")
+        return False
+
+    try:
+        client = MongoClient(connection_string, serverSelectionTimeoutMS=5000)
+        client.admin.command('ping')
+
+        db = client[db_name]
+        collection = db["longmemeval_results"]
+
+        result = collection.insert_many(records)
+        print(f"\nMongoDB: saved {len(result.inserted_ids)} category records")
+        for rec in records:
+            print(f"  {rec['question_category']}: "
+                  f"accuracy={rec['accuracy']} "
+                  f"({rec['correct_count']}/{rec['total_questions']}), "
+                  f"avg_duration={rec['avg_duration_sec']}s")
+
+        client.close()
+        return True
+    except Exception as e:
+        print(f"Warning: Failed to save to MongoDB: {str(e)}")
+        return False
+
+
+def print_metrics(type2results):
     """Print accuracy metrics by question type."""
     all_acc = []
     task_acc = []
@@ -307,12 +458,16 @@ def print_metrics(type2acc):
     print("=" * 60)
 
     for qtype in QUESTION_TYPES:
-        accs = type2acc.get(qtype, [])
-        if accs:
-            mean_acc = round(np.mean(accs), 4)
-            task_acc.append(mean_acc)
-            all_acc.extend(accs)
-            print(f"  {qtype}: {mean_acc} ({len(accs)} questions)")
+        results = type2results.get(qtype, [])
+        if results:
+            correct = sum(1 for r in results if r['label'])
+            acc = round(correct / len(results), 4)
+            task_acc.append(acc)
+            all_acc.extend([1 if r['label'] else 0 for r in results])
+            total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec'] for r in results)
+            avg_dur = round(total_dur / len(results), 2)
+            print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
+                  f"— avg {avg_dur}s/question")
         else:
             print(f"  {qtype}: N/A (0 questions)")
 
@@ -320,26 +475,7 @@ def print_metrics(type2acc):
         print(f"\n  Task-averaged Accuracy: {round(np.mean(task_acc), 4)}")
     if all_acc:
         print(f"  Overall Accuracy: {round(np.mean(all_acc), 4)} ({sum(all_acc)}/{len(all_acc)})")
-
-    abstention_acc = []
-    for qtype, accs_list in type2acc.items():
-        pass
     print("=" * 60)
-
-    return {
-        'overall_accuracy': round(np.mean(all_acc), 4) if all_acc else 0.0,
-        'task_averaged_accuracy': round(np.mean(task_acc), 4) if task_acc else 0.0,
-        'total_questions': len(all_acc),
-        'correct_count': sum(all_acc) if all_acc else 0,
-        'per_type': {
-            qtype: {
-                'accuracy': round(np.mean(type2acc[qtype]), 4) if type2acc[qtype] else 0.0,
-                'count': len(type2acc[qtype]),
-                'correct': sum(type2acc[qtype]) if type2acc[qtype] else 0,
-            }
-            for qtype in QUESTION_TYPES
-        }
-    }
 
 
 def main():
@@ -374,6 +510,8 @@ def main():
         data = json.load(f)
     print(f"Loaded {len(data)} questions")
 
+    qid2type = {e['question_id']: e['question_type'] for e in data}
+
     if args.question_id:
         data = [e for e in data if e['question_id'] == args.question_id]
         if not data:
@@ -399,10 +537,11 @@ def main():
         print(f"Loaded {len(existing_preds)} existing predictions")
 
     to_generate = [e for e in data if e['question_id'] not in existing_preds]
-    print(f"Questions to generate: {len(to_generate)} (skipping {len(data) - len(to_generate)} existing)")
+    print(f"Questions to generate: {len(to_generate)} "
+          f"(skipping {len(data) - len(to_generate)} existing)")
 
     if to_generate:
-        new_predictions = generate_answers(client, to_generate, args, tokenizer)
+        new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
         for pred in new_predictions:
             existing_preds[pred['question_id']] = pred
 
@@ -411,22 +550,30 @@ def main():
                 f.write(json.dumps(pred) + '\n')
         print(f"\nPredictions saved to {predictions_file}")
 
-    all_predictions = [existing_preds[e['question_id']] for e in data if e['question_id'] in existing_preds]
+    all_predictions = [
+        existing_preds[e['question_id']]
+        for e in data
+        if e['question_id'] in existing_preds
+    ]
 
     if args.skip_eval:
         print("\nSkipping evaluation (--skip-eval)")
     else:
         print(f"\nRunning LLM-as-judge evaluation with {args.eval_model}...")
-        evaluated, type2acc = evaluate_predictions(client, all_predictions, data, args.eval_model)
+        evaluated, type2results = evaluate_predictions(
+            client, all_predictions, data, args.eval_model
+        )
 
         with open(eval_file, 'w') as f:
             for entry in evaluated:
-                f.write(json.dumps(entry) + '\n')
+                f.write(json.dumps(entry, default=str) + '\n')
         print(f"Evaluation results saved to {eval_file}")
 
-        metrics = print_metrics(type2acc)
+        print_metrics(type2results)
 
         execution_time = time.time() - start_time
+
+        # Build per-category stats for local file
         stats = {
             'model': args.model,
             'eval_model': args.eval_model,
@@ -435,11 +582,50 @@ def main():
             'max_questions': args.max_questions,
             'execution_time_seconds': round(execution_time, 2),
             'timestamp': datetime.utcnow().isoformat(),
-            **metrics,
+            'categories': {},
         }
+        all_correct = 0
+        all_total = 0
+        for qtype in QUESTION_TYPES:
+            results = type2results.get(qtype, [])
+            if results:
+                correct = sum(1 for r in results if r['label'])
+                total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec']
+                                for r in results)
+                stats['categories'][qtype] = {
+                    'total_questions': len(results),
+                    'correct_count': correct,
+                    'incorrect_count': len(results) - correct,
+                    'accuracy': round(correct / len(results), 4),
+                    'total_duration_sec': round(total_dur, 2),
+                    'avg_duration_sec': round(total_dur / len(results), 2),
+                }
+                all_correct += correct
+                all_total += len(results)
+
+        stats['overall_accuracy'] = round(all_correct / all_total, 4) if all_total else 0.0
+        stats['total_questions'] = all_total
+        stats['correct_count'] = all_correct
+
         with open(stats_file, 'w') as f:
             json.dump(stats, f, indent=2)
         print(f"Statistics saved to {stats_file}")
+
+        # Save to MongoDB (one record per category)
+        db_name = os.environ.get("DB_NAME")
+        connection_string = os.environ.get("CONNECTION_STRING")
+        experiment_name = os.environ.get("EXPERIMENT_NAME")
+
+        if experiment_name and db_name and connection_string:
+            records = build_category_records(
+                type2results, evaluated, args, execution_time
+            )
+            save_to_mongodb(records, db_name, connection_string)
+        elif not experiment_name:
+            print("\nEXPERIMENT_NAME not set, skipping MongoDB save")
+        else:
+            print("\nMongoDB not fully configured (missing DB_NAME or CONNECTION_STRING), "
+                  "skipping save")
 
     execution_time = time.time() - start_time
     print(f"\nTotal execution time: {execution_time:.1f}s")

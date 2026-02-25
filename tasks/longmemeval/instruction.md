@@ -127,7 +127,9 @@ tasks/longmemeval/
 │   ├── Dockerfile                 # Container build instructions
 │   ├── requirements.txt           # Python dependencies
 │   └── run_longmemeval.py         # Main benchmark runner
+├── generate_report.py             # HTML report generator from MongoDB
 ├── instruction.md                 # This file
+├── reports/                       # Generated HTML reports
 ├── solution/
 │   └── solve.sh                   # Entry point script for Harbor
 ├── tests/
@@ -151,7 +153,36 @@ The task produces:
 - `/outputs/longmemeval_eval_results.jsonl` — Evaluation results with labels
 - `/outputs/longmemeval_stats.json` — Aggregate statistics by question type
 
+## MongoDB Integration
+
+Results are automatically saved to MongoDB (one record per question category) when `EXPERIMENT_NAME`, `DB_NAME`, and `CONNECTION_STRING` are set in `secrets.env`.
+
+Each record contains:
+- `question_category` — Category name (e.g., `temporal-reasoning`)
+- `total_questions`, `correct_count`, `incorrect_count`, `accuracy`
+- `total_duration_sec`, `avg_duration_sec` — Timing per category
+- `incorrect_answers` — List of wrong answers with `question`, `expected_answer`, `model_answer`, and `judge_explanation`
+
+## Generating Reports
+
+After running an evaluation, generate an HTML report from MongoDB:
+
+```bash
+# From project root
+python tasks/longmemeval/generate_report.py --experiment-name my_experiment
+
+# Or with environment variables
+EXPERIMENT_NAME=my_experiment python tasks/longmemeval/generate_report.py
+```
+
+Reports are saved to `tasks/longmemeval/reports/` and include:
+- Overall accuracy summary
+- Accuracy breakdown by question category with timing
+- Filterable list of incorrect responses with judge explanations
+
 ## API Keys
 
 API keys are loaded from `secrets.env` at the project root:
 - `OPENAI_API_KEY` — Required for GPT models (generation and evaluation)
+- `DB_NAME` — MongoDB database name (for saving results)
+- `CONNECTION_STRING` — MongoDB connection string (for saving results)
