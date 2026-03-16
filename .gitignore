@@ -18,6 +18,11 @@ benchmark_runs/dockerized_pam_without_git_with_memory_agent/claude-config/**
 benchmark_runs/dockerized_pam_without_git_with_memory_agent/outputs/**
 scripts/view_conversation.py
 agents/mem0
+agents/backboard
+agents/LongMemEval
+
+datasets/longmemeval/*.json
+!datasets/longmemeval/registry.json
 
 # Distribution / packaging
 .Python

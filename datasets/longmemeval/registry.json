@@ -1,0 +1,13 @@
+[
+  {
+    "name": "longmemeval",
+    "version": "1.0",
+    "description": "LongMemEval benchmark for evaluating long-term conversational memory of LLM agents across 500 questions in 6 categories",
+    "tasks": [
+      {
+        "name": "longmemeval",
+        "path": "tasks/longmemeval"
+      }
+    ]
+  }
+]
