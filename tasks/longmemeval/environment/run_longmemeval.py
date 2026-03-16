@@ -16,10 +16,14 @@ import argparse
 from datetime import datetime
 from typing import Dict, List, Optional
 
+import io
+import math
+
 import backoff
 import numpy as np
 import openai
 from openai import OpenAI
+import requests
 import tiktoken
 from tqdm import tqdm
 
@@ -39,6 +43,283 @@ def load_secrets():
         print("Loaded secrets from secrets.env")
     else:
         print("Warning: secrets.env not found, using existing environment variables")
+
+
+###############################################################################
+# PAM Agent API Client
+###############################################################################
+
+class PAMClient:
+    """Client for the PAM API used when MODEL=pam.
+
+    Requires an admin login to obtain a token before creating benchmark
+    user accounts.
+    """
+
+    MAX_FILES_PER_REQUEST = 5
+    SSE_TIMEOUT = 600
+
+    def __init__(self, api_host: str):
+        self.host = api_host.rstrip("/")
+        self.base_url = f"{self.host}/api/v1"
+        self.session = requests.Session()
+        self.admin_token: Optional[str] = None
+        self.access_token: Optional[str] = None
+        self.user_id: Optional[int] = None
+
+    def _headers(self) -> dict:
+        h = {}
+        if self.access_token:
+            h["Authorization"] = f"Bearer {self.access_token}"
+        elif self.admin_token:
+            h["Authorization"] = f"Bearer {self.admin_token}"
+        return h
+
+    # --- 0. Admin login ---------------------------------------------------------
+
+    def login(self, email: str, password: str) -> str:
+        """Authenticate and store the admin token."""
+        resp = self.session.post(
+            f"{self.host}/v1/auth/login",
+            json={"email": email, "password": password},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        self.admin_token = data["tokens"]["access_token"]
+        return self.admin_token
+
+    # --- 1. Account lifecycle ---------------------------------------------------
+
+    def create_account(self, email: str, password: str, name: str) -> dict:
+        resp = self.session.post(
+            f"{self.base_url}/admin/create-account",
+            json={"email": email, "password": password, "name": name},
+            headers=self._headers(),
+            timeout=60,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        self.access_token = data["tokens"]["access_token"]
+        self.user_id = data["user"]["id"]
+        return data
+
+    def delete_account(self) -> None:
+        resp = self.session.delete(
+            f"{self.base_url}/admin/delete-account/{self.user_id}",
+            headers=self._headers(),
+            timeout=60,
+        )
+        resp.raise_for_status()
+
+    def backup_workspace(self) -> dict:
+        resp = self.session.post(
+            f"{self.base_url}/admin/backup-workspace/{self.user_id}",
+            headers=self._headers(),
+            timeout=300,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    # --- 2. File upload ---------------------------------------------------------
+
+    def upload_generic_files(self, file_tuples: List[tuple]) -> list:
+        """Upload files in batches of MAX_FILES_PER_REQUEST.
+
+        Args:
+            file_tuples: list of (filename, file_bytes) pairs.
+
+        Returns:
+            Aggregated list of upload result dicts.
+        """
+        all_results = []
+        for batch_start in range(0, len(file_tuples), self.MAX_FILES_PER_REQUEST):
+            batch = file_tuples[batch_start:batch_start + self.MAX_FILES_PER_REQUEST]
+            files_payload = [
+                ("files", (fname, io.BytesIO(fbytes), "text/plain"))
+                for fname, fbytes in batch
+            ]
+            resp = self.session.post(
+                f"{self.base_url}/files/upload-generic/{self.user_id}",
+                headers=self._headers(),
+                files=files_payload,
+                timeout=120,
+            )
+            resp.raise_for_status()
+            all_results.extend(resp.json())
+        return all_results
+
+    # --- 3. Memory creation -----------------------------------------------------
+
+    def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
+        params = {"batch_size": batch_size}
+        if max_files is not None:
+            params["max_files"] = max_files
+        resp = self.session.post(
+            f"{self.base_url}/memory/benchmark/create-memory/{self.user_id}",
+            headers=self._headers(),
+            params=params,
+            timeout=1800,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    # --- 4. Chat (SSE) ----------------------------------------------------------
+
+    def send_message(self, prompt: str, conversation_id: Optional[str] = None) -> str:
+        """Send a message and collect the full text response from the SSE stream."""
+        body = {
+            "prompt": prompt,
+            "conversation_id": conversation_id,
+        }
+        resp = self.session.post(
+            f"{self.base_url}/messages/stream",
+            json=body,
+            headers=self._headers(),
+            stream=True,
+            timeout=self.SSE_TIMEOUT,
+        )
+        resp.raise_for_status()
+
+        collected_text = []
+        for line in resp.iter_lines(decode_unicode=True):
+            if not line or not line.startswith("data:"):
+                continue
+            payload = line[len("data:"):].strip()
+            if not payload:
+                continue
+            try:
+                event = json.loads(payload)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "text" and "content" in event:
+                collected_text.append(event["content"])
+
+        return "".join(collected_text)
+
+
+def serialize_sessions_to_files(entry: dict) -> List[tuple]:
+    """Convert a question's haystack sessions into (filename, bytes) pairs.
+
+    Each session becomes a plain-text file named by its session ID.
+    """
+    file_tuples = []
+    for sid, date, session in zip(
+        entry["haystack_session_ids"],
+        entry["haystack_dates"],
+        entry["haystack_sessions"],
+    ):
+        lines = [f"Session Date: {date}\n"]
+        for turn in session:
+            lines.append(f"{turn['role']}: {turn['content'].strip()}\n")
+        text = "\n".join(lines)
+        file_tuples.append((f"{sid}.txt", text.encode("utf-8")))
+    return file_tuples
+
+
+def process_question_pam(
+    pam_host: str,
+    admin_email: str,
+    admin_password: str,
+    entry: dict,
+    question_idx: int,
+    total: int,
+    qid2type: dict,
+) -> dict:
+    """Run the full PAM pipeline for a single LongMemEval question.
+
+    0. Login to obtain admin token
+    1. Create benchmark user account
+    2. Upload haystack sessions as files (batched, max 5 per request)
+    3. Create memory
+    4. Send the question via SSE chat
+    5. Backup workspace
+    6. Delete account
+    """
+    qid = entry["question_id"]
+    qtype = qid2type.get(qid, "unknown")
+    email = f"longmemeval-{qid}@benchmark.local"
+    print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})")
+
+    pam = PAMClient(pam_host)
+    q_start = time.time()
+    answer = ""
+
+    try:
+        # Step 0: Login to get admin token
+        print(f"  [0/6] Logging in as {admin_email} ...")
+        pam.login(admin_email, admin_password)
+
+        # Step 1: Create account
+        print(f"  [1/6] Creating account {email} ...")
+        pam.create_account(email=email, password="benchmark-run", name=f"LongMemEval {qid}")
+        print(f"        user_id={pam.user_id}")
+
+        # Step 2: Upload haystack sessions as files
+        file_tuples = serialize_sessions_to_files(entry)
+        num_batches = math.ceil(len(file_tuples) / PAMClient.MAX_FILES_PER_REQUEST)
+        print(f"  [2/6] Uploading {len(file_tuples)} session files ({num_batches} batches) ...")
+        upload_results = pam.upload_generic_files(file_tuples)
+        print(f"        Uploaded {len(upload_results)} files")
+
+        # Step 3: Create memory
+        print(f"  [3/6] Creating memory (this may take a while) ...")
+        mem_result = pam.create_memory()
+        print(f"        Memory created: {mem_result.get('message', 'ok')}")
+
+        # Step 4: Ask the question
+        prompt = (
+            f"Current Date: {entry['question_date']}\n"
+            f"Question: {entry['question']}\n"
+            f"Answer:"
+        )
+        print(f"  [4/6] Sending question: {entry['question'][:80]}...")
+        answer = pam.send_message(prompt)
+        print(f"        Answer: {answer[:120]}...")
+
+        # Step 5: Backup workspace
+        print(f"  [5/6] Backing up workspace ...")
+        backup = pam.backup_workspace()
+        print(f"        Backup: {backup.get('backup_path', 'done')}")
+
+    except Exception as e:
+        print(f"  ERROR for {qid}: {repr(e)}")
+
+    finally:
+        # Step 6: Cleanup
+        if pam.user_id:
+            try:
+                print(f"  [6/6] Deleting account (user_id={pam.user_id}) ...")
+                pam.delete_account()
+                print(f"        Account deleted")
+            except Exception as e:
+                print(f"        Warning: cleanup failed: {repr(e)}")
+
+    duration = round(time.time() - q_start, 2)
+    return {
+        "question_id": qid,
+        "question_type": qtype,
+        "hypothesis": answer.strip(),
+        "generation_duration_sec": duration,
+    }
+
+
+def generate_answers_pam(
+    pam_host: str,
+    admin_email: str,
+    admin_password: str,
+    data: list,
+    qid2type: dict,
+) -> list:
+    """Generate answers for all questions using the PAM Agent API."""
+    predictions = []
+    for i, entry in enumerate(data):
+        pred = process_question_pam(
+            pam_host, admin_email, admin_password,
+            entry, i, len(data), qid2type,
+        )
+        predictions.append(pred)
+    return predictions
 
 
 def parse_args():
@@ -483,27 +764,48 @@ def main():
     load_secrets()
     args = parse_args()
 
+    is_pam = args.model.lower() == "pam"
+
     print("=" * 60)
     print("LongMemEval Benchmark")
     print("=" * 60)
-    print(f"  Model: {args.model}")
+    print(f"  Model: {args.model}" + (" (PAM Agent pipeline)" if is_pam else ""))
     print(f"  Eval model: {args.eval_model}")
     print(f"  Data file: {args.data_file}")
-    print(f"  History format: {args.history_format}")
-    print(f"  Chain-of-thought: {args.cot}")
+    if not is_pam:
+        print(f"  History format: {args.history_format}")
+        print(f"  Chain-of-thought: {args.cot}")
     if args.max_questions > 0:
         print(f"  Max questions: {args.max_questions}")
     if args.question_id:
         print(f"  Single question: {args.question_id}")
     print("=" * 60)
 
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if not api_key:
-        print("Error: OPENAI_API_KEY not set")
-        sys.exit(1)
+    if is_pam:
+        pam_host = os.environ.get("PAM_API_HOST")
+        pam_api_user = os.environ.get("PAM_API_USER")
+        pam_api_password = os.environ.get("PAM_API_PASSWORD")
+        missing = []
+        if not pam_host:
+            missing.append("PAM_API_HOST")
+        if not pam_api_user:
+            missing.append("PAM_API_USER")
+        if not pam_api_password:
+            missing.append("PAM_API_PASSWORD")
+        if missing:
+            print(f"Error: {', '.join(missing)} not set (required when MODEL=pam)")
+            sys.exit(1)
+        print(f"  PAM API host: {pam_host}")
+        print(f"  PAM admin user: {pam_api_user}")
+    else:
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            print("Error: OPENAI_API_KEY not set")
+            sys.exit(1)
 
-    client = OpenAI(api_key=api_key)
-    tokenizer = tiktoken.get_encoding('o200k_base')
+    if not is_pam:
+        client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+        tokenizer = tiktoken.get_encoding('o200k_base')
 
     print(f"\nLoading dataset from {args.data_file}...")
     with open(args.data_file) as f:
@@ -541,7 +843,13 @@ def main():
           f"(skipping {len(data) - len(to_generate)} existing)")
 
     if to_generate:
-        new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
+        if is_pam:
+            new_predictions = generate_answers_pam(
+                pam_host, pam_api_user, pam_api_password,
+                to_generate, qid2type,
+            )
+        else:
+            new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
         for pred in new_predictions:
             existing_preds[pred['question_id']] = pred
 
@@ -559,9 +867,15 @@ def main():
     if args.skip_eval:
         print("\nSkipping evaluation (--skip-eval)")
     else:
+        eval_api_key = os.environ.get('OPENAI_API_KEY')
+        if not eval_api_key:
+            print("Error: OPENAI_API_KEY not set (required for LLM-as-judge evaluation)")
+            sys.exit(1)
+        eval_client = OpenAI(api_key=eval_api_key)
+
         print(f"\nRunning LLM-as-judge evaluation with {args.eval_model}...")
         evaluated, type2results = evaluate_predictions(
-            client, all_predictions, data, args.eval_model
+            eval_client, all_predictions, data, args.eval_model
         )
 
         with open(eval_file, 'w') as f:

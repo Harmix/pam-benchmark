@@ -41,6 +41,19 @@ echo "[INFO] COT='${COT}'"
 echo "[INFO] OVERWRITE='${OVERWRITE}'"
 echo "[INFO] SKIP_EVAL='${SKIP_EVAL}'"
 echo "[INFO] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
+
+if [ "${MODEL}" = "pam" ]; then
+  echo "[INFO] PAM_API_HOST='${PAM_API_HOST:-}'"
+  echo "[INFO] PAM_API_USER='${PAM_API_USER:-}'"
+  MISSING=""
+  [ -z "${PAM_API_HOST}" ] && MISSING="${MISSING} PAM_API_HOST"
+  [ -z "${PAM_API_USER}" ] && MISSING="${MISSING} PAM_API_USER"
+  [ -z "${PAM_API_PASSWORD}" ] && MISSING="${MISSING} PAM_API_PASSWORD"
+  if [ -n "${MISSING}" ]; then
+    echo "[ERROR] Missing required env vars for MODEL=pam:${MISSING}"
+    exit 1
+  fi
+fi
 echo ""
 
 ARGS="--model ${MODEL} --eval-model ${EVAL_MODEL} --history-format ${HISTORY_FORMAT}"

@@ -21,6 +21,9 @@ services:
       - COT=${COT}
       - OVERWRITE=${OVERWRITE}
       - SKIP_EVAL=${SKIP_EVAL}
+      - PAM_API_HOST=${PAM_API_HOST}
+      - PAM_API_USER=${PAM_API_USER}
+      - PAM_API_PASSWORD=${PAM_API_PASSWORD}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:
