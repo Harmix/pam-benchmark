@@ -8,16 +8,21 @@ Saves per-category results to MongoDB.
 Based on agents/LongMemEval by Di Wu (2024).
 """
 
+import builtins
 import os
 import sys
 import json
 import time
 import argparse
+import functools
 from datetime import datetime
 from typing import Dict, List, Optional
 
 import io
 import math
+
+# Force unbuffered output so progress logs appear immediately in log files.
+print = functools.partial(builtins.print, flush=True)
 
 import backoff
 import numpy as np
@@ -61,7 +66,7 @@ class PAMClient:
 
     def __init__(self, api_host: str):
         self.host = api_host.rstrip("/")
-        self.base_url = f"{self.host}/api/v1"
+        self.base_url = f"{self.host}/v1"
         self.session = requests.Session()
         self.admin_token: Optional[str] = None
         self.access_token: Optional[str] = None
@@ -159,7 +164,7 @@ class PAMClient:
             f"{self.base_url}/memory/benchmark/create-memory/{self.user_id}",
             headers=self._headers(),
             params=params,
-            timeout=1800,
+            timeout=3600,
         )
         resp.raise_for_status()
         return resp.json()

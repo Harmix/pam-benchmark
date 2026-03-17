@@ -124,24 +124,24 @@ For each question the runner executes the following pipeline:
 0. POST {PAM_API_HOST}/v1/auth/login
    → Login with PAM_API_USER / PAM_API_PASSWORD to get an admin access token
 
-1. POST {PAM_API_HOST}/api/v1/admin/create-account
+1. POST {PAM_API_HOST}/v1/admin/create-account
    → Create a dedicated PAM user (email: longmemeval-{question_id}@benchmark.local)
      using the admin token from step 0
 
-2. POST {PAM_API_HOST}/api/v1/files/upload-generic/{user_id}
+2. POST {PAM_API_HOST}/v1/files/upload-generic/{user_id}
    → Upload the question's ~48 haystack sessions as .txt files
      (batched in groups of 5 per request, stored in unsorted/generic_downloads/)
 
-3. POST {PAM_API_HOST}/api/v1/memory/benchmark/create-memory/{user_id}
+3. POST {PAM_API_HOST}/v1/memory/benchmark/create-memory/{user_id}
    → Run the full memory pipeline (folder setup → sync → compress → deep analysis)
 
-4. POST {PAM_API_HOST}/api/v1/messages/stream
+4. POST {PAM_API_HOST}/v1/messages/stream
    → Send the question and collect the answer from the SSE stream
 
-5. POST {PAM_API_HOST}/api/v1/admin/backup-workspace/{user_id}
+5. POST {PAM_API_HOST}/v1/admin/backup-workspace/{user_id}
    → Backup the user's workspace to GCS before cleanup
 
-6. DELETE {PAM_API_HOST}/api/v1/admin/delete-account/{user_id}
+6. DELETE {PAM_API_HOST}/v1/admin/delete-account/{user_id}
    → Delete the user and all associated data
 ```
 
