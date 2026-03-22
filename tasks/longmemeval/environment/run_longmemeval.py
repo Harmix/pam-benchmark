@@ -203,22 +203,45 @@ class PAMClient:
         return "".join(collected_text)
 
 
+def _date_to_filename_prefix(date_str: str) -> str:
+    """Convert '2023/05/20 (Sat) 02:21' → '2023-05-20_02-21'."""
+    parts = date_str.split()
+    day_part = parts[0].replace("/", "-")       # '2023-05-20'
+    time_part = parts[-1].replace(":", "-")      # '02-21'
+    return f"{day_part}_{time_part}"
+
+
 def serialize_sessions_to_files(entry: dict) -> List[tuple]:
     """Convert a question's haystack sessions into (filename, bytes) pairs.
 
-    Each session becomes a plain-text file named by its session ID.
+    Each session becomes a plain-text file whose name encodes the
+    chronological order and timestamp so PAM can reconstruct the timeline:
+        session_001_2023-05-20_02-21_sharegpt_yywfIrx_0.txt
+
+    The file body starts with a metadata header (session number, date,
+    total sessions) followed by the conversation turns.
     """
+    total = len(entry["haystack_sessions"])
     file_tuples = []
-    for sid, date, session in zip(
+    for idx, (sid, date, session) in enumerate(zip(
         entry["haystack_session_ids"],
         entry["haystack_dates"],
         entry["haystack_sessions"],
-    ):
-        lines = [f"Session Date: {date}\n"]
+    )):
+        date_prefix = _date_to_filename_prefix(date)
+        filename = f"session_{idx+1:03d}_{date_prefix}_{sid}.txt"
+
+        lines = [
+            f"Session {idx+1} of {total}",
+            f"Session Date: {date}",
+            f"Session ID: {sid}",
+            "",
+        ]
         for turn in session:
-            lines.append(f"{turn['role']}: {turn['content'].strip()}\n")
+            lines.append(f"{turn['role']}: {turn['content'].strip()}")
+            lines.append("")
         text = "\n".join(lines)
-        file_tuples.append((f"{sid}.txt", text.encode("utf-8")))
+        file_tuples.append((filename, text.encode("utf-8")))
     return file_tuples
 
 
