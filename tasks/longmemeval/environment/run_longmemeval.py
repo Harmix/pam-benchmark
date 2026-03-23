@@ -8,18 +8,27 @@ Saves per-category results to MongoDB.
 Based on agents/LongMemEval by Di Wu (2024).
 """
 
+import builtins
 import os
 import sys
 import json
 import time
 import argparse
+import functools
 from datetime import datetime
 from typing import Dict, List, Optional
+
+import io
+import math
+
+# Force unbuffered output so progress logs appear immediately in log files.
+print = functools.partial(builtins.print, flush=True)
 
 import backoff
 import numpy as np
 import openai
 from openai import OpenAI
+import requests
 import tiktoken
 from tqdm import tqdm
 
@@ -39,6 +48,435 @@ def load_secrets():
         print("Loaded secrets from secrets.env")
     else:
         print("Warning: secrets.env not found, using existing environment variables")
+
+
+###############################################################################
+# PAM Agent API Client
+###############################################################################
+
+class PAMClient:
+    """Client for the PAM API used when MODEL=pam.
+
+    Requires an admin login to obtain a token before creating benchmark
+    user accounts.
+    """
+
+    MAX_FILES_PER_REQUEST = 5
+    SSE_TIMEOUT = 600
+
+    def __init__(self, api_host: str):
+        self.host = api_host.rstrip("/")
+        self.base_url = f"{self.host}/v1"
+        self.session = requests.Session()
+        self.admin_token: Optional[str] = None
+        self.access_token: Optional[str] = None
+        self.user_id: Optional[int] = None
+
+    def _headers(self) -> dict:
+        h = {}
+        if self.access_token:
+            h["Authorization"] = f"Bearer {self.access_token}"
+        elif self.admin_token:
+            h["Authorization"] = f"Bearer {self.admin_token}"
+        return h
+
+    # --- 0. Admin login ---------------------------------------------------------
+
+    def login(self, email: str, password: str) -> str:
+        """Authenticate and store the admin token."""
+        resp = self.session.post(
+            f"{self.host}/v1/auth/login",
+            json={"email": email, "password": password},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        self.admin_token = data["tokens"]["access_token"]
+        return self.admin_token
+
+    # --- 1. Account lifecycle ---------------------------------------------------
+
+    def create_account(self, email: str, password: str, name: str) -> dict:
+        resp = self.session.post(
+            f"{self.base_url}/admin/create-account",
+            json={"email": email, "password": password, "name": name},
+            headers=self._headers(),
+            timeout=60,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        self.access_token = data["tokens"]["access_token"]
+        self.user_id = data["user"]["id"]
+        return data
+
+    def delete_account(self) -> None:
+        resp = self.session.delete(
+            f"{self.base_url}/admin/delete-account/{self.user_id}",
+            headers=self._headers(),
+            timeout=60,
+        )
+        resp.raise_for_status()
+
+    def backup_workspace(self) -> dict:
+        resp = self.session.post(
+            f"{self.base_url}/admin/backup-workspace/{self.user_id}",
+            headers=self._headers(),
+            timeout=300,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    # --- 2. File upload ---------------------------------------------------------
+
+    def upload_generic_files(self, file_tuples: List[tuple]) -> list:
+        """Upload files in batches of MAX_FILES_PER_REQUEST.
+
+        Args:
+            file_tuples: list of (filename, file_bytes) pairs.
+
+        Returns:
+            Aggregated list of upload result dicts.
+        """
+        all_results = []
+        for batch_start in range(0, len(file_tuples), self.MAX_FILES_PER_REQUEST):
+            batch = file_tuples[batch_start:batch_start + self.MAX_FILES_PER_REQUEST]
+            files_payload = [
+                ("files", (fname, io.BytesIO(fbytes), "text/plain"))
+                for fname, fbytes in batch
+            ]
+            resp = self.session.post(
+                f"{self.base_url}/files/upload-generic/{self.user_id}",
+                headers=self._headers(),
+                files=files_payload,
+                timeout=120,
+            )
+            resp.raise_for_status()
+            all_results.extend(resp.json())
+        return all_results
+
+    # --- 3. Memory creation (async pipeline) ------------------------------------
+
+    MEMORY_POLL_INTERVAL = 30      # seconds between status checks
+    MEMORY_POLL_TIMEOUT = 3600     # max wait time (1 hour)
+    TERMINAL_STATUSES = {"completed", "failed", "stopped", "cancelled"}
+
+    PIPELINE_TYPE = "benchmark_memory"
+
+    def trigger_memory_pipeline(
+        self, max_files: Optional[int] = None, batch_size: int = 500,
+    ) -> str:
+        """Start the async benchmark_memory pipeline. Returns the run_id."""
+        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/run"
+        body = {
+            "sync_type": "initial",
+            "params": {
+                "max_files": max_files,
+                "batch_size": batch_size,
+            },
+        }
+        print(f"        POST {url}?user_id={self.user_id}")
+        print(f"        Body: {json.dumps(body)}")
+        resp = self.session.post(
+            url,
+            params={"user_id": self.user_id},
+            json=body,
+            headers=self._headers(),
+            timeout=60,
+        )
+        if resp.status_code != 202 and resp.status_code != 200:
+            print(f"        Response {resp.status_code}: {resp.text}")
+        resp.raise_for_status()
+        data = resp.json()
+        return data["run_id"]
+
+    def poll_memory_status(self) -> dict:
+        """Get the current status of the benchmark_memory pipeline."""
+        resp = self.session.get(
+            f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status",
+            params={"user_id": self.user_id},
+            headers=self._headers(),
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
+        """Trigger the memory pipeline and poll until completion or timeout."""
+        run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
+        print(f"        Pipeline triggered (run_id={run_id}), polling every "
+              f"{self.MEMORY_POLL_INTERVAL}s (timeout {self.MEMORY_POLL_TIMEOUT}s) ...")
+
+        start = time.time()
+        last_status = "pending"
+        while True:
+            elapsed = time.time() - start
+            if elapsed > self.MEMORY_POLL_TIMEOUT:
+                raise TimeoutError(
+                    f"Memory pipeline did not finish within {self.MEMORY_POLL_TIMEOUT}s "
+                    f"(last status: {last_status})"
+                )
+
+            time.sleep(self.MEMORY_POLL_INTERVAL)
+
+            status_resp = self.poll_memory_status()
+            run_info = status_resp.get("run", status_resp)
+            last_status = run_info.get("run_status", run_info.get("status", "unknown"))
+            elapsed_min = elapsed / 60
+            print(f"        [{elapsed_min:.1f}m] status={last_status}")
+
+            if last_status in self.TERMINAL_STATUSES:
+                if last_status != "completed":
+                    error_msg = run_info.get("run_error_message", "no details")
+                    raise RuntimeError(
+                        f"Memory pipeline {last_status}: {error_msg}"
+                    )
+                return status_resp
+
+    # --- 4. Chat (SSE) ----------------------------------------------------------
+
+    def send_message(self, prompt: str, conversation_id: Optional[str] = None) -> str:
+        """Send a message and return the **last** assistant text turn from the SSE stream.
+
+        PAM may produce multiple assistant text turns separated by tool-use
+        cycles.  Only the final assistant text turn contains the actual answer;
+        earlier ones are intermediate messages like "I'll search for …".
+
+        Turn tracking:
+          - ``role "assistant"`` + ``content_new.type "text"`` → append to
+            the *current* turn buffer.
+          - ``role "tool_use"`` or ``role "tool_result"`` → save the current
+            turn and start a fresh buffer (the next assistant text is a new
+            turn).
+          - ``role "result"`` / ``event: stream_stopped`` → terminal, stop.
+        """
+        body = {
+            "prompt": prompt,
+            "conversation_id": conversation_id,
+        }
+        resp = self.session.post(
+            f"{self.base_url}/messages/stream",
+            json=body,
+            headers=self._headers(),
+            stream=True,
+            timeout=self.SSE_TIMEOUT,
+        )
+        resp.raise_for_status()
+
+        all_turns: List[List[str]] = []
+        current_turn: List[str] = []
+
+        for line in resp.iter_lines(decode_unicode=True):
+            if not line:
+                continue
+            if line.startswith("event: stream_stopped"):
+                break
+            if not line.startswith("data: "):
+                continue
+
+            try:
+                payload = json.loads(line[len("data: "):])
+            except json.JSONDecodeError:
+                continue
+
+            if payload.get("type") == "resume_conversation":
+                continue
+
+            role = payload.get("role")
+            if role == "assistant":
+                content_new = payload.get("content_new", {})
+                if content_new.get("type") == "text" and content_new.get("text"):
+                    current_turn.append(content_new["text"])
+            elif role in ("tool_use", "tool_result"):
+                if current_turn:
+                    all_turns.append(current_turn)
+                    current_turn = []
+            elif role == "result":
+                break
+
+        if current_turn:
+            all_turns.append(current_turn)
+
+        for idx, turn in enumerate(all_turns):
+            turn_text = "".join(turn)
+            print(f"        [SSE turn {idx+1}/{len(all_turns)}] "
+                  f"{turn_text[:200]}{'…' if len(turn_text) > 200 else ''}")
+
+        if not all_turns:
+            return ""
+        return "".join(all_turns[-1])
+
+
+def _date_to_filename_prefix(date_str: str) -> str:
+    """Convert '2023/05/20 (Sat) 02:21' → '2023-05-20_02-21'."""
+    parts = date_str.split()
+    day_part = parts[0].replace("/", "-")       # '2023-05-20'
+    time_part = parts[-1].replace(":", "-")      # '02-21'
+    return f"{day_part}_{time_part}"
+
+
+def serialize_sessions_to_files(entry: dict) -> List[tuple]:
+    """Convert a question's haystack sessions into (filename, bytes) pairs.
+
+    Each session becomes a plain-text file whose name encodes the
+    chronological order and timestamp so PAM can reconstruct the timeline:
+        session_001_2023-05-20_02-21_sharegpt_yywfIrx_0.txt
+
+    The file body starts with a metadata header (session number, date,
+    total sessions) followed by the conversation turns.
+    """
+    total = len(entry["haystack_sessions"])
+    file_tuples = []
+    for idx, (sid, date, session) in enumerate(zip(
+        entry["haystack_session_ids"],
+        entry["haystack_dates"],
+        entry["haystack_sessions"],
+    )):
+        date_prefix = _date_to_filename_prefix(date)
+        filename = f"session_{idx+1:03d}_{date_prefix}_{sid}.txt"
+
+        lines = [
+            f"Session {idx+1} of {total}",
+            f"Session Date: {date}",
+            f"Session ID: {sid}",
+            "",
+        ]
+        for turn in session:
+            lines.append(f"{turn['role']}: {turn['content'].strip()}")
+            lines.append("")
+        text = "\n".join(lines)
+        file_tuples.append((filename, text.encode("utf-8")))
+    return file_tuples
+
+
+def process_question_pam(
+    pam_host: str,
+    admin_email: str,
+    admin_password: str,
+    entry: dict,
+    question_idx: int,
+    total: int,
+    qid2type: dict,
+    debug: bool = False,
+    debug_user_id: Optional[int] = None,
+) -> dict:
+    """Run the full PAM pipeline for a single LongMemEval question.
+
+    0. Login to obtain admin token
+    1. Create benchmark user account  (skipped when debug_user_id is set)
+    2. Upload haystack sessions       (skipped when debug_user_id is set)
+    3. Create memory                  (skipped when debug_user_id is set)
+    4. Send the question via SSE chat
+    5. Backup workspace               (skipped in debug mode)
+    6. Delete account                 (skipped in debug mode)
+    """
+    qid = entry["question_id"]
+    qtype = qid2type.get(qid, "unknown")
+    email = f"longmemeval-{qid}@benchmark.local"
+    reuse_user = debug_user_id is not None
+    print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})"
+          + (f" [DEBUG user_id={debug_user_id}]" if reuse_user else "")
+          + (" [DEBUG]" if debug and not reuse_user else ""))
+    print(f"        Expected answer:\n{str(entry.get('answer', ''))}")
+
+    pam = PAMClient(pam_host)
+    answer = ""
+    memory_creation_sec = 0.0
+    generation_sec = 0.0
+
+    try:
+        # Step 0: Login to get admin token
+        print(f"  [0/6] Logging in as {admin_email} ...")
+        pam.login(admin_email, admin_password)
+
+        if reuse_user:
+            pam.user_id = debug_user_id
+            pam.access_token = pam.admin_token
+            print(f"  [1/6] Reusing existing user_id={debug_user_id} (debug)")
+            print(f"  [2/6] Skipping file upload (debug)")
+            print(f"  [3/6] Skipping memory creation (debug)")
+        else:
+            # Step 1: Create account
+            print(f"  [1/6] Creating account {email} ...")
+            pam.create_account(email=email, password="benchmark-run", name=f"LongMemEval {qid}")
+            print(f"        user_id={pam.user_id}")
+
+            # Step 2: Upload haystack sessions as files
+            file_tuples = serialize_sessions_to_files(entry)
+            num_batches = math.ceil(len(file_tuples) / PAMClient.MAX_FILES_PER_REQUEST)
+            print(f"  [2/6] Uploading {len(file_tuples)} session files ({num_batches} batches) ...")
+            upload_results = pam.upload_generic_files(file_tuples)
+            print(f"        Uploaded {len(upload_results)} files")
+
+            # Step 3: Create memory (timed separately)
+            print(f"  [3/6] Creating memory (this may take a while) ...")
+            mem_start = time.time()
+            mem_result = pam.create_memory()
+            memory_creation_sec = round(time.time() - mem_start, 2)
+            print(f"        Memory created: {mem_result.get('message', 'ok')} "
+                  f"({memory_creation_sec}s)")
+
+        # Step 4: Ask the question (timed separately)
+        prompt = (
+            f"Current Date: {entry['question_date']}\n"
+            f"Question: {entry['question']}\n"
+            f"Answer:"
+        )
+        print(f"  [4/6] Sending question: {entry['question'][:80]}...")
+        gen_start = time.time()
+        answer = pam.send_message(prompt)
+        generation_sec = round(time.time() - gen_start, 2)
+        print(f"        Final answer ({generation_sec}s):\n{answer}")
+
+        if not debug:
+            # Step 5: Backup workspace
+            print(f"  [5/6] Backing up workspace ...")
+            backup = pam.backup_workspace()
+            print(f"        Backup: {backup.get('backup_path', 'done')}")
+        else:
+            print(f"  [5/6] Skipping backup (debug)")
+
+    except Exception as e:
+        print(f"  ERROR for {qid}: {repr(e)}")
+
+    finally:
+        if not debug and pam.user_id:
+            try:
+                print(f"  [6/6] Deleting account (user_id={pam.user_id}) ...")
+                pam.delete_account()
+                print(f"        Account deleted")
+            except Exception as e:
+                print(f"        Warning: cleanup failed: {repr(e)}")
+        elif debug:
+            print(f"  [6/6] Skipping account deletion (debug)")
+
+    return {
+        "question_id": qid,
+        "question_type": qtype,
+        "hypothesis": answer.strip(),
+        "generation_duration_sec": generation_sec,
+        "memory_creation_duration_sec": memory_creation_sec,
+    }
+
+
+def generate_answers_pam(
+    pam_host: str,
+    admin_email: str,
+    admin_password: str,
+    data: list,
+    qid2type: dict,
+    debug: bool = False,
+    debug_user_id: Optional[int] = None,
+) -> list:
+    """Generate answers for all questions using the PAM Agent API."""
+    predictions = []
+    for i, entry in enumerate(data):
+        pred = process_question_pam(
+            pam_host, admin_email, admin_password,
+            entry, i, len(data), qid2type,
+            debug=debug, debug_user_id=debug_user_id,
+        )
+        predictions.append(pred)
+    return predictions
 
 
 def parse_args():
@@ -65,7 +503,20 @@ def parse_args():
                         help='Overwrite existing predictions')
     parser.add_argument('--skip-eval', action='store_true',
                         help='Skip LLM-as-judge evaluation')
-    return parser.parse_args()
+    parser.add_argument('--debug', action='store_true',
+                        help='PAM debug mode: skip backup and account deletion')
+    parser.add_argument('--debug-user-id', type=int, default=None,
+                        help='PAM debug: reuse existing user/memory instead of creating new ones')
+
+    args = parser.parse_args()
+
+    if os.environ.get("DEBUG", "").lower() in ("true", "1"):
+        args.debug = True
+    env_debug_uid = os.environ.get("DEBUG_USER_ID", "")
+    if env_debug_uid and args.debug_user_id is None:
+        args.debug_user_id = int(env_debug_uid)
+
+    return args
 
 
 MODEL_MAX_LENGTHS = {
@@ -156,6 +607,7 @@ def generate_answers(client, data, args, tokenizer, qid2type):
     total_completion_tokens = 0
 
     for entry in tqdm(data, desc="Generating answers"):
+        print(f"  [{entry['question_id']}] Expected answer:\n{str(entry.get('answer', ''))}")
         prompt = build_prompt(
             entry,
             history_format=args.history_format,
@@ -343,6 +795,7 @@ def evaluate_predictions(client, predictions, ref_data, eval_model):
                 'question_id': qid,
                 'label': label,
                 'generation_duration_sec': entry.get('generation_duration_sec', 0),
+                'memory_creation_duration_sec': entry.get('memory_creation_duration_sec', 0),
                 'eval_duration_sec': eval_duration,
             })
 
@@ -367,6 +820,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
 
         total_gen_duration = sum(r['generation_duration_sec'] for r in results)
         total_eval_duration = sum(r['eval_duration_sec'] for r in results)
+        total_mem_duration = sum(r.get('memory_creation_duration_sec', 0) for r in results)
         total_duration = round(total_gen_duration + total_eval_duration, 2)
         avg_duration = round(total_duration / len(results), 2) if results else 0.0
 
@@ -380,6 +834,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
                 'expected_answer': entry.get('expected_answer', ''),
                 'model_answer': entry.get('hypothesis', ''),
                 'generation_duration_sec': r['generation_duration_sec'],
+                'memory_creation_duration_sec': r.get('memory_creation_duration_sec', 0),
             }
             if r['label']:
                 correct_answers.append(answer_record)
@@ -403,6 +858,9 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
             'total_duration_sec': total_duration,
             'avg_duration_sec': avg_duration,
             'total_generation_duration_sec': round(total_gen_duration, 2),
+            'total_memory_creation_duration_sec': round(total_mem_duration, 2),
+            'avg_memory_creation_duration_sec': round(total_mem_duration / len(results), 2) if results else 0.0,
+            'avg_generation_duration_sec': round(total_gen_duration / len(results), 2) if results else 0.0,
             'total_eval_duration_sec': round(total_eval_duration, 2),
             'correct_answers': correct_answers,
             'incorrect_answers': incorrect_answers,
@@ -453,6 +911,12 @@ def print_metrics(type2results):
     all_acc = []
     task_acc = []
 
+    has_memory_times = any(
+        r.get('memory_creation_duration_sec', 0) > 0
+        for results in type2results.values()
+        for r in results
+    )
+
     print("\n" + "=" * 60)
     print("Evaluation Results by Question Type")
     print("=" * 60)
@@ -464,10 +928,22 @@ def print_metrics(type2results):
             acc = round(correct / len(results), 4)
             task_acc.append(acc)
             all_acc.extend([1 if r['label'] else 0 for r in results])
-            total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec'] for r in results)
-            avg_dur = round(total_dur / len(results), 2)
-            print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
-                  f"— avg {avg_dur}s/question")
+
+            avg_gen = round(
+                sum(r['generation_duration_sec'] for r in results) / len(results), 2
+            )
+            if has_memory_times:
+                avg_mem = round(
+                    sum(r.get('memory_creation_duration_sec', 0) for r in results) / len(results), 2
+                )
+                print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
+                      f"— avg memory {avg_mem}s, avg generation {avg_gen}s")
+            else:
+                avg_eval = round(
+                    sum(r['eval_duration_sec'] for r in results) / len(results), 2
+                )
+                print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
+                      f"— avg {round(avg_gen + avg_eval, 2)}s/question")
         else:
             print(f"  {qtype}: N/A (0 questions)")
 
@@ -483,27 +959,52 @@ def main():
     load_secrets()
     args = parse_args()
 
+    is_pam = args.model.lower() == "pam"
+
     print("=" * 60)
     print("LongMemEval Benchmark")
     print("=" * 60)
-    print(f"  Model: {args.model}")
+    print(f"  Model: {args.model}" + (" (PAM Agent pipeline)" if is_pam else ""))
     print(f"  Eval model: {args.eval_model}")
     print(f"  Data file: {args.data_file}")
-    print(f"  History format: {args.history_format}")
-    print(f"  Chain-of-thought: {args.cot}")
+    if not is_pam:
+        print(f"  History format: {args.history_format}")
+        print(f"  Chain-of-thought: {args.cot}")
     if args.max_questions > 0:
         print(f"  Max questions: {args.max_questions}")
     if args.question_id:
         print(f"  Single question: {args.question_id}")
+    if is_pam and args.debug:
+        print(f"  Debug mode: ON")
+        if args.debug_user_id is not None:
+            print(f"  Debug user_id: {args.debug_user_id}")
     print("=" * 60)
 
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if not api_key:
-        print("Error: OPENAI_API_KEY not set")
-        sys.exit(1)
+    if is_pam:
+        pam_host = os.environ.get("PAM_API_HOST")
+        pam_api_user = os.environ.get("PAM_API_USER")
+        pam_api_password = os.environ.get("PAM_API_PASSWORD")
+        missing = []
+        if not pam_host:
+            missing.append("PAM_API_HOST")
+        if not pam_api_user:
+            missing.append("PAM_API_USER")
+        if not pam_api_password:
+            missing.append("PAM_API_PASSWORD")
+        if missing:
+            print(f"Error: {', '.join(missing)} not set (required when MODEL=pam)")
+            sys.exit(1)
+        print(f"  PAM API host: {pam_host}")
+        print(f"  PAM admin user: {pam_api_user}")
+    else:
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            print("Error: OPENAI_API_KEY not set")
+            sys.exit(1)
 
-    client = OpenAI(api_key=api_key)
-    tokenizer = tiktoken.get_encoding('o200k_base')
+    if not is_pam:
+        client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+        tokenizer = tiktoken.get_encoding('o200k_base')
 
     print(f"\nLoading dataset from {args.data_file}...")
     with open(args.data_file) as f:
@@ -541,7 +1042,14 @@ def main():
           f"(skipping {len(data) - len(to_generate)} existing)")
 
     if to_generate:
-        new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
+        if is_pam:
+            new_predictions = generate_answers_pam(
+                pam_host, pam_api_user, pam_api_password,
+                to_generate, qid2type,
+                debug=args.debug, debug_user_id=args.debug_user_id,
+            )
+        else:
+            new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
         for pred in new_predictions:
             existing_preds[pred['question_id']] = pred
 
@@ -559,9 +1067,15 @@ def main():
     if args.skip_eval:
         print("\nSkipping evaluation (--skip-eval)")
     else:
+        eval_api_key = os.environ.get('OPENAI_API_KEY')
+        if not eval_api_key:
+            print("Error: OPENAI_API_KEY not set (required for LLM-as-judge evaluation)")
+            sys.exit(1)
+        eval_client = OpenAI(api_key=eval_api_key)
+
         print(f"\nRunning LLM-as-judge evaluation with {args.eval_model}...")
         evaluated, type2results = evaluate_predictions(
-            client, all_predictions, data, args.eval_model
+            eval_client, all_predictions, data, args.eval_model
         )
 
         with open(eval_file, 'w') as f:
@@ -590,16 +1104,22 @@ def main():
             results = type2results.get(qtype, [])
             if results:
                 correct = sum(1 for r in results if r['label'])
-                total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec']
-                                for r in results)
-                stats['categories'][qtype] = {
+                total_gen = sum(r['generation_duration_sec'] for r in results)
+                total_mem = sum(r.get('memory_creation_duration_sec', 0) for r in results)
+                total_eval = sum(r['eval_duration_sec'] for r in results)
+                cat_stats = {
                     'total_questions': len(results),
                     'correct_count': correct,
                     'incorrect_count': len(results) - correct,
                     'accuracy': round(correct / len(results), 4),
-                    'total_duration_sec': round(total_dur, 2),
-                    'avg_duration_sec': round(total_dur / len(results), 2),
+                    'total_generation_duration_sec': round(total_gen, 2),
+                    'avg_generation_duration_sec': round(total_gen / len(results), 2),
+                    'total_eval_duration_sec': round(total_eval, 2),
                 }
+                if total_mem > 0:
+                    cat_stats['total_memory_creation_duration_sec'] = round(total_mem, 2)
+                    cat_stats['avg_memory_creation_duration_sec'] = round(total_mem / len(results), 2)
+                stats['categories'][qtype] = cat_stats
                 all_correct += correct
                 all_total += len(results)
 

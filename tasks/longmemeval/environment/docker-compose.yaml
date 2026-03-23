@@ -11,6 +11,7 @@ services:
       - EXPERIMENT_NAME=${EXPERIMENT_NAME}
       - TASK_CONFIGS=${TASK_CONFIGS}
       - DEBUG=${DEBUG}
+      - DEBUG_USER_ID=${DEBUG_USER_ID}
       - DATASET_NAME=longmemeval@1.0
       - TASK_NAME=longmemeval
       - MODEL=${MODEL}
@@ -21,6 +22,9 @@ services:
       - COT=${COT}
       - OVERWRITE=${OVERWRITE}
       - SKIP_EVAL=${SKIP_EVAL}
+      - PAM_API_HOST=${PAM_API_HOST}
+      - PAM_API_USER=${PAM_API_USER}
+      - PAM_API_PASSWORD=${PAM_API_PASSWORD}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:
