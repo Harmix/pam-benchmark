@@ -507,6 +507,10 @@ def parse_args():
                         help='PAM debug mode: skip backup and account deletion')
     parser.add_argument('--debug-user-id', type=int, default=None,
                         help='PAM debug: reuse existing user/memory instead of creating new ones')
+    parser.add_argument('--question-range-start', type=int, default=None,
+                        help='1-based inclusive start index in dataset order (after QUESTION_ID filter)')
+    parser.add_argument('--question-range-end', type=int, default=None,
+                        help='1-based inclusive end index in dataset order (after QUESTION_ID filter)')
 
     args = parser.parse_args()
 
@@ -515,6 +519,13 @@ def parse_args():
     env_debug_uid = os.environ.get("DEBUG_USER_ID", "")
     if env_debug_uid and args.debug_user_id is None:
         args.debug_user_id = int(env_debug_uid)
+
+    env_qrs = os.environ.get("QUESTION_RANGE_START", "").strip()
+    env_qre = os.environ.get("QUESTION_RANGE_END", "").strip()
+    if env_qrs and args.question_range_start is None:
+        args.question_range_start = int(env_qrs)
+    if env_qre and args.question_range_end is None:
+        args.question_range_end = int(env_qre)
 
     return args
 
@@ -868,6 +879,8 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
                 'history_format': args.history_format,
                 'cot': args.cot,
                 'max_questions': args.max_questions,
+                'question_range_start': args.question_range_start,
+                'question_range_end': args.question_range_end,
             },
             'total_execution_time_sec': round(total_execution_time, 2),
             'timestamp': datetime.utcnow(),
@@ -974,6 +987,10 @@ def main():
         print(f"  Max questions: {args.max_questions}")
     if args.question_id:
         print(f"  Single question: {args.question_id}")
+    if args.question_range_start is not None or args.question_range_end is not None:
+        _s = args.question_range_start if args.question_range_start is not None else 1
+        _e = args.question_range_end if args.question_range_end is not None else "…"
+        print(f"  Question range (1-based): {_s}-{_e}")
     if is_pam and args.debug:
         print(f"  Debug mode: ON")
         if args.debug_user_id is not None:
@@ -1019,6 +1036,27 @@ def main():
             print(f"Error: question_id '{args.question_id}' not found")
             sys.exit(1)
         print(f"Filtered to question: {args.question_id}")
+
+    qrs, qre = args.question_range_start, args.question_range_end
+    if qrs is not None or qre is not None:
+        n = len(data)
+        start_1 = qrs if qrs is not None else 1
+        end_1 = qre if qre is not None else n
+        if start_1 < 1 or end_1 < 1:
+            print("Error: QUESTION_RANGE_START / QUESTION_RANGE_END must be >= 1 (1-based)")
+            sys.exit(1)
+        if start_1 > end_1:
+            print("Error: QUESTION_RANGE_START must be <= QUESTION_RANGE_END")
+            sys.exit(1)
+        if start_1 > n:
+            print(f"Error: QUESTION_RANGE_START ({start_1}) is past dataset size ({n})")
+            sys.exit(1)
+        if end_1 > n:
+            print(f"Warning: QUESTION_RANGE_END ({end_1}) clipped to dataset size ({n})")
+            end_1 = n
+        # 1-based inclusive → Python slice [start_1 - 1 : end_1]
+        data = data[start_1 - 1 : end_1]
+        print(f"Question range (1-based): {start_1}-{end_1} → {len(data)} question(s)")
 
     if args.max_questions > 0:
         data = data[:args.max_questions]
@@ -1094,6 +1132,8 @@ def main():
             'history_format': args.history_format,
             'cot': args.cot,
             'max_questions': args.max_questions,
+            'question_range_start': args.question_range_start,
+            'question_range_end': args.question_range_end,
             'execution_time_seconds': round(execution_time, 2),
             'timestamp': datetime.utcnow().isoformat(),
             'categories': {},

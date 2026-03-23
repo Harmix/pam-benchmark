@@ -13,6 +13,8 @@ set -e
 #   COT             - Enable chain-of-thought (default: false)
 #   OVERWRITE       - Overwrite existing predictions (default: false)
 #   SKIP_EVAL       - Skip LLM-as-judge evaluation (default: false)
+#   QUESTION_RANGE_START - 1-based inclusive start index in dataset order (optional)
+#   QUESTION_RANGE_END   - 1-based inclusive end index in dataset order (optional)
 
 if [ -f /workspace/secrets.env ]; then
   set -a
@@ -36,6 +38,8 @@ echo "[INFO] MODEL='${MODEL}'"
 echo "[INFO] EVAL_MODEL='${EVAL_MODEL}'"
 echo "[INFO] MAX_QUESTIONS='${MAX_QUESTIONS}'"
 echo "[INFO] QUESTION_ID='${QUESTION_ID:-}'"
+echo "[INFO] QUESTION_RANGE_START='${QUESTION_RANGE_START:-}'"
+echo "[INFO] QUESTION_RANGE_END='${QUESTION_RANGE_END:-}'"
 echo "[INFO] HISTORY_FORMAT='${HISTORY_FORMAT}'"
 echo "[INFO] COT='${COT}'"
 echo "[INFO] OVERWRITE='${OVERWRITE}'"
@@ -68,6 +72,15 @@ fi
 if [ -n "$QUESTION_ID" ]; then
   ARGS="${ARGS} --question-id ${QUESTION_ID}"
   echo "[INFO] Processing single question: ${QUESTION_ID}"
+fi
+
+if [ -n "$QUESTION_RANGE_START" ]; then
+  ARGS="${ARGS} --question-range-start ${QUESTION_RANGE_START}"
+  echo "[INFO] Question range start (1-based): ${QUESTION_RANGE_START}"
+fi
+if [ -n "$QUESTION_RANGE_END" ]; then
+  ARGS="${ARGS} --question-range-end ${QUESTION_RANGE_END}"
+  echo "[INFO] Question range end (1-based): ${QUESTION_RANGE_END}"
 fi
 
 if [ "$COT" = "true" ] || [ "$COT" = "1" ]; then

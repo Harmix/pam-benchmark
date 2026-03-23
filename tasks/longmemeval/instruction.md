@@ -44,6 +44,8 @@ MODEL=gpt-4o-mini EXPERIMENT_NAME=longmemeval_mini harbor run \
 | `EVAL_MODEL` | `gpt-4o` | Model for LLM-as-judge evaluation |
 | `MAX_QUESTIONS` | `0` | Maximum questions to process (0 = all 500) |
 | `QUESTION_ID` | - | Process a single question by ID (e.g., `e47becba`) |
+| `QUESTION_RANGE_START` | - | 1-based inclusive start index in dataset JSON order (after `QUESTION_ID` filter, if any) |
+| `QUESTION_RANGE_END` | - | 1-based inclusive end index in dataset JSON order (omit with `QUESTION_RANGE_START` only → through end of list) |
 | `HISTORY_FORMAT` | `nl` | History format: `nl` or `json` (ignored when `MODEL=pam`) |
 | `COT` | `false` | Enable chain-of-thought prompting (ignored when `MODEL=pam`) |
 | `OVERWRITE` | `false` | Overwrite existing predictions |
@@ -102,6 +104,18 @@ MODEL=gpt-4o EVAL_MODEL=gpt-4o-mini EXPERIMENT_NAME=longmemeval_eval_mini harbor
   --registry-path datasets/longmemeval/registry.json \
   --force-build
 ```
+
+**Sharding by index (parallel workers):** indices are **1-based** and match the order of questions in the dataset JSON (after `QUESTION_ID` filtering, if any). `MAX_QUESTIONS` is applied **after** the range slice. Example — worker A runs questions 1–10, worker B runs 11–20:
+
+```bash
+# Worker A
+QUESTION_RANGE_START=1 QUESTION_RANGE_END=10 EXPERIMENT_NAME=longmemeval_w1 harbor run ...
+
+# Worker B
+QUESTION_RANGE_START=11 QUESTION_RANGE_END=20 EXPERIMENT_NAME=longmemeval_w2 harbor run ...
+```
+
+Use a distinct `EXPERIMENT_NAME` (or separate output volumes) per worker so MongoDB / artifacts do not collide; merge `longmemeval_predictions.jsonl` afterward if needed.
 
 ## Running with PAM Agent (`MODEL=pam`)
 
