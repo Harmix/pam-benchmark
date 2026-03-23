@@ -376,6 +376,7 @@ def process_question_pam(
     print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})"
           + (f" [DEBUG user_id={debug_user_id}]" if reuse_user else "")
           + (" [DEBUG]" if debug and not reuse_user else ""))
+    print(f"        Expected answer:\n{str(entry.get('answer', ''))}")
 
     pam = PAMClient(pam_host)
     answer = ""
@@ -606,6 +607,7 @@ def generate_answers(client, data, args, tokenizer, qid2type):
     total_completion_tokens = 0
 
     for entry in tqdm(data, desc="Generating answers"):
+        print(f"  [{entry['question_id']}] Expected answer:\n{str(entry.get('answer', ''))}")
         prompt = build_prompt(
             entry,
             history_format=args.history_format,
