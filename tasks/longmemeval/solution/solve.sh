@@ -45,6 +45,8 @@ echo "[INFO] EXPERIMENT_NAME='${EXPERIMENT_NAME:-}'"
 if [ "${MODEL}" = "pam" ]; then
   echo "[INFO] PAM_API_HOST='${PAM_API_HOST:-}'"
   echo "[INFO] PAM_API_USER='${PAM_API_USER:-}'"
+  echo "[INFO] DEBUG='${DEBUG:-false}'"
+  echo "[INFO] DEBUG_USER_ID='${DEBUG_USER_ID:-}'"
   MISSING=""
   [ -z "${PAM_API_HOST}" ] && MISSING="${MISSING} PAM_API_HOST"
   [ -z "${PAM_API_USER}" ] && MISSING="${MISSING} PAM_API_USER"
@@ -81,6 +83,15 @@ fi
 if [ "$SKIP_EVAL" = "true" ] || [ "$SKIP_EVAL" = "1" ]; then
   ARGS="${ARGS} --skip-eval"
   echo "[INFO] Skipping evaluation"
+fi
+
+if [ "$DEBUG" = "true" ] || [ "$DEBUG" = "1" ]; then
+  ARGS="${ARGS} --debug"
+  echo "[INFO] PAM debug mode enabled"
+  if [ -n "$DEBUG_USER_ID" ]; then
+    ARGS="${ARGS} --debug-user-id ${DEBUG_USER_ID}"
+    echo "[INFO] Reusing debug user_id=${DEBUG_USER_ID}"
+  fi
 fi
 
 echo ""

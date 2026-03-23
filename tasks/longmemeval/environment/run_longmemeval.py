@@ -235,7 +235,20 @@ class PAMClient:
     # --- 4. Chat (SSE) ----------------------------------------------------------
 
     def send_message(self, prompt: str, conversation_id: Optional[str] = None) -> str:
-        """Send a message and collect the full text response from the SSE stream."""
+        """Send a message and return the **last** assistant text turn from the SSE stream.
+
+        PAM may produce multiple assistant text turns separated by tool-use
+        cycles.  Only the final assistant text turn contains the actual answer;
+        earlier ones are intermediate messages like "I'll search for …".
+
+        Turn tracking:
+          - ``role "assistant"`` + ``content_new.type "text"`` → append to
+            the *current* turn buffer.
+          - ``role "tool_use"`` or ``role "tool_result"`` → save the current
+            turn and start a fresh buffer (the next assistant text is a new
+            turn).
+          - ``role "result"`` / ``event: stream_stopped`` → terminal, stop.
+        """
         body = {
             "prompt": prompt,
             "conversation_id": conversation_id,
@@ -249,21 +262,48 @@ class PAMClient:
         )
         resp.raise_for_status()
 
-        collected_text = []
+        all_turns: List[List[str]] = []
+        current_turn: List[str] = []
+
         for line in resp.iter_lines(decode_unicode=True):
-            if not line or not line.startswith("data:"):
+            if not line:
                 continue
-            payload = line[len("data:"):].strip()
-            if not payload:
+            if line.startswith("event: stream_stopped"):
+                break
+            if not line.startswith("data: "):
                 continue
+
             try:
-                event = json.loads(payload)
+                payload = json.loads(line[len("data: "):])
             except json.JSONDecodeError:
                 continue
-            if event.get("type") == "text" and "content" in event:
-                collected_text.append(event["content"])
 
-        return "".join(collected_text)
+            if payload.get("type") == "resume_conversation":
+                continue
+
+            role = payload.get("role")
+            if role == "assistant":
+                content_new = payload.get("content_new", {})
+                if content_new.get("type") == "text" and content_new.get("text"):
+                    current_turn.append(content_new["text"])
+            elif role in ("tool_use", "tool_result"):
+                if current_turn:
+                    all_turns.append(current_turn)
+                    current_turn = []
+            elif role == "result":
+                break
+
+        if current_turn:
+            all_turns.append(current_turn)
+
+        for idx, turn in enumerate(all_turns):
+            turn_text = "".join(turn)
+            print(f"        [SSE turn {idx+1}/{len(all_turns)}] "
+                  f"{turn_text[:200]}{'…' if len(turn_text) > 200 else ''}")
+
+        if not all_turns:
+            return ""
+        return "".join(all_turns[-1])
 
 
 def _date_to_filename_prefix(date_str: str) -> str:
@@ -316,82 +356,104 @@ def process_question_pam(
     question_idx: int,
     total: int,
     qid2type: dict,
+    debug: bool = False,
+    debug_user_id: Optional[int] = None,
 ) -> dict:
     """Run the full PAM pipeline for a single LongMemEval question.
 
     0. Login to obtain admin token
-    1. Create benchmark user account
-    2. Upload haystack sessions as files (batched, max 5 per request)
-    3. Create memory (async pipeline with polling)
+    1. Create benchmark user account  (skipped when debug_user_id is set)
+    2. Upload haystack sessions       (skipped when debug_user_id is set)
+    3. Create memory                  (skipped when debug_user_id is set)
     4. Send the question via SSE chat
-    5. Backup workspace
-    6. Delete account
+    5. Backup workspace               (skipped in debug mode)
+    6. Delete account                 (skipped in debug mode)
     """
     qid = entry["question_id"]
     qtype = qid2type.get(qid, "unknown")
     email = f"longmemeval-{qid}@benchmark.local"
-    print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})")
+    reuse_user = debug_user_id is not None
+    print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})"
+          + (f" [DEBUG user_id={debug_user_id}]" if reuse_user else "")
+          + (" [DEBUG]" if debug and not reuse_user else ""))
 
     pam = PAMClient(pam_host)
-    q_start = time.time()
     answer = ""
+    memory_creation_sec = 0.0
+    generation_sec = 0.0
 
     try:
         # Step 0: Login to get admin token
         print(f"  [0/6] Logging in as {admin_email} ...")
         pam.login(admin_email, admin_password)
 
-        # Step 1: Create account
-        print(f"  [1/6] Creating account {email} ...")
-        pam.create_account(email=email, password="benchmark-run", name=f"LongMemEval {qid}")
-        print(f"        user_id={pam.user_id}")
+        if reuse_user:
+            pam.user_id = debug_user_id
+            pam.access_token = pam.admin_token
+            print(f"  [1/6] Reusing existing user_id={debug_user_id} (debug)")
+            print(f"  [2/6] Skipping file upload (debug)")
+            print(f"  [3/6] Skipping memory creation (debug)")
+        else:
+            # Step 1: Create account
+            print(f"  [1/6] Creating account {email} ...")
+            pam.create_account(email=email, password="benchmark-run", name=f"LongMemEval {qid}")
+            print(f"        user_id={pam.user_id}")
 
-        # Step 2: Upload haystack sessions as files
-        file_tuples = serialize_sessions_to_files(entry)
-        num_batches = math.ceil(len(file_tuples) / PAMClient.MAX_FILES_PER_REQUEST)
-        print(f"  [2/6] Uploading {len(file_tuples)} session files ({num_batches} batches) ...")
-        upload_results = pam.upload_generic_files(file_tuples)
-        print(f"        Uploaded {len(upload_results)} files")
+            # Step 2: Upload haystack sessions as files
+            file_tuples = serialize_sessions_to_files(entry)
+            num_batches = math.ceil(len(file_tuples) / PAMClient.MAX_FILES_PER_REQUEST)
+            print(f"  [2/6] Uploading {len(file_tuples)} session files ({num_batches} batches) ...")
+            upload_results = pam.upload_generic_files(file_tuples)
+            print(f"        Uploaded {len(upload_results)} files")
 
-        # Step 3: Create memory
-        print(f"  [3/6] Creating memory (this may take a while) ...")
-        mem_result = pam.create_memory()
-        print(f"        Memory created: {mem_result.get('message', 'ok')}")
+            # Step 3: Create memory (timed separately)
+            print(f"  [3/6] Creating memory (this may take a while) ...")
+            mem_start = time.time()
+            mem_result = pam.create_memory()
+            memory_creation_sec = round(time.time() - mem_start, 2)
+            print(f"        Memory created: {mem_result.get('message', 'ok')} "
+                  f"({memory_creation_sec}s)")
 
-        # Step 4: Ask the question
+        # Step 4: Ask the question (timed separately)
         prompt = (
             f"Current Date: {entry['question_date']}\n"
             f"Question: {entry['question']}\n"
             f"Answer:"
         )
         print(f"  [4/6] Sending question: {entry['question'][:80]}...")
+        gen_start = time.time()
         answer = pam.send_message(prompt)
-        print(f"        Answer: {answer[:120]}...")
+        generation_sec = round(time.time() - gen_start, 2)
+        print(f"        Final answer ({generation_sec}s):\n{answer}")
 
-        # Step 5: Backup workspace
-        print(f"  [5/6] Backing up workspace ...")
-        backup = pam.backup_workspace()
-        print(f"        Backup: {backup.get('backup_path', 'done')}")
+        if not debug:
+            # Step 5: Backup workspace
+            print(f"  [5/6] Backing up workspace ...")
+            backup = pam.backup_workspace()
+            print(f"        Backup: {backup.get('backup_path', 'done')}")
+        else:
+            print(f"  [5/6] Skipping backup (debug)")
 
     except Exception as e:
         print(f"  ERROR for {qid}: {repr(e)}")
 
     finally:
-        # Step 6: Cleanup
-        if pam.user_id:
+        if not debug and pam.user_id:
             try:
                 print(f"  [6/6] Deleting account (user_id={pam.user_id}) ...")
                 pam.delete_account()
                 print(f"        Account deleted")
             except Exception as e:
                 print(f"        Warning: cleanup failed: {repr(e)}")
+        elif debug:
+            print(f"  [6/6] Skipping account deletion (debug)")
 
-    duration = round(time.time() - q_start, 2)
     return {
         "question_id": qid,
         "question_type": qtype,
         "hypothesis": answer.strip(),
-        "generation_duration_sec": duration,
+        "generation_duration_sec": generation_sec,
+        "memory_creation_duration_sec": memory_creation_sec,
     }
 
 
@@ -401,6 +463,8 @@ def generate_answers_pam(
     admin_password: str,
     data: list,
     qid2type: dict,
+    debug: bool = False,
+    debug_user_id: Optional[int] = None,
 ) -> list:
     """Generate answers for all questions using the PAM Agent API."""
     predictions = []
@@ -408,6 +472,7 @@ def generate_answers_pam(
         pred = process_question_pam(
             pam_host, admin_email, admin_password,
             entry, i, len(data), qid2type,
+            debug=debug, debug_user_id=debug_user_id,
         )
         predictions.append(pred)
     return predictions
@@ -437,7 +502,20 @@ def parse_args():
                         help='Overwrite existing predictions')
     parser.add_argument('--skip-eval', action='store_true',
                         help='Skip LLM-as-judge evaluation')
-    return parser.parse_args()
+    parser.add_argument('--debug', action='store_true',
+                        help='PAM debug mode: skip backup and account deletion')
+    parser.add_argument('--debug-user-id', type=int, default=None,
+                        help='PAM debug: reuse existing user/memory instead of creating new ones')
+
+    args = parser.parse_args()
+
+    if os.environ.get("DEBUG", "").lower() in ("true", "1"):
+        args.debug = True
+    env_debug_uid = os.environ.get("DEBUG_USER_ID", "")
+    if env_debug_uid and args.debug_user_id is None:
+        args.debug_user_id = int(env_debug_uid)
+
+    return args
 
 
 MODEL_MAX_LENGTHS = {
@@ -715,6 +793,7 @@ def evaluate_predictions(client, predictions, ref_data, eval_model):
                 'question_id': qid,
                 'label': label,
                 'generation_duration_sec': entry.get('generation_duration_sec', 0),
+                'memory_creation_duration_sec': entry.get('memory_creation_duration_sec', 0),
                 'eval_duration_sec': eval_duration,
             })
 
@@ -739,6 +818,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
 
         total_gen_duration = sum(r['generation_duration_sec'] for r in results)
         total_eval_duration = sum(r['eval_duration_sec'] for r in results)
+        total_mem_duration = sum(r.get('memory_creation_duration_sec', 0) for r in results)
         total_duration = round(total_gen_duration + total_eval_duration, 2)
         avg_duration = round(total_duration / len(results), 2) if results else 0.0
 
@@ -752,6 +832,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
                 'expected_answer': entry.get('expected_answer', ''),
                 'model_answer': entry.get('hypothesis', ''),
                 'generation_duration_sec': r['generation_duration_sec'],
+                'memory_creation_duration_sec': r.get('memory_creation_duration_sec', 0),
             }
             if r['label']:
                 correct_answers.append(answer_record)
@@ -775,6 +856,9 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
             'total_duration_sec': total_duration,
             'avg_duration_sec': avg_duration,
             'total_generation_duration_sec': round(total_gen_duration, 2),
+            'total_memory_creation_duration_sec': round(total_mem_duration, 2),
+            'avg_memory_creation_duration_sec': round(total_mem_duration / len(results), 2) if results else 0.0,
+            'avg_generation_duration_sec': round(total_gen_duration / len(results), 2) if results else 0.0,
             'total_eval_duration_sec': round(total_eval_duration, 2),
             'correct_answers': correct_answers,
             'incorrect_answers': incorrect_answers,
@@ -825,6 +909,12 @@ def print_metrics(type2results):
     all_acc = []
     task_acc = []
 
+    has_memory_times = any(
+        r.get('memory_creation_duration_sec', 0) > 0
+        for results in type2results.values()
+        for r in results
+    )
+
     print("\n" + "=" * 60)
     print("Evaluation Results by Question Type")
     print("=" * 60)
@@ -836,10 +926,22 @@ def print_metrics(type2results):
             acc = round(correct / len(results), 4)
             task_acc.append(acc)
             all_acc.extend([1 if r['label'] else 0 for r in results])
-            total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec'] for r in results)
-            avg_dur = round(total_dur / len(results), 2)
-            print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
-                  f"— avg {avg_dur}s/question")
+
+            avg_gen = round(
+                sum(r['generation_duration_sec'] for r in results) / len(results), 2
+            )
+            if has_memory_times:
+                avg_mem = round(
+                    sum(r.get('memory_creation_duration_sec', 0) for r in results) / len(results), 2
+                )
+                print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
+                      f"— avg memory {avg_mem}s, avg generation {avg_gen}s")
+            else:
+                avg_eval = round(
+                    sum(r['eval_duration_sec'] for r in results) / len(results), 2
+                )
+                print(f"  {qtype}: {acc} ({correct}/{len(results)}) "
+                      f"— avg {round(avg_gen + avg_eval, 2)}s/question")
         else:
             print(f"  {qtype}: N/A (0 questions)")
 
@@ -870,6 +972,10 @@ def main():
         print(f"  Max questions: {args.max_questions}")
     if args.question_id:
         print(f"  Single question: {args.question_id}")
+    if is_pam and args.debug:
+        print(f"  Debug mode: ON")
+        if args.debug_user_id is not None:
+            print(f"  Debug user_id: {args.debug_user_id}")
     print("=" * 60)
 
     if is_pam:
@@ -938,6 +1044,7 @@ def main():
             new_predictions = generate_answers_pam(
                 pam_host, pam_api_user, pam_api_password,
                 to_generate, qid2type,
+                debug=args.debug, debug_user_id=args.debug_user_id,
             )
         else:
             new_predictions = generate_answers(client, to_generate, args, tokenizer, qid2type)
@@ -995,16 +1102,22 @@ def main():
             results = type2results.get(qtype, [])
             if results:
                 correct = sum(1 for r in results if r['label'])
-                total_dur = sum(r['generation_duration_sec'] + r['eval_duration_sec']
-                                for r in results)
-                stats['categories'][qtype] = {
+                total_gen = sum(r['generation_duration_sec'] for r in results)
+                total_mem = sum(r.get('memory_creation_duration_sec', 0) for r in results)
+                total_eval = sum(r['eval_duration_sec'] for r in results)
+                cat_stats = {
                     'total_questions': len(results),
                     'correct_count': correct,
                     'incorrect_count': len(results) - correct,
                     'accuracy': round(correct / len(results), 4),
-                    'total_duration_sec': round(total_dur, 2),
-                    'avg_duration_sec': round(total_dur / len(results), 2),
+                    'total_generation_duration_sec': round(total_gen, 2),
+                    'avg_generation_duration_sec': round(total_gen / len(results), 2),
+                    'total_eval_duration_sec': round(total_eval, 2),
                 }
+                if total_mem > 0:
+                    cat_stats['total_memory_creation_duration_sec'] = round(total_mem, 2)
+                    cat_stats['avg_memory_creation_duration_sec'] = round(total_mem / len(results), 2)
+                stats['categories'][qtype] = cat_stats
                 all_correct += correct
                 all_total += len(results)
 

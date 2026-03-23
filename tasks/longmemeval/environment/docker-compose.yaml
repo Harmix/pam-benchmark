@@ -11,6 +11,7 @@ services:
       - EXPERIMENT_NAME=${EXPERIMENT_NAME}
       - TASK_CONFIGS=${TASK_CONFIGS}
       - DEBUG=${DEBUG}
+      - DEBUG_USER_ID=${DEBUG_USER_ID}
       - DATASET_NAME=longmemeval@1.0
       - TASK_NAME=longmemeval
       - MODEL=${MODEL}
