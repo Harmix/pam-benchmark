@@ -154,20 +154,83 @@ class PAMClient:
             all_results.extend(resp.json())
         return all_results
 
-    # --- 3. Memory creation -----------------------------------------------------
+    # --- 3. Memory creation (async pipeline) ------------------------------------
 
-    def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
-        params = {"batch_size": batch_size}
-        if max_files is not None:
-            params["max_files"] = max_files
+    MEMORY_POLL_INTERVAL = 30      # seconds between status checks
+    MEMORY_POLL_TIMEOUT = 3600     # max wait time (1 hour)
+    TERMINAL_STATUSES = {"completed", "failed", "stopped", "cancelled"}
+
+    PIPELINE_TYPE = "benchmark_memory"
+
+    def trigger_memory_pipeline(
+        self, max_files: Optional[int] = None, batch_size: int = 500,
+    ) -> str:
+        """Start the async benchmark_memory pipeline. Returns the run_id."""
+        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/run"
+        body = {
+            "sync_type": "initial",
+            "params": {
+                "max_files": max_files,
+                "batch_size": batch_size,
+            },
+        }
+        print(f"        POST {url}?user_id={self.user_id}")
+        print(f"        Body: {json.dumps(body)}")
         resp = self.session.post(
-            f"{self.base_url}/memory/benchmark/create-memory/{self.user_id}",
+            url,
+            params={"user_id": self.user_id},
+            json=body,
             headers=self._headers(),
-            params=params,
-            timeout=3600,
+            timeout=60,
+        )
+        if resp.status_code != 202 and resp.status_code != 200:
+            print(f"        Response {resp.status_code}: {resp.text}")
+        resp.raise_for_status()
+        data = resp.json()
+        return data["run_id"]
+
+    def poll_memory_status(self) -> dict:
+        """Get the current status of the benchmark_memory pipeline."""
+        resp = self.session.get(
+            f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status",
+            params={"user_id": self.user_id},
+            headers=self._headers(),
+            timeout=30,
         )
         resp.raise_for_status()
         return resp.json()
+
+    def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
+        """Trigger the memory pipeline and poll until completion or timeout."""
+        run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
+        print(f"        Pipeline triggered (run_id={run_id}), polling every "
+              f"{self.MEMORY_POLL_INTERVAL}s (timeout {self.MEMORY_POLL_TIMEOUT}s) ...")
+
+        start = time.time()
+        last_status = "pending"
+        while True:
+            elapsed = time.time() - start
+            if elapsed > self.MEMORY_POLL_TIMEOUT:
+                raise TimeoutError(
+                    f"Memory pipeline did not finish within {self.MEMORY_POLL_TIMEOUT}s "
+                    f"(last status: {last_status})"
+                )
+
+            time.sleep(self.MEMORY_POLL_INTERVAL)
+
+            status_resp = self.poll_memory_status()
+            run_info = status_resp.get("run", status_resp)
+            last_status = run_info.get("run_status", run_info.get("status", "unknown"))
+            elapsed_min = elapsed / 60
+            print(f"        [{elapsed_min:.1f}m] status={last_status}")
+
+            if last_status in self.TERMINAL_STATUSES:
+                if last_status != "completed":
+                    error_msg = run_info.get("run_error_message", "no details")
+                    raise RuntimeError(
+                        f"Memory pipeline {last_status}: {error_msg}"
+                    )
+                return status_resp
 
     # --- 4. Chat (SSE) ----------------------------------------------------------
 
@@ -259,7 +322,7 @@ def process_question_pam(
     0. Login to obtain admin token
     1. Create benchmark user account
     2. Upload haystack sessions as files (batched, max 5 per request)
-    3. Create memory
+    3. Create memory (async pipeline with polling)
     4. Send the question via SSE chat
     5. Backup workspace
     6. Delete account

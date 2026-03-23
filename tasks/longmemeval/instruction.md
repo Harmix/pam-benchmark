@@ -132,8 +132,9 @@ For each question the runner executes the following pipeline:
    → Upload the question's ~48 haystack sessions as .txt files
      (batched in groups of 5 per request, stored in unsorted/generic_downloads/)
 
-3. POST {PAM_API_HOST}/v1/memory/benchmark/create-memory/{user_id}
-   → Run the full memory pipeline (folder setup → sync → compress → deep analysis)
+3. POST {PAM_API_HOST}/v1/memory/pipeline/benchmark_memory/run?user_id={user_id}
+   → Trigger async memory pipeline, then poll status every 30s until completion
+     (up to 1 hour). Pipeline stages: folder setup → sync → compress → deep analysis
 
 4. POST {PAM_API_HOST}/v1/messages/stream
    → Send the question and collect the answer from the SSE stream
