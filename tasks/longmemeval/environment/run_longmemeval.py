@@ -96,13 +96,29 @@ class PAMClient:
 
     # --- 1. Account lifecycle ---------------------------------------------------
 
-    def create_account(self, email: str, password: str, name: str) -> dict:
-        resp = self.session.post(
-            f"{self.base_url}/admin/create-account",
-            json={"email": email, "password": password, "name": name},
-            headers=self._headers(),
-            timeout=60,
-        )
+    def create_account(
+        self,
+        email: str,
+        password: str,
+        name: str,
+        company_name: str = "Acme Inc",
+        position: str = "Engineer",
+    ) -> dict:
+        url = f"{self.base_url}/admin/create-account"
+        body = {
+            "email": email,
+            "password": password,
+            "name": name,
+            "company_name": company_name,
+            "position": position,
+        }
+        headers = {**self._headers(), "Content-Type": "application/json"}
+        print(f"        POST {url}")
+        print(f"        Headers: { {k: (v[:20] + '…' if len(v) > 20 else v) for k, v in headers.items()} }")
+        print(f"        Body: {body}")
+        resp = self.session.post(url, json=body, headers=headers, timeout=60)
+        if not resp.ok:
+            print(f"        Response {resp.status_code}: {resp.text[:500]}")
         resp.raise_for_status()
         data = resp.json()
         self.access_token = data["tokens"]["access_token"]
@@ -371,7 +387,8 @@ def process_question_pam(
     """
     qid = entry["question_id"]
     qtype = qid2type.get(qid, "unknown")
-    email = f"longmemeval-{qid}@benchmark.local"
+    run_ts = int(time.time())
+    email = f"longmemeval-{qid}-{run_ts}@benchmark.local"
     reuse_user = debug_user_id is not None
     print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})"
           + (f" [DEBUG user_id={debug_user_id}]" if reuse_user else "")

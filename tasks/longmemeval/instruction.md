@@ -140,7 +140,8 @@ For each question the runner executes the following pipeline:
 
 1. POST {PAM_API_HOST}/v1/admin/create-account
    → Create a dedicated PAM user (email: longmemeval-{question_id}@benchmark.local)
-     using the admin token from step 0
+     using the admin token from step 0. JSON body includes `email`, `password`, `name`,
+     `company_name`, and `position` (defaults: `Acme Inc`, `Engineer`, matching the API schema).
 
 2. POST {PAM_API_HOST}/v1/files/upload-generic/{user_id}
    → Upload the question's ~48 haystack sessions as .txt files
