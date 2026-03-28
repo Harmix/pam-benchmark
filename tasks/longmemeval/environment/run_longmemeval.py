@@ -71,6 +71,8 @@ class PAMClient:
         self.admin_token: Optional[str] = None
         self.access_token: Optional[str] = None
         self.user_id: Optional[int] = None
+        self._login_email: Optional[str] = None
+        self._login_password: Optional[str] = None
 
     def _headers(self) -> dict:
         h = {}
@@ -84,6 +86,8 @@ class PAMClient:
 
     def login(self, email: str, password: str) -> str:
         """Authenticate and store the admin token."""
+        self._login_email = email
+        self._login_password = password
         resp = self.session.post(
             f"{self.host}/v1/auth/login",
             json={"email": email, "password": password},
@@ -93,6 +97,13 @@ class PAMClient:
         data = resp.json()
         self.admin_token = data["tokens"]["access_token"]
         return self.admin_token
+
+    def refresh_token(self) -> str:
+        """Re-login with stored credentials to get a fresh token."""
+        if not self._login_email or not self._login_password:
+            raise RuntimeError("Cannot refresh token: no stored login credentials")
+        print("        Refreshing auth token ...")
+        return self.login(self._login_email, self._login_password)
 
     # --- 1. Account lifecycle ---------------------------------------------------
 
@@ -126,19 +137,19 @@ class PAMClient:
         return data
 
     def delete_account(self) -> None:
-        resp = self.session.delete(
-            f"{self.base_url}/admin/delete-account/{self.user_id}",
-            headers=self._headers(),
-            timeout=60,
-        )
+        url = f"{self.base_url}/admin/delete-account/{self.user_id}"
+        resp = self.session.delete(url, headers=self._headers(), timeout=60)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.delete(url, headers=self._headers(), timeout=60)
         resp.raise_for_status()
 
     def backup_workspace(self) -> dict:
-        resp = self.session.post(
-            f"{self.base_url}/admin/backup-workspace/{self.user_id}",
-            headers=self._headers(),
-            timeout=300,
-        )
+        url = f"{self.base_url}/admin/backup-workspace/{self.user_id}"
+        resp = self.session.post(url, headers=self._headers(), timeout=300)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._headers(), timeout=300)
         resp.raise_for_status()
         return resp.json()
 
@@ -206,13 +217,25 @@ class PAMClient:
         return data["run_id"]
 
     def poll_memory_status(self) -> dict:
-        """Get the current status of the benchmark_memory pipeline."""
+        """Get the current status of the benchmark_memory pipeline.
+
+        Automatically refreshes the auth token on 401 and retries once.
+        """
+        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status"
         resp = self.session.get(
-            f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status",
+            url,
             params={"user_id": self.user_id},
             headers=self._headers(),
             timeout=30,
         )
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.get(
+                url,
+                params={"user_id": self.user_id},
+                headers=self._headers(),
+                timeout=30,
+            )
         resp.raise_for_status()
         return resp.json()
 
@@ -269,13 +292,17 @@ class PAMClient:
             "prompt": prompt,
             "conversation_id": conversation_id,
         }
+        url = f"{self.base_url}/messages/stream"
         resp = self.session.post(
-            f"{self.base_url}/messages/stream",
-            json=body,
-            headers=self._headers(),
-            stream=True,
-            timeout=self.SSE_TIMEOUT,
+            url, json=body, headers=self._headers(),
+            stream=True, timeout=self.SSE_TIMEOUT,
         )
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(
+                url, json=body, headers=self._headers(),
+                stream=True, timeout=self.SSE_TIMEOUT,
+            )
         resp.raise_for_status()
 
         all_turns: List[List[str]] = []
