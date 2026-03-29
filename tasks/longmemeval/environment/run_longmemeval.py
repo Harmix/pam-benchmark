@@ -71,8 +71,10 @@ class PAMClient:
         self.admin_token: Optional[str] = None
         self.access_token: Optional[str] = None
         self.user_id: Optional[int] = None
-        self._login_email: Optional[str] = None
-        self._login_password: Optional[str] = None
+        self._admin_email: Optional[str] = None
+        self._admin_password: Optional[str] = None
+        self._user_email: Optional[str] = None
+        self._user_password: Optional[str] = None
 
     def _headers(self) -> dict:
         h = {}
@@ -86,24 +88,36 @@ class PAMClient:
 
     def login(self, email: str, password: str) -> str:
         """Authenticate and store the admin token."""
-        self._login_email = email
-        self._login_password = password
+        self._admin_email = email
+        self._admin_password = password
         resp = self.session.post(
             f"{self.host}/v1/auth/login",
             json={"email": email, "password": password},
-            timeout=30,
+            timeout=180,
         )
         resp.raise_for_status()
         data = resp.json()
         self.admin_token = data["tokens"]["access_token"]
         return self.admin_token
 
-    def refresh_token(self) -> str:
-        """Re-login with stored credentials to get a fresh token."""
-        if not self._login_email or not self._login_password:
-            raise RuntimeError("Cannot refresh token: no stored login credentials")
-        print("        Refreshing auth token ...")
-        return self.login(self._login_email, self._login_password)
+    def _login_as(self, email: str, password: str) -> str:
+        """Login with arbitrary credentials and return the access token."""
+        resp = self.session.post(
+            f"{self.host}/v1/auth/login",
+            json={"email": email, "password": password},
+            timeout=180,
+        )
+        resp.raise_for_status()
+        return resp.json()["tokens"]["access_token"]
+
+    def refresh_token(self) -> None:
+        """Refresh both admin and user tokens using stored credentials."""
+        if self._admin_email and self._admin_password:
+            print("        Refreshing admin token ...")
+            self.admin_token = self._login_as(self._admin_email, self._admin_password)
+        if self._user_email and self._user_password:
+            print("        Refreshing user token ...")
+            self.access_token = self._login_as(self._user_email, self._user_password)
 
     # --- 1. Account lifecycle ---------------------------------------------------
 
@@ -127,21 +141,23 @@ class PAMClient:
         print(f"        POST {url}")
         print(f"        Headers: { {k: (v[:20] + '…' if len(v) > 20 else v) for k, v in headers.items()} }")
         print(f"        Body: {body}")
-        resp = self.session.post(url, json=body, headers=headers, timeout=60)
+        resp = self.session.post(url, json=body, headers=headers, timeout=180)
         if not resp.ok:
             print(f"        Response {resp.status_code}: {resp.text[:500]}")
         resp.raise_for_status()
         data = resp.json()
         self.access_token = data["tokens"]["access_token"]
         self.user_id = data["user"]["id"]
+        self._user_email = email
+        self._user_password = password
         return data
 
     def delete_account(self) -> None:
         url = f"{self.base_url}/admin/delete-account/{self.user_id}"
-        resp = self.session.delete(url, headers=self._headers(), timeout=60)
+        resp = self.session.delete(url, headers=self._headers(), timeout=180)
         if resp.status_code == 401:
             self.refresh_token()
-            resp = self.session.delete(url, headers=self._headers(), timeout=60)
+            resp = self.session.delete(url, headers=self._headers(), timeout=180)
         resp.raise_for_status()
 
     def backup_workspace(self) -> dict:
@@ -175,7 +191,7 @@ class PAMClient:
                 f"{self.base_url}/files/upload-generic/{self.user_id}",
                 headers=self._headers(),
                 files=files_payload,
-                timeout=120,
+                timeout=180,
             )
             resp.raise_for_status()
             all_results.extend(resp.json())
@@ -184,7 +200,6 @@ class PAMClient:
     # --- 3. Memory creation (async pipeline) ------------------------------------
 
     MEMORY_POLL_INTERVAL = 30      # seconds between status checks
-    MEMORY_POLL_TIMEOUT = 3600     # max wait time (1 hour)
     TERMINAL_STATUSES = {"completed", "failed", "stopped", "cancelled"}
 
     PIPELINE_TYPE = "benchmark_memory"
@@ -203,14 +218,18 @@ class PAMClient:
         }
         print(f"        POST {url}?user_id={self.user_id}")
         print(f"        Body: {json.dumps(body)}")
-        resp = self.session.post(
-            url,
+        kwargs = dict(
             params={"user_id": self.user_id},
             json=body,
             headers=self._headers(),
-            timeout=60,
+            timeout=180,
         )
-        if resp.status_code != 202 and resp.status_code != 200:
+        resp = self.session.post(url, **kwargs)
+        if resp.status_code == 401:
+            self.refresh_token()
+            kwargs["headers"] = self._headers()
+            resp = self.session.post(url, **kwargs)
+        if resp.status_code not in (200, 202):
             print(f"        Response {resp.status_code}: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
@@ -226,7 +245,7 @@ class PAMClient:
             url,
             params={"user_id": self.user_id},
             headers=self._headers(),
-            timeout=30,
+            timeout=120,
         )
         if resp.status_code == 401:
             self.refresh_token()
@@ -234,33 +253,26 @@ class PAMClient:
                 url,
                 params={"user_id": self.user_id},
                 headers=self._headers(),
-                timeout=30,
+                timeout=120,
             )
         resp.raise_for_status()
         return resp.json()
 
     def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
-        """Trigger the memory pipeline and poll until completion or timeout."""
+        """Trigger the memory pipeline and poll until a terminal status is reached."""
         run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
         print(f"        Pipeline triggered (run_id={run_id}), polling every "
-              f"{self.MEMORY_POLL_INTERVAL}s (timeout {self.MEMORY_POLL_TIMEOUT}s) ...")
+              f"{self.MEMORY_POLL_INTERVAL}s ...")
 
         start = time.time()
         last_status = "pending"
         while True:
-            elapsed = time.time() - start
-            if elapsed > self.MEMORY_POLL_TIMEOUT:
-                raise TimeoutError(
-                    f"Memory pipeline did not finish within {self.MEMORY_POLL_TIMEOUT}s "
-                    f"(last status: {last_status})"
-                )
-
             time.sleep(self.MEMORY_POLL_INTERVAL)
 
             status_resp = self.poll_memory_status()
             run_info = status_resp.get("run", status_resp)
             last_status = run_info.get("run_status", run_info.get("status", "unknown"))
-            elapsed_min = elapsed / 60
+            elapsed_min = (time.time() - start) / 60
             print(f"        [{elapsed_min:.1f}m] status={last_status}")
 
             if last_status in self.TERMINAL_STATUSES:
