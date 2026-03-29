@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LongMemEval Report - longmemeval_pam_memory_test</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #16a34a;
+            --error-color: #dc2626;
+            --warning-color: #ca8a04;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .header {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+
+        .header-meta {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            opacity: 0.95;
+        }
+
+        .header-meta-item { display: flex; align-items: center; gap: 0.5rem; }
+        .header-meta-label { font-weight: 600; }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .summary-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            white-space: nowrap;
+            line-height: 2.5rem;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .summary-card-value.fraction { font-size: 1.6rem; }
+        .summary-card-value.success { color: var(--success-color); }
+        .summary-card-value.warning { color: var(--warning-color); }
+        .summary-card-value.error { color: var(--error-color); }
+
+        .summary-card-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-color);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover { background: var(--bg-color); }
+
+        .accuracy-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .accuracy-high { background: #dcfce7; color: #166534; }
+        .accuracy-medium { background: #fef9c3; color: #854d0e; }
+        .accuracy-low { background: #fee2e2; color: #991b1b; }
+
+        .category-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-correct { background: #dcfce7; color: #166534; }
+        .status-incorrect { background: #fee2e2; color: #991b1b; }
+
+        .responses-section { margin-top: 2rem; }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }
+
+        .filter-btn {
+            padding: 0.35rem 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .filter-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }
+
+        .answer-card {
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .answer-card.incorrect {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .answer-card.correct {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .answer-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .answer-card-title { font-weight: 600; }
+        .answer-card-title.incorrect { color: var(--error-color); }
+        .answer-card-title.correct { color: var(--success-color); }
+
+        .answer-card-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .answer-field { margin-bottom: 0.75rem; }
+
+        .answer-field-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .answer-field-value {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .answer-card.incorrect .answer-field-value { border: 1px solid #fecaca; }
+        .answer-card.correct .answer-field-value { border: 1px solid #bbf7d0; }
+
+        .explanation-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LongMemEval Evaluation Report</h1>
+            <div class="header-meta">
+                <div class="header-meta-item">
+                    <span class="header-meta-label">Experiment:</span>
+                    <span>longmemeval_pam_memory_test</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="header-meta-label">Model:</span>
+                    <span>pam</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="header-meta-label">Eval Model:</span>
+                    <span>gpt-4o</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="header-meta-label">Generated:</span>
+                    <span>2026-03-29 11:32:38 EDT</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-value success">80.0%</div>
+                <div class="summary-card-label">Overall Accuracy</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-value fraction">8/10</div>
+                <div class="summary-card-label">Correct Answers</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-value">10</div>
+                <div class="summary-card-label">Total Questions</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-value">21.2h</div>
+                <div class="summary-card-label">Total Time</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Accuracy by Question Category</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Questions</th>
+                        <th>Correct</th>
+                        <th>Incorrect</th>
+                        <th>Accuracy</th>
+                        <th>Avg Memory Creation</th>
+                        <th>Avg Generation</th>
+                        <th>Avg Eval</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr>
+            <td><strong>Single-Session (User)</strong></td>
+            <td>10</td>
+            <td>8</td>
+            <td>2</td>
+            <td><span class="accuracy-badge accuracy-high">80.0%</span></td>
+            <td>2.1h</td>
+            <td>43.0s</td>
+            <td>2.1s</td>
+        </tr>
+
+    <tr style="font-weight: 700; background: var(--bg-color);">
+        <td>Total</td>
+        <td>10</td>
+        <td>8</td>
+        <td>2</td>
+        <td><span class="accuracy-badge accuracy-high">80.0%</span></td>
+        <td>2.1h</td>
+        <td>43.0s</td>
+        <td>2.1s</td>
+    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section responses-section" id="responses-section">
+            <h2 class="section-title">All Responses (10)</h2>
+            <div class="filter-bar">
+                <span class="filter-bar-label">Status:</span>
+                <button class="filter-btn active" data-group="status" data-filter="all" onclick="setFilter('status','all')">All (10)</button>
+                <button class="filter-btn" data-group="status" data-filter="correct" onclick="setFilter('status','correct')">Correct (8)</button>
+                <button class="filter-btn" data-group="status" data-filter="incorrect" onclick="setFilter('status','incorrect')">Incorrect (2)</button>
+            </div>
+            <div class="filter-bar">
+                <span class="filter-bar-label">Category:</span>
+                <button class="filter-btn active" data-group="category" data-filter="all" onclick="setFilter('category','all')">All</button>
+                <button class="filter-btn" data-group="category" data-filter="single-session-user" onclick="setFilter('category','single-session-user')">Single-Session (User) (10)</button>
+                <span class="filter-count" id="filter-count"></span>
+            </div>
+            
+<div class="answer-card incorrect" data-status="incorrect" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title incorrect">6f9b354f</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-incorrect">INCORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 52.1s | Mem: 2.2h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">What color did I repaint my bedroom walls?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">a lighter shade of gray</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on the project information I found, you **haven't repainted your bedroom walls yet**. 
+
+Your Home Office Nook Project in the spare bedroom is still in the planning phase. According to the project notes from May 27th, selecting a light gray paint color for the walls is listed as an upcoming "Next Step" - meaning it hasn't been completed yet.
+
+The plan recommends **light gray** for the walls to maximize natural light and complement the design, but the actual repainting hasn't happened yet.</div>
+    </div>
+    
+    <div class="answer-field">
+        <div class="answer-field-label">Judge Explanation</div>
+        <div class="explanation-box">The model's response is incorrect because it assumes the repainting hasn't occurred yet, based on project notes, rather than directly answering the question about the current color of the walls. The question asks for the color the walls were repainted, which is a factual inquiry about the present state, not the status of a project plan.</div>
+    </div>
+</div>
+
+<div class="answer-card incorrect" data-status="incorrect" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title incorrect">58ef2f1c</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-incorrect">INCORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 50.7s | Mem: 2.0h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">When did I volunteer at the local animal shelter's fundraising dinner?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">February 14th</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on the records, you volunteered at the "Love is in the Air" fundraising dinner on **February 1, 2023**.</div>
+    </div>
+    
+    <div class="answer-field">
+        <div class="answer-field-label">Judge Explanation</div>
+        <div class="explanation-box">The model's response is incorrect because it provided a specific date, February 1, 2023, which does not match the expected answer of February 14th. The model likely inferred the date from context or records, but it did not align with the expected information provided in the question.</div>
+    </div>
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">118b2229</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 33.3s | Mem: 2.1h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">How long is my daily commute to work?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">45 minutes each way</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on information in your records, your daily commute takes **45 minutes each way**.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">51a45a95</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 47.9s | Mem: 1.9h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">Where did I redeem a $5 coupon on coffee creamer?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">Target</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on the information in your history, you redeemed the $5 coffee creamer coupon last Sunday (May 28, 2023). The coupon was found in your email inbox.
+
+While you didn't specify the exact store, based on your shopping patterns, you most likely redeemed it at **Target** — since you shop there approximately every other week for household items and toiletries.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">58bf7951</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 29.2s | Mem: 2.7h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">What play did I attend at the local community theater?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">The Glass Menagerie</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">You attended **The Glass Menagerie** at the local community theater.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">1e043500</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 45.0s | Mem: 2.0h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">What is the name of the playlist I created on Spotify?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">Summer Vibes</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">The name of the playlist you created on Spotify is **"Summer Vibes"**. It contains chill tracks that are perfect for relaxing or working out.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">c5e8278d</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 59.7s | Mem: 2.0h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">What was my last name before I changed it?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">Johnson</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Your last name before you changed it was **Johnson**. You changed it to Winters.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">e47becba</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 38.0s | Mem: 2.0h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">What degree did I graduate with?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">Business Administration</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on my knowledge base, you graduated with a degree in **Business Administration**.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">6ade9755</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 41.0s | Mem: 2.2h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">Where do I take yoga classes?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">Serenity Yoga</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">You take yoga classes at **Serenity Yoga** studio.</div>
+    </div>
+    
+</div>
+
+<div class="answer-card correct" data-status="correct" data-category="single-session-user">
+    <div class="answer-card-header">
+        <span class="answer-card-title correct">f8c5f88b</span>
+        <div class="answer-card-meta">
+            <span class="status-badge status-correct">CORRECT</span>
+            <span class="category-badge">Single-Session (User)</span>
+            <span> | Gen: 40.5s | Mem: 1.9h</span>
+        </div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Question</div>
+        <div class="answer-field-value">Where did I buy my new tennis racket from?</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Expected Answer</div>
+        <div class="answer-field-value">the sports store downtown</div>
+    </div>
+    <div class="answer-field">
+        <div class="answer-field-label">Model Answer</div>
+        <div class="answer-field-value">Based on my knowledge base, you bought your new tennis racket from **a sports store downtown**.</div>
+    </div>
+    
+</div>
+        </div>
+
+        <div class="footer">
+            Generated by LongMemEval Benchmark Report Generator<br>
+            <a href="https://github.com/xiaowu0162/LongMemEval" target="_blank">
+                LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory
+            </a>
+        </div>
+    </div>
+    <script>
+    var activeFilters = { status: 'all', category: 'all' };
+
+    function setFilter(group, value) {
+        activeFilters[group] = value;
+        document.querySelectorAll('.filter-btn[data-group="' + group + '"]').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        document.querySelector('.filter-btn[data-group="' + group + '"][data-filter="' + value + '"]').classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        var cards = document.querySelectorAll('.answer-card');
+        var shown = 0;
+        cards.forEach(function(card) {
+            var statusMatch = (activeFilters.status === 'all' || card.getAttribute('data-status') === activeFilters.status);
+            var catMatch = (activeFilters.category === 'all' || card.getAttribute('data-category') === activeFilters.category);
+            if (statusMatch && catMatch) {
+                card.style.display = '';
+                shown++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        var countEl = document.getElementById('filter-count');
+        if (activeFilters.status === 'all' && activeFilters.category === 'all') {
+            countEl.textContent = '';
+        } else {
+            countEl.textContent = 'Showing ' + shown + ' of ' + cards.length;
+        }
+    }
+    </script>
+</body>
+</html>
