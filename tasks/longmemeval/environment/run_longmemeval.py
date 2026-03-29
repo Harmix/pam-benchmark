@@ -71,6 +71,10 @@ class PAMClient:
         self.admin_token: Optional[str] = None
         self.access_token: Optional[str] = None
         self.user_id: Optional[int] = None
+        self._admin_email: Optional[str] = None
+        self._admin_password: Optional[str] = None
+        self._user_email: Optional[str] = None
+        self._user_password: Optional[str] = None
 
     def _headers(self) -> dict:
         h = {}
@@ -84,45 +88,84 @@ class PAMClient:
 
     def login(self, email: str, password: str) -> str:
         """Authenticate and store the admin token."""
+        self._admin_email = email
+        self._admin_password = password
         resp = self.session.post(
             f"{self.host}/v1/auth/login",
             json={"email": email, "password": password},
-            timeout=30,
+            timeout=180,
         )
         resp.raise_for_status()
         data = resp.json()
         self.admin_token = data["tokens"]["access_token"]
         return self.admin_token
 
+    def _login_as(self, email: str, password: str) -> str:
+        """Login with arbitrary credentials and return the access token."""
+        resp = self.session.post(
+            f"{self.host}/v1/auth/login",
+            json={"email": email, "password": password},
+            timeout=180,
+        )
+        resp.raise_for_status()
+        return resp.json()["tokens"]["access_token"]
+
+    def refresh_token(self) -> None:
+        """Refresh both admin and user tokens using stored credentials."""
+        if self._admin_email and self._admin_password:
+            print("        Refreshing admin token ...")
+            self.admin_token = self._login_as(self._admin_email, self._admin_password)
+        if self._user_email and self._user_password:
+            print("        Refreshing user token ...")
+            self.access_token = self._login_as(self._user_email, self._user_password)
+
     # --- 1. Account lifecycle ---------------------------------------------------
 
-    def create_account(self, email: str, password: str, name: str) -> dict:
-        resp = self.session.post(
-            f"{self.base_url}/admin/create-account",
-            json={"email": email, "password": password, "name": name},
-            headers=self._headers(),
-            timeout=60,
-        )
+    def create_account(
+        self,
+        email: str,
+        password: str,
+        name: str,
+        company_name: str = "Acme Inc",
+        position: str = "Engineer",
+    ) -> dict:
+        url = f"{self.base_url}/admin/create-account"
+        body = {
+            "email": email,
+            "password": password,
+            "name": name,
+            "company_name": company_name,
+            "position": position,
+        }
+        headers = {**self._headers(), "Content-Type": "application/json"}
+        print(f"        POST {url}")
+        print(f"        Headers: { {k: (v[:20] + '…' if len(v) > 20 else v) for k, v in headers.items()} }")
+        print(f"        Body: {body}")
+        resp = self.session.post(url, json=body, headers=headers, timeout=180)
+        if not resp.ok:
+            print(f"        Response {resp.status_code}: {resp.text[:500]}")
         resp.raise_for_status()
         data = resp.json()
         self.access_token = data["tokens"]["access_token"]
         self.user_id = data["user"]["id"]
+        self._user_email = email
+        self._user_password = password
         return data
 
     def delete_account(self) -> None:
-        resp = self.session.delete(
-            f"{self.base_url}/admin/delete-account/{self.user_id}",
-            headers=self._headers(),
-            timeout=60,
-        )
+        url = f"{self.base_url}/admin/delete-account/{self.user_id}"
+        resp = self.session.delete(url, headers=self._headers(), timeout=180)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.delete(url, headers=self._headers(), timeout=180)
         resp.raise_for_status()
 
     def backup_workspace(self) -> dict:
-        resp = self.session.post(
-            f"{self.base_url}/admin/backup-workspace/{self.user_id}",
-            headers=self._headers(),
-            timeout=300,
-        )
+        url = f"{self.base_url}/admin/backup-workspace/{self.user_id}"
+        resp = self.session.post(url, headers=self._headers(), timeout=300)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._headers(), timeout=300)
         resp.raise_for_status()
         return resp.json()
 
@@ -148,7 +191,7 @@ class PAMClient:
                 f"{self.base_url}/files/upload-generic/{self.user_id}",
                 headers=self._headers(),
                 files=files_payload,
-                timeout=120,
+                timeout=180,
             )
             resp.raise_for_status()
             all_results.extend(resp.json())
@@ -157,7 +200,6 @@ class PAMClient:
     # --- 3. Memory creation (async pipeline) ------------------------------------
 
     MEMORY_POLL_INTERVAL = 30      # seconds between status checks
-    MEMORY_POLL_TIMEOUT = 3600     # max wait time (1 hour)
     TERMINAL_STATUSES = {"completed", "failed", "stopped", "cancelled"}
 
     PIPELINE_TYPE = "benchmark_memory"
@@ -176,52 +218,61 @@ class PAMClient:
         }
         print(f"        POST {url}?user_id={self.user_id}")
         print(f"        Body: {json.dumps(body)}")
-        resp = self.session.post(
-            url,
+        kwargs = dict(
             params={"user_id": self.user_id},
             json=body,
             headers=self._headers(),
-            timeout=60,
+            timeout=180,
         )
-        if resp.status_code != 202 and resp.status_code != 200:
+        resp = self.session.post(url, **kwargs)
+        if resp.status_code == 401:
+            self.refresh_token()
+            kwargs["headers"] = self._headers()
+            resp = self.session.post(url, **kwargs)
+        if resp.status_code not in (200, 202):
             print(f"        Response {resp.status_code}: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
         return data["run_id"]
 
     def poll_memory_status(self) -> dict:
-        """Get the current status of the benchmark_memory pipeline."""
+        """Get the current status of the benchmark_memory pipeline.
+
+        Automatically refreshes the auth token on 401 and retries once.
+        """
+        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status"
         resp = self.session.get(
-            f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status",
+            url,
             params={"user_id": self.user_id},
             headers=self._headers(),
-            timeout=30,
+            timeout=120,
         )
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.get(
+                url,
+                params={"user_id": self.user_id},
+                headers=self._headers(),
+                timeout=120,
+            )
         resp.raise_for_status()
         return resp.json()
 
     def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
-        """Trigger the memory pipeline and poll until completion or timeout."""
+        """Trigger the memory pipeline and poll until a terminal status is reached."""
         run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
         print(f"        Pipeline triggered (run_id={run_id}), polling every "
-              f"{self.MEMORY_POLL_INTERVAL}s (timeout {self.MEMORY_POLL_TIMEOUT}s) ...")
+              f"{self.MEMORY_POLL_INTERVAL}s ...")
 
         start = time.time()
         last_status = "pending"
         while True:
-            elapsed = time.time() - start
-            if elapsed > self.MEMORY_POLL_TIMEOUT:
-                raise TimeoutError(
-                    f"Memory pipeline did not finish within {self.MEMORY_POLL_TIMEOUT}s "
-                    f"(last status: {last_status})"
-                )
-
             time.sleep(self.MEMORY_POLL_INTERVAL)
 
             status_resp = self.poll_memory_status()
             run_info = status_resp.get("run", status_resp)
             last_status = run_info.get("run_status", run_info.get("status", "unknown"))
-            elapsed_min = elapsed / 60
+            elapsed_min = (time.time() - start) / 60
             print(f"        [{elapsed_min:.1f}m] status={last_status}")
 
             if last_status in self.TERMINAL_STATUSES:
@@ -253,13 +304,17 @@ class PAMClient:
             "prompt": prompt,
             "conversation_id": conversation_id,
         }
+        url = f"{self.base_url}/messages/stream"
         resp = self.session.post(
-            f"{self.base_url}/messages/stream",
-            json=body,
-            headers=self._headers(),
-            stream=True,
-            timeout=self.SSE_TIMEOUT,
+            url, json=body, headers=self._headers(),
+            stream=True, timeout=self.SSE_TIMEOUT,
         )
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(
+                url, json=body, headers=self._headers(),
+                stream=True, timeout=self.SSE_TIMEOUT,
+            )
         resp.raise_for_status()
 
         all_turns: List[List[str]] = []
@@ -371,7 +426,8 @@ def process_question_pam(
     """
     qid = entry["question_id"]
     qtype = qid2type.get(qid, "unknown")
-    email = f"longmemeval-{qid}@benchmark.local"
+    run_ts = int(time.time())
+    email = f"longmemeval-{qid}-{run_ts}@benchmark.local"
     reuse_user = debug_user_id is not None
     print(f"\n[{question_idx+1}/{total}] Question {qid} ({qtype})"
           + (f" [DEBUG user_id={debug_user_id}]" if reuse_user else "")
@@ -507,6 +563,10 @@ def parse_args():
                         help='PAM debug mode: skip backup and account deletion')
     parser.add_argument('--debug-user-id', type=int, default=None,
                         help='PAM debug: reuse existing user/memory instead of creating new ones')
+    parser.add_argument('--question-range-start', type=int, default=None,
+                        help='1-based inclusive start index in dataset order (after QUESTION_ID filter)')
+    parser.add_argument('--question-range-end', type=int, default=None,
+                        help='1-based inclusive end index in dataset order (after QUESTION_ID filter)')
 
     args = parser.parse_args()
 
@@ -515,6 +575,13 @@ def parse_args():
     env_debug_uid = os.environ.get("DEBUG_USER_ID", "")
     if env_debug_uid and args.debug_user_id is None:
         args.debug_user_id = int(env_debug_uid)
+
+    env_qrs = os.environ.get("QUESTION_RANGE_START", "").strip()
+    env_qre = os.environ.get("QUESTION_RANGE_END", "").strip()
+    if env_qrs and args.question_range_start is None:
+        args.question_range_start = int(env_qrs)
+    if env_qre and args.question_range_end is None:
+        args.question_range_end = int(env_qre)
 
     return args
 
@@ -868,6 +935,8 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
                 'history_format': args.history_format,
                 'cot': args.cot,
                 'max_questions': args.max_questions,
+                'question_range_start': args.question_range_start,
+                'question_range_end': args.question_range_end,
             },
             'total_execution_time_sec': round(total_execution_time, 2),
             'timestamp': datetime.utcnow(),
@@ -974,6 +1043,10 @@ def main():
         print(f"  Max questions: {args.max_questions}")
     if args.question_id:
         print(f"  Single question: {args.question_id}")
+    if args.question_range_start is not None or args.question_range_end is not None:
+        _s = args.question_range_start if args.question_range_start is not None else 1
+        _e = args.question_range_end if args.question_range_end is not None else "…"
+        print(f"  Question range (1-based): {_s}-{_e}")
     if is_pam and args.debug:
         print(f"  Debug mode: ON")
         if args.debug_user_id is not None:
@@ -1019,6 +1092,27 @@ def main():
             print(f"Error: question_id '{args.question_id}' not found")
             sys.exit(1)
         print(f"Filtered to question: {args.question_id}")
+
+    qrs, qre = args.question_range_start, args.question_range_end
+    if qrs is not None or qre is not None:
+        n = len(data)
+        start_1 = qrs if qrs is not None else 1
+        end_1 = qre if qre is not None else n
+        if start_1 < 1 or end_1 < 1:
+            print("Error: QUESTION_RANGE_START / QUESTION_RANGE_END must be >= 1 (1-based)")
+            sys.exit(1)
+        if start_1 > end_1:
+            print("Error: QUESTION_RANGE_START must be <= QUESTION_RANGE_END")
+            sys.exit(1)
+        if start_1 > n:
+            print(f"Error: QUESTION_RANGE_START ({start_1}) is past dataset size ({n})")
+            sys.exit(1)
+        if end_1 > n:
+            print(f"Warning: QUESTION_RANGE_END ({end_1}) clipped to dataset size ({n})")
+            end_1 = n
+        # 1-based inclusive → Python slice [start_1 - 1 : end_1]
+        data = data[start_1 - 1 : end_1]
+        print(f"Question range (1-based): {start_1}-{end_1} → {len(data)} question(s)")
 
     if args.max_questions > 0:
         data = data[:args.max_questions]
@@ -1094,6 +1188,8 @@ def main():
             'history_format': args.history_format,
             'cot': args.cot,
             'max_questions': args.max_questions,
+            'question_range_start': args.question_range_start,
+            'question_range_end': args.question_range_end,
             'execution_time_seconds': round(execution_time, 2),
             'timestamp': datetime.utcnow().isoformat(),
             'categories': {},
