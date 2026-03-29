@@ -2,7 +2,7 @@
 Generate HTML reports from MongoDB LongMemEval evaluation results.
 
 Usage:
-    python generate_report.py --experiment-name <experiment_name>
+    python tasks/longmemeval/generate_report.py --experiment-name <experiment_name>
 
     Or with environment variables:
     EXPERIMENT_NAME=my_experiment python generate_report.py
@@ -368,8 +368,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th>Correct</th>
                         <th>Incorrect</th>
                         <th>Accuracy</th>
-                        <th>Total Duration</th>
-                        <th>Avg Duration / Question</th>
+                        <th>Avg Memory Creation</th>
+                        <th>Avg Generation</th>
+                        <th>Avg Eval</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -463,6 +464,65 @@ def fetch_experiment_results(client: MongoClient, db_name: str, experiment_name:
 
 
 # ============================================================================
+# AGGREGATION
+# ============================================================================
+
+def aggregate_results(results: List[Dict]) -> List[Dict]:
+    """Aggregate multiple records that share the same question_category.
+
+    When an experiment has been run in multiple batches (or re-run), the DB may
+    contain several documents with the same (experiment_name, question_category)
+    pair.  This function collapses them into one record per category by:
+      - summing  : total_questions, correct_count, incorrect_count,
+                   total_duration_sec, total_execution_time_sec
+      - averaging: avg_duration_sec  (recomputed as total_duration / total_q)
+      - recomputing: accuracy  (correct_count / total_questions)
+      - merging lists: correct_answers, incorrect_answers
+    """
+    from collections import defaultdict
+
+    groups: Dict[str, List[Dict]] = defaultdict(list)
+    for r in results:
+        groups[r['question_category']].append(r)
+
+    aggregated = []
+    for cat_key, records in groups.items():
+        if len(records) == 1:
+            aggregated.append(records[0])
+            continue
+
+        total_questions = sum(r.get('total_questions', 0) for r in records)
+        correct_count   = sum(r.get('correct_count',   0) for r in records)
+        incorrect_count = sum(r.get('incorrect_count', 0) for r in records)
+        total_duration  = sum(r.get('total_duration_sec', 0) for r in records)
+        total_exec_time = sum(r.get('total_execution_time_sec', 0) for r in records)
+
+        accuracy     = (correct_count / total_questions) if total_questions else 0
+        avg_duration = (total_duration / total_questions) if total_questions else 0
+
+        incorrect_answers: list = []
+        correct_answers:   list = []
+        for r in records:
+            incorrect_answers.extend(r.get('incorrect_answers', []))
+            correct_answers.extend(r.get('correct_answers', []))
+
+        aggregated.append({
+            **records[0],
+            'total_questions':         total_questions,
+            'correct_count':           correct_count,
+            'incorrect_count':         incorrect_count,
+            'total_duration_sec':      total_duration,
+            'total_execution_time_sec': total_exec_time,
+            'accuracy':                accuracy,
+            'avg_duration_sec':        avg_duration,
+            'incorrect_answers':       incorrect_answers,
+            'correct_answers':         correct_answers,
+        })
+
+    return aggregated
+
+
+# ============================================================================
 # REPORT GENERATION HELPERS
 # ============================================================================
 
@@ -542,6 +602,11 @@ def generate_category_rows(results: List[Dict]) -> str:
         accuracy_pct = rec['accuracy'] * 100
         acc_class = get_accuracy_class(accuracy_pct)
 
+        avg_mem  = rec.get('avg_memory_creation_duration_sec')
+        avg_gen  = rec.get('avg_generation_duration_sec')
+        avg_dur  = rec.get('avg_duration_sec')
+        avg_eval = (avg_dur - avg_gen) if (avg_dur is not None and avg_gen is not None) else None
+
         rows.append(f"""
         <tr>
             <td><strong>{display}</strong></td>
@@ -549,16 +614,29 @@ def generate_category_rows(results: List[Dict]) -> str:
             <td>{rec['correct_count']}</td>
             <td>{rec['incorrect_count']}</td>
             <td><span class="accuracy-badge {acc_class}">{accuracy_pct:.1f}%</span></td>
-            <td>{format_duration(rec.get('total_duration_sec'))}</td>
-            <td>{format_duration(rec.get('avg_duration_sec'))}</td>
+            <td>{format_duration(avg_mem)}</td>
+            <td>{format_duration(avg_gen)}</td>
+            <td>{format_duration(avg_eval)}</td>
         </tr>""")
 
-    total_q = sum(r.get('total_questions', 0) for r in results)
-    total_c = sum(r.get('correct_count', 0) for r in results)
-    total_i = sum(r.get('incorrect_count', 0) for r in results)
-    total_dur = sum(r.get('total_duration_sec', 0) for r in results)
+    total_q   = sum(r.get('total_questions', 0) for r in results)
+    total_c   = sum(r.get('correct_count', 0) for r in results)
+    total_i   = sum(r.get('incorrect_count', 0) for r in results)
     overall_acc = (total_c / total_q * 100) if total_q else 0
-    avg_dur = total_dur / total_q if total_q else 0
+
+    # Weighted averages across categories
+    def _wavg(field):
+        total_w = sum(r.get('total_questions', 0) for r in results if r.get(field) is not None)
+        if not total_w:
+            return None
+        return sum(r[field] * r.get('total_questions', 0)
+                   for r in results if r.get(field) is not None) / total_w
+
+    w_avg_mem  = _wavg('avg_memory_creation_duration_sec')
+    w_avg_gen  = _wavg('avg_generation_duration_sec')
+    w_avg_dur  = _wavg('avg_duration_sec')
+    w_avg_eval = (w_avg_dur - w_avg_gen) if (w_avg_dur is not None and w_avg_gen is not None) else None
+
 
     rows.append(f"""
     <tr style="font-weight: 700; background: var(--bg-color);">
@@ -567,8 +645,9 @@ def generate_category_rows(results: List[Dict]) -> str:
         <td>{total_c}</td>
         <td>{total_i}</td>
         <td><span class="accuracy-badge {get_accuracy_class(overall_acc)}">{overall_acc:.1f}%</span></td>
-        <td>{format_duration(total_dur)}</td>
-        <td>{format_duration(avg_dur)}</td>
+        <td>{format_duration(w_avg_mem)}</td>
+        <td>{format_duration(w_avg_gen)}</td>
+        <td>{format_duration(w_avg_eval)}</td>
     </tr>""")
 
     return "\n".join(rows)
@@ -606,7 +685,9 @@ def _render_answer_card(item: Dict, cat_key: str, display: str, is_correct: bool
     </div>"""
 
     gen_dur = item.get('generation_duration_sec')
-    dur_str = f" | Gen: {gen_dur:.1f}s" if gen_dur else ""
+    mem_dur = item.get('memory_creation_duration_sec')
+    dur_str = (f" | Gen: {gen_dur:.1f}s" if gen_dur else "") + \
+              (f" | Mem: {format_duration(mem_dur)}" if mem_dur else "")
 
     return f"""
 <div class="answer-card {status}" data-status="{status}" data-category="{cat_key}">
@@ -776,6 +857,15 @@ def main():
             return 1
 
         print(f"Found {len(results)} category records")
+
+        # Collapse duplicate (experiment_name, question_category) records.
+        categories_before = len(results)
+        results = aggregate_results(results)
+        if len(results) < categories_before:
+            print(
+                f"Aggregated {categories_before} records → {len(results)} categories "
+                f"(summed totals, averaged per-question metrics)"
+            )
 
         output_dir = Path(args.output_dir)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
