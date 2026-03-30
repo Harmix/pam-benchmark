@@ -258,3 +258,4 @@ The Docker environment includes:
 - yq for YAML parsing
 - Node.js 20 and Claude Code v2.0.76
 - Python packages: openai, pyyaml, pydantic, python-dotenv, pymongo
+
