@@ -366,8 +366,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th>Category</th>
                         <th>Questions</th>
                         <th>Correct</th>
-                        <th>Incorrect</th>
                         <th>Accuracy</th>
+                        <th>Avg Tokens</th>
                         <th>Avg Memory Creation</th>
                         <th>Avg Generation</th>
                         <th>Avg Eval</th>
@@ -496,9 +496,15 @@ def aggregate_results(results: List[Dict]) -> List[Dict]:
         incorrect_count = sum(r.get('incorrect_count', 0) for r in records)
         total_duration  = sum(r.get('total_duration_sec', 0) for r in records)
         total_exec_time = sum(r.get('total_execution_time_sec', 0) for r in records)
+        total_injected_tokens = sum(r.get('total_injected_tokens', 0) for r in records)
+        # Only compute avg over questions that actually have token data.
+        token_question_count = sum(
+            r.get('total_questions', 0) for r in records if r.get('total_injected_tokens')
+        )
 
         accuracy     = (correct_count / total_questions) if total_questions else 0
         avg_duration = (total_duration / total_questions) if total_questions else 0
+        avg_injected_tokens = (total_injected_tokens / token_question_count) if token_question_count else None
 
         incorrect_answers: list = []
         correct_answers:   list = []
@@ -513,8 +519,10 @@ def aggregate_results(results: List[Dict]) -> List[Dict]:
             'incorrect_count':         incorrect_count,
             'total_duration_sec':      total_duration,
             'total_execution_time_sec': total_exec_time,
+            'total_injected_tokens':   total_injected_tokens,
             'accuracy':                accuracy,
             'avg_duration_sec':        avg_duration,
+            'avg_injected_tokens':     avg_injected_tokens,
             'incorrect_answers':       incorrect_answers,
             'correct_answers':         correct_answers,
         })
@@ -606,14 +614,17 @@ def generate_category_rows(results: List[Dict]) -> str:
         avg_gen  = rec.get('avg_generation_duration_sec')
         avg_dur  = rec.get('avg_duration_sec')
         avg_eval = (avg_dur - avg_gen) if (avg_dur is not None and avg_gen is not None) else None
+        avg_tokens = rec.get('avg_injected_tokens')
+
+        avg_tokens_str = f"{avg_tokens:,.0f}" if avg_tokens else "N/A"
 
         rows.append(f"""
         <tr>
             <td><strong>{display}</strong></td>
             <td>{rec['total_questions']}</td>
             <td>{rec['correct_count']}</td>
-            <td>{rec['incorrect_count']}</td>
             <td><span class="accuracy-badge {acc_class}">{accuracy_pct:.1f}%</span></td>
+            <td>{avg_tokens_str}</td>
             <td>{format_duration(avg_mem)}</td>
             <td>{format_duration(avg_gen)}</td>
             <td>{format_duration(avg_eval)}</td>
@@ -621,7 +632,6 @@ def generate_category_rows(results: List[Dict]) -> str:
 
     total_q   = sum(r.get('total_questions', 0) for r in results)
     total_c   = sum(r.get('correct_count', 0) for r in results)
-    total_i   = sum(r.get('incorrect_count', 0) for r in results)
     overall_acc = (total_c / total_q * 100) if total_q else 0
 
     # Weighted averages across categories
@@ -632,19 +642,31 @@ def generate_category_rows(results: List[Dict]) -> str:
         return sum(r[field] * r.get('total_questions', 0)
                    for r in results if r.get(field) is not None) / total_w
 
-    w_avg_mem  = _wavg('avg_memory_creation_duration_sec')
-    w_avg_gen  = _wavg('avg_generation_duration_sec')
-    w_avg_dur  = _wavg('avg_duration_sec')
-    w_avg_eval = (w_avg_dur - w_avg_gen) if (w_avg_dur is not None and w_avg_gen is not None) else None
+    w_avg_mem    = _wavg('avg_memory_creation_duration_sec')
+    w_avg_gen    = _wavg('avg_generation_duration_sec')
+    w_avg_dur    = _wavg('avg_duration_sec')
+    w_avg_eval   = (w_avg_dur - w_avg_gen) if (w_avg_dur is not None and w_avg_gen is not None) else None
 
+    # Weighted average only over categories that have token data (exclude 0 and None).
+    token_results = [r for r in results if r.get('avg_injected_tokens')]
+    if token_results:
+        token_w = sum(r.get('total_questions', 0) for r in token_results)
+        w_avg_tokens = (
+            sum(r['avg_injected_tokens'] * r.get('total_questions', 0) for r in token_results)
+            / token_w
+        ) if token_w else None
+    else:
+        w_avg_tokens = None
+
+    total_tokens_str = f"{w_avg_tokens:,.0f}" if w_avg_tokens else "N/A"
 
     rows.append(f"""
     <tr style="font-weight: 700; background: var(--bg-color);">
         <td>Total</td>
         <td>{total_q}</td>
         <td>{total_c}</td>
-        <td>{total_i}</td>
         <td><span class="accuracy-badge {get_accuracy_class(overall_acc)}">{overall_acc:.1f}%</span></td>
+        <td>{total_tokens_str}</td>
         <td>{format_duration(w_avg_mem)}</td>
         <td>{format_duration(w_avg_gen)}</td>
         <td>{format_duration(w_avg_eval)}</td>
@@ -686,8 +708,10 @@ def _render_answer_card(item: Dict, cat_key: str, display: str, is_correct: bool
 
     gen_dur = item.get('generation_duration_sec')
     mem_dur = item.get('memory_creation_duration_sec')
+    inj_tok = item.get('injected_tokens')
     dur_str = (f" | Gen: {gen_dur:.1f}s" if gen_dur else "") + \
-              (f" | Mem: {format_duration(mem_dur)}" if mem_dur else "")
+              (f" | Mem: {format_duration(mem_dur)}" if mem_dur else "") + \
+              (f" | Tokens: {inj_tok:,}" if inj_tok else "")
 
     return f"""
 <div class="answer-card {status}" data-status="{status}" data-category="{cat_key}">
