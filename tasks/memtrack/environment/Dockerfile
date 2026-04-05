@@ -46,6 +46,9 @@ COPY tasks/memtrack/environment/CLAUDE.md /task_data/CLAUDE.md
 COPY tasks/memtrack/environment/parse_oracle_stub.py /task_data/parse_oracle_stub.py
 RUN chmod +x /task_data/parse_oracle_stub.py
 
+# Copy pam_v2 runner script
+COPY tasks/memtrack/environment/run_memtrack_pam_v2.py /task_data/run_memtrack_pam_v2.py
+
 # Copy debug oracle files for DEBUG/stub mode
 COPY agents/debug/ /task_data/debug/
 

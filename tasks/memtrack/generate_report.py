@@ -342,6 +342,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th>Accuracy</th>
                         <th>Avg Score</th>
                         <th>Execution Time</th>
+                        <th>Avg Memory Creation</th>
+                        <th>Avg Injected Tokens</th>
                         <th>Executed At</th>
                     </tr>
                 </thead>
@@ -372,6 +374,8 @@ CONFIG_ROW_TEMPLATE = """
     <td><span class="accuracy-badge {accuracy_class}">{accuracy}%</span></td>
     <td>{avg_score}</td>
     <td>{execution_time}</td>
+    <td>{avg_memory_creation}</td>
+    <td>{avg_injected_tokens}</td>
     <td>{executed_at}</td>
 </tr>
 """
@@ -489,10 +493,24 @@ def format_timestamp(timestamp) -> str:
     return timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def format_avg_memory_creation(value) -> str:
+    """Format avg memory creation duration for display."""
+    if value is None:
+        return "N/A"
+    return f"{value:.1f}s"
+
+
+def format_avg_injected_tokens(value) -> str:
+    """Format avg injected tokens for display."""
+    if value is None:
+        return "N/A"
+    return str(int(value))
+
+
 def generate_config_rows(results: List[Dict]) -> str:
     """Generate HTML table rows for each config"""
     rows = []
-    
+
     for result in results:
         config_name = result.get("config_name", "Unknown")
         total_questions = result.get("total_questions", 0)
@@ -501,7 +519,9 @@ def generate_config_rows(results: List[Dict]) -> str:
         avg_score = result.get("avg_score", 0)
         execution_time = result.get("execution_time_seconds")
         timestamp = result.get("timestamp")
-        
+        avg_memory_creation = result.get("avg_memory_creation_duration_sec")
+        avg_injected_tokens = result.get("avg_injected_tokens")
+
         row = CONFIG_ROW_TEMPLATE.format(
             config_name=config_name,
             total_questions=total_questions,
@@ -510,10 +530,12 @@ def generate_config_rows(results: List[Dict]) -> str:
             accuracy_class=get_accuracy_class(accuracy),
             avg_score=f"{avg_score:.2f}",
             execution_time=format_execution_time(execution_time),
+            avg_memory_creation=format_avg_memory_creation(avg_memory_creation),
+            avg_injected_tokens=format_avg_injected_tokens(avg_injected_tokens),
             executed_at=format_timestamp(timestamp)
         )
         rows.append(row)
-    
+
     return "\n".join(rows)
 
 
