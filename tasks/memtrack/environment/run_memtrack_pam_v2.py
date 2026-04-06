@@ -285,17 +285,36 @@ class PAMClient:
         resp.raise_for_status()
         return resp.json()
 
+    MAX_CONSECUTIVE_POLL_ERRORS = 3
+
     def create_memory(self, max_files: Optional[int] = None, batch_size: int = 500) -> dict:
-        """Trigger the memory pipeline and poll until a terminal status is reached."""
+        """Trigger the memory pipeline and poll until a terminal status is reached.
+
+        Transient poll errors (timeouts, connection drops) are tolerated up to
+        MAX_CONSECUTIVE_POLL_ERRORS times in a row before the whole pipeline is
+        considered failed.
+        """
         run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
         print(f"        Pipeline triggered (run_id={run_id}), polling every "
               f"{self.MEMORY_POLL_INTERVAL}s ...")
 
         start = time.time()
+        consecutive_errors = 0
         while True:
             time.sleep(self.MEMORY_POLL_INTERVAL)
 
-            status_resp = self.poll_memory_status()
+            try:
+                status_resp = self.poll_memory_status()
+                consecutive_errors = 0
+            except Exception as e:
+                consecutive_errors += 1
+                elapsed_min = (time.time() - start) / 60
+                print(f"        [{elapsed_min:.1f}m] poll error "
+                      f"({consecutive_errors}/{self.MAX_CONSECUTIVE_POLL_ERRORS}): {repr(e)}")
+                if consecutive_errors >= self.MAX_CONSECUTIVE_POLL_ERRORS:
+                    raise
+                continue
+
             run_info = status_resp.get("run", status_resp)
             last_status = run_info.get("run_status", run_info.get("status", "unknown"))
             elapsed_min = (time.time() - start) / 60
