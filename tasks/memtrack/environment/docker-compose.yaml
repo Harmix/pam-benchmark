@@ -14,6 +14,18 @@ services:
       - DATASET_NAME=memtrack@1.0
       - TASK_NAME=memtrack
       - PAM_AGENT_NAME=PAM@2.0
+      # pam_v2 agent settings
+      - AGENT=${AGENT}
+      - PAM_API_HOST=${PAM_API_HOST}
+      - PAM_API_USER=${PAM_API_USER}
+      - PAM_API_PASSWORD=${PAM_API_PASSWORD}
+      - EVAL_MODEL=${EVAL_MODEL}
+      - MAX_QUESTIONS=${MAX_QUESTIONS}
+      - SKIP_EVAL=${SKIP_EVAL}
+      - OVERWRITE=${OVERWRITE}
+      - QUESTION_RANGE_START=${QUESTION_RANGE_START}
+      - QUESTION_RANGE_END=${QUESTION_RANGE_END}
+      - DEBUG_USER_ID=${DEBUG_USER_ID}
     env_file:
       - ${CONTEXT_DIR}/../../../secrets.env  # secrets.env at project root
     volumes:

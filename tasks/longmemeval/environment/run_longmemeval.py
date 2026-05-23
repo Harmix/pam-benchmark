@@ -285,8 +285,8 @@ class PAMClient:
 
     # --- 4. Chat (SSE) ----------------------------------------------------------
 
-    def send_message(self, prompt: str, conversation_id: Optional[str] = None) -> str:
-        """Send a message and return the **last** assistant text turn from the SSE stream.
+    def send_message(self, prompt: str, conversation_id: Optional[str] = None) -> tuple:
+        """Send a message and return ``(answer_text, injected_tokens)`` from the SSE stream.
 
         PAM may produce multiple assistant text turns separated by tool-use
         cycles.  Only the final assistant text turn contains the actual answer;
@@ -299,6 +299,11 @@ class PAMClient:
             turn and start a fresh buffer (the next assistant text is a new
             turn).
           - ``role "result"`` / ``event: stream_stopped`` → terminal, stop.
+
+        Returns:
+            (answer_text, injected_tokens) where injected_tokens is the number
+            of tokens injected from memory retrieval into the answering model
+            (0 if not reported by the server).
         """
         body = {
             "prompt": prompt,
@@ -319,6 +324,7 @@ class PAMClient:
 
         all_turns: List[List[str]] = []
         current_turn: List[str] = []
+        injected_tokens: int = 0
 
         for line in resp.iter_lines(decode_unicode=True):
             if not line:
@@ -346,6 +352,12 @@ class PAMClient:
                     all_turns.append(current_turn)
                     current_turn = []
             elif role == "result":
+                usage = payload.get("usage") or {}
+                injected_tokens = (
+                    payload.get("injected_tokens")
+                    or usage.get("injected_tokens")
+                    or 0
+                )
                 break
 
         if current_turn:
@@ -356,9 +368,9 @@ class PAMClient:
             print(f"        [SSE turn {idx+1}/{len(all_turns)}] "
                   f"{turn_text[:200]}{'…' if len(turn_text) > 200 else ''}")
 
-        if not all_turns:
-            return ""
-        return "".join(all_turns[-1])
+        answer = "".join(all_turns[-1]) if all_turns else ""
+        print(f"        Injected tokens: {injected_tokens}")
+        return answer, injected_tokens
 
 
 def _date_to_filename_prefix(date_str: str) -> str:
@@ -438,6 +450,7 @@ def process_question_pam(
     answer = ""
     memory_creation_sec = 0.0
     generation_sec = 0.0
+    injected_tokens = 0
 
     try:
         # Step 0: Login to get admin token
@@ -479,7 +492,7 @@ def process_question_pam(
         )
         print(f"  [4/6] Sending question: {entry['question'][:80]}...")
         gen_start = time.time()
-        answer = pam.send_message(prompt)
+        answer, injected_tokens = pam.send_message(prompt)
         generation_sec = round(time.time() - gen_start, 2)
         print(f"        Final answer ({generation_sec}s):\n{answer}")
 
@@ -511,6 +524,7 @@ def process_question_pam(
         "hypothesis": answer.strip(),
         "generation_duration_sec": generation_sec,
         "memory_creation_duration_sec": memory_creation_sec,
+        "injected_tokens": injected_tokens,
     }
 
 
@@ -863,6 +877,7 @@ def evaluate_predictions(client, predictions, ref_data, eval_model):
                 'label': label,
                 'generation_duration_sec': entry.get('generation_duration_sec', 0),
                 'memory_creation_duration_sec': entry.get('memory_creation_duration_sec', 0),
+                'injected_tokens': entry.get('injected_tokens', 0),
                 'eval_duration_sec': eval_duration,
             })
 
@@ -888,6 +903,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
         total_gen_duration = sum(r['generation_duration_sec'] for r in results)
         total_eval_duration = sum(r['eval_duration_sec'] for r in results)
         total_mem_duration = sum(r.get('memory_creation_duration_sec', 0) for r in results)
+        total_injected_tokens = sum(r.get('injected_tokens', 0) for r in results)
         total_duration = round(total_gen_duration + total_eval_duration, 2)
         avg_duration = round(total_duration / len(results), 2) if results else 0.0
 
@@ -902,6 +918,7 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
                 'model_answer': entry.get('hypothesis', ''),
                 'generation_duration_sec': r['generation_duration_sec'],
                 'memory_creation_duration_sec': r.get('memory_creation_duration_sec', 0),
+                'injected_tokens': r.get('injected_tokens', 0),
             }
             if r['label']:
                 correct_answers.append(answer_record)
@@ -929,6 +946,8 @@ def build_category_records(type2results, evaluated, args, total_execution_time):
             'avg_memory_creation_duration_sec': round(total_mem_duration / len(results), 2) if results else 0.0,
             'avg_generation_duration_sec': round(total_gen_duration / len(results), 2) if results else 0.0,
             'total_eval_duration_sec': round(total_eval_duration, 2),
+            'total_injected_tokens': total_injected_tokens,
+            'avg_injected_tokens': round(total_injected_tokens / len(results), 1) if results else 0.0,
             'correct_answers': correct_answers,
             'incorrect_answers': incorrect_answers,
             'config': {
