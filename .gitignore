@@ -24,6 +24,8 @@ agents/LongMemEval
 datasets/longmemeval/*.json
 !datasets/longmemeval/registry.json
 
+src/datasets/**/data/**
+
 # Distribution / packaging
 .Python
 build/
