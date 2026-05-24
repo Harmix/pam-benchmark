@@ -29,15 +29,21 @@ EOF
 fi
 
 # Build the comma-separated --args list that Cloud Run Jobs expects.
-# Args with commas inside would need additional escaping; baseline kwargs
-# JSON has no commas in practice (we use multiple keys at the same level).
-ARGS_CSV="scripts/run_benchmark.py"
+# `scripts/run_benchmark.py` is baked into the image's ENTRYPOINT, so we only
+# pass the run-benchmark flags here. Args with commas inside would need
+# additional escaping; baseline kwargs JSON has no commas in practice
+# (we use multiple keys at the same level).
+ARGS_CSV=""
 for arg in "$@"; do
-    ARGS_CSV="${ARGS_CSV},${arg}"
+    if [[ -z "$ARGS_CSV" ]]; then
+        ARGS_CSV="$arg"
+    else
+        ARGS_CSV="${ARGS_CSV},${arg}"
+    fi
 done
 
 # Force JSON logs so Cloud Logging gets structured entries.
-ARGS_CSV="${ARGS_CSV},--log-format,json"
+ARGS_CSV="${ARGS_CSV:+${ARGS_CSV},}--log-format,json"
 
 echo "==> Executing job: $JOB_NAME"
 echo "    Args: $ARGS_CSV"

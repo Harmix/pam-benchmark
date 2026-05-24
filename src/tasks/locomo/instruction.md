@@ -45,14 +45,15 @@ uv run python scripts/run_benchmark.py \
 ### Docker
 
 ```bash
-docker build -f cluster/Dockerfile -t pam-benchmark:dev .
+docker build -f cluster/Dockerfile -t memory-benchmark:dev .
 docker run --rm --env-file secrets.env \
   -v "$(pwd)/outputs:/app/outputs" \
-  pam-benchmark:dev \
-  scripts/run_benchmark.py \
+  memory-benchmark:dev \
     --dataset locomo --baseline gpt-4-turbo \
     --exp-name docker_smoke --sample-index 0 --max-questions 5
 ```
+
+(The image's `ENTRYPOINT` is `python scripts/run_benchmark.py`.)
 
 ### Cloud Run Jobs
 

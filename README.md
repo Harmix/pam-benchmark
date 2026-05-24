@@ -121,40 +121,36 @@ Reports at `reports/<exp-name>/report.html` are rendered on demand from Mongo by
 ## Docker (local parity with Cloud Run)
 
 ```bash
-docker build -f cluster/Dockerfile -t pam-benchmark:dev .
+docker build -f cluster/Dockerfile -t memory-benchmark:dev .
 
 docker run --rm \
   --env-file secrets.env \
   -v "$(pwd)/outputs:/app/outputs" \
-  pam-benchmark:dev \
-  scripts/run_benchmark.py \
+  memory-benchmark:dev \
     --dataset locomo --baseline gpt-4-turbo \
     --exp-name docker_smoke --sample-index 0 --max-questions 5
 ```
 
+(The image's `ENTRYPOINT` is `python scripts/run_benchmark.py`, so flags go straight to the benchmark — no need to repeat the script name.)
+
 ## Cloud Run Jobs
 
-One-time setup: enable Artifact Registry + Cloud Run, create a repo (e.g. `pam-benchmark`), and put the required secrets in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
+One-time setup: enable Artifact Registry + Cloud Run, the `pam-rnd-cloud-run-jobs` repo in `harmix-pam-rnd` / `us-east1` exists, and the secrets are in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
 
 ```bash
-export GCP_PROJECT=<your-project>
-export GCP_REGION=europe-west1
-export AR_REPO=pam-benchmark
-export SECRETS=OPENAI_API_KEY=openai-key:latest,CONNECTION_STRING=mongo-uri:latest,DB_NAME=mongo-db:latest
+# Build + push the image to the rnd registry (defaults to :latest)
+./cluster/build_and_push.sh
 
-# Build, push, and create/update the job
-./cluster/deploy.sh
-
-# Execute one run (uses --wait to block until completion)
+# Execute the job (Cloud Run pulls :latest, runs ENTRYPOINT + --args)
 ./cluster/run_job.sh \
   --exp-name locomo_gpt4_full \
   --dataset locomo --baseline gpt-4-turbo
 
-# Then render the report from your laptop
+# Render the report from your laptop
 uv run python scripts/generate_report.py --exp-name locomo_gpt4_full
 ```
 
-Logs stream to Cloud Logging (use `--log-format json` for structured entries — `run_job.sh` adds this automatically).
+The Cloud Run Job itself is created/managed via the GCP Console (or a separate deploy script) — `build_and_push.sh` only refreshes the image. Logs stream to Cloud Logging (use `--log-format json` for structured entries — `run_job.sh` adds this automatically).
 
 ## Tests & quality gates
 
