@@ -1,4 +1,6 @@
-# PAM Performance Improvement Suggestions
+# Pam Performance Improvement Suggestions
+
+> **Historical context.** Error-pattern analysis for [Harmix](https://manager.harmix.ai)'s Pam (Proactive AI Manager) on LoCoMo, written under the legacy Harbor-based pipeline. File paths and metric definitions reference that old structure (e.g. `tasks/locomo/environment/task_eval/evaluation.py`); the new harness lives at `src/evals/qa_f1.py` and `src/evals/llm_judge.py`. The error patterns (adversarial hallucination, token-F1 vs semantic-correctness divergence) still apply and should drive the M2 Pam-integration work.
 
 ## Current Metrics (5 samples, 999 questions, Overall F1: 43.3%)
 
@@ -12,43 +14,43 @@
 
 ### Pattern A: Adversarial Hallucination (220 questions, ~0% accuracy)
 
-Category 5 questions are designed so the correct answer is **empty** -- the fact was never mentioned. The eval at [evaluation.py](tasks/locomo/environment/task_eval/evaluation.py) lines 220-224 scores 1.0 only if the response contains `"not mentioned"` or `"no information available"`. PAM confidently fabricates answers instead:
+Category 5 questions are designed so the correct answer is **empty** -- the fact was never mentioned. The eval at [evaluation.py](tasks/locomo/environment/task_eval/evaluation.py) lines 220-224 scores 1.0 only if the response contains `"not mentioned"` or `"no information available"`. Pam confidently fabricates answers instead:
 
-- Q: "What does Melanie's necklace symbolize?" Expected: `""` PAM: `"Love, faith, and strength"`
-- Q: "What country is Melanie's grandma from?" Expected: `""` PAM: `"Sweden"`
-- Q: "What was grandpa's gift to Caroline?" Expected: `""` PAM: `"Hand-painted bowl from a friend"`
+- Q: "What does Melanie's necklace symbolize?" Expected: `""` Pam: `"Love, faith, and strength"`
+- Q: "What country is Melanie's grandma from?" Expected: `""` Pam: `"Sweden"`
+- Q: "What was grandpa's gift to Caroline?" Expected: `""` Pam: `"Hand-painted bowl from a friend"`
 
-**Root cause**: PAM has zero awareness of adversarial questions. Unlike gpt4-turbo, which formats cat 5 as multiple-choice (`"(a) adversarial_answer (b) Not mentioned"`), PAM receives the raw question with no signal that it might be a trap.
+**Root cause**: Pam has zero awareness of adversarial questions. Unlike gpt4-turbo, which formats cat 5 as multiple-choice (`"(a) adversarial_answer (b) Not mentioned"`), Pam receives the raw question with no signal that it might be a trap.
 
 ### Pattern B: Semantically Correct but Token-F1 Penalized
 
 Many answers are correct but scored poorly due to pure token-overlap F1:
 
-- Q: "When did Melanie paint a sunrise?" Expected: `"2022"` PAM: `"Last year before May 2023 (2022)"` -- F1: 0.286
-- Q: "How many times to beach?" Expected: `"2"` PAM: `"2 times (beach camping in July...)"` -- F1: 0.154
-- Q: "Career path?" Expected: `"counseling or mental health for Transgender people"` PAM: `"Counseling/mental health"` -- F1: 0.222
+- Q: "When did Melanie paint a sunrise?" Expected: `"2022"` Pam: `"Last year before May 2023 (2022)"` -- F1: 0.286
+- Q: "How many times to beach?" Expected: `"2"` Pam: `"2 times (beach camping in July...)"` -- F1: 0.154
+- Q: "Career path?" Expected: `"counseling or mental health for Transgender people"` Pam: `"Counseling/mental health"` -- F1: 0.222
 
 ### Pattern C: Over-generation / Hallucinated List Items
 
-PAM lists too many items, many fabricated:
+Pam lists too many items, many fabricated:
 
-- Q: "LGBTQ events?" Expected: `"Pride parade, school speech, support group"` (3 items) PAM: `"Pride parades, transgender conferences, LGBTQ+ counseling workshops, support groups, poetry readings, LGBTQ art shows, youth center volunteering"` (7 items)
-- Q: "Activities with family?" Expected: 6 items PAM: 9 items including fabricated ones ("road trip to Grand Canyon")
+- Q: "LGBTQ events?" Expected: `"Pride parade, school speech, support group"` (3 items) Pam: `"Pride parades, transgender conferences, LGBTQ+ counseling workshops, support groups, poetry readings, LGBTQ art shows, youth center volunteering"` (7 items)
+- Q: "Activities with family?" Expected: 6 items Pam: 9 items including fabricated ones ("road trip to Grand Canyon")
 
 ### Pattern D: Refusal to Reason on Open-domain Questions
 
-PAM says "Not mentioned" for questions requiring inference:
+Pam says "Not mentioned" for questions requiring inference:
 
-- Q: "Would Caroline still want counseling if no support growing up?" Expected: `"Likely no"` PAM: `"Not mentioned"`
-- Q: "Would Caroline likely have Dr. Seuss books?" Expected: `"Yes, she collects classic children's books"` PAM: `"Not mentioned"`
+- Q: "Would Caroline still want counseling if no support growing up?" Expected: `"Likely no"` Pam: `"Not mentioned"`
+- Q: "Would Caroline likely have Dr. Seuss books?" Expected: `"Yes, she collects classic children's books"` Pam: `"Not mentioned"`
 
-**Root cause**: The current prompt at [pam_answer.sh](tasks/locomo/environment/pam_answer.sh) line 97 says `"If the information is not available, say 'Not mentioned in the conversation'"` which makes PAM default to refusal for inference questions.
+**Root cause**: The current prompt at [pam_answer.sh](tasks/locomo/environment/pam_answer.sh) line 97 says `"If the information is not available, say 'Not mentioned in the conversation'"` which makes Pam default to refusal for inference questions.
 
 ### Pattern E: Wrong Fact Retrieval
 
-PAM retrieves incorrect facts from its memory:
+Pam retrieves incorrect facts from its memory:
 
-- Q: "Books Melanie read?" Expected: `"Nothing is Impossible, Charlotte's Web"` PAM: `"Becoming Nicole by Amy Ellis Nutt"` (confusing speakers or sessions)
+- Q: "Books Melanie read?" Expected: `"Nothing is Impossible, Charlotte's Web"` Pam: `"Becoming Nicole by Amy Ellis Nutt"` (confusing speakers or sessions)
 
 ---
 
@@ -58,7 +60,7 @@ PAM retrieves incorrect facts from its memory:
 
 **Expected impact**: 0.2% -> ~50%+ on adversarial (lifts overall by ~10+ points)
 
-**Approach**: Pass `category` and `adversarial_answer` to PAM's answering phase. In [pam_answer.sh](tasks/locomo/environment/pam_answer.sh), when building the questions list (lines 64-78), append category info. For category 5 questions, format as multiple-choice like gpt4-turbo does in [gpt_utils.py](tasks/locomo/environment/task_eval/gpt_utils.py) lines 246-264:
+**Approach**: Pass `category` and `adversarial_answer` to Pam's answering phase. In [pam_answer.sh](tasks/locomo/environment/pam_answer.sh), when building the questions list (lines 64-78), append category info. For category 5 questions, format as multiple-choice like gpt4-turbo does in [gpt_utils.py](tasks/locomo/environment/task_eval/gpt_utils.py) lines 246-264:
 
 ```
 Q153: What did Caroline realize after her charity race?
@@ -75,7 +77,7 @@ This requires:
 
 **Expected impact**: Reveals true accuracy is likely 5-15 points higher than token F1 shows
 
-**Approach**: Adapt the existing implementation from [agents/mem0/metrics/llm_judge.py](agents/mem0/metrics/llm_judge.py) into PAM's evaluation pipeline. The mem0 judge:
+**Approach**: Adapt the existing implementation from [agents/mem0/metrics/llm_judge.py](agents/mem0/metrics/llm_judge.py) into Pam's evaluation pipeline. The mem0 judge:
 
 - Uses `gpt-4o-mini` with a structured prompt
 - Returns CORRECT/WRONG in JSON

@@ -1,0 +1,52 @@
+[project]
+name = "pam-benchmark"
+version = "0.1.0"
+description = "PAM benchmark — compare PAM against memory baselines on memory-oriented datasets"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "litellm>=1.55",
+    "instructor>=1.7",
+    "pydantic>=2.9",
+    "typer>=0.15",
+    "rich>=13.9",
+    "tenacity>=9.0",
+    "aiolimiter>=1.2",
+    "tiktoken>=0.8",
+    "python-dotenv>=1.0",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pymongo>=4.10",
+    "jinja2>=3.1",
+    "scipy>=1.14",
+    "nltk>=3.9",
+    "regex>=2024.5.15",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "pre-commit>=4.0",
+]
+
+# Application, not library — no build backend, no installable package.
+# Imports resolve via PYTHONPATH=src (set in Dockerfile and recommended for local).
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "scripts", "tests"]
+exclude = ["src/tasks/locomo/environment", "bench_venv", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = "-ra"

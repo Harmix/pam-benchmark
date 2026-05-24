@@ -1,6 +1,8 @@
-# Blog Post Notes: PAM Sets New State-of-the-Art on LoCoMo Memory Benchmark
+# Blog Post Notes: Pam Sets New State-of-the-Art on LoCoMo Memory Benchmark
 
-*Notes for the marketing manager. Use these as the skeleton for a blog post.*
+*Notes for the [Harmix](https://manager.harmix.ai) marketing team. Use these as the skeleton for a blog post or for collateral on the product site.*
+
+> **Historical context.** These notes were written under the legacy Harbor-based pipeline. File paths and CLI commands reference that old structure; the underlying narrative (LoCoMo, LLM-as-judge methodology, Pam vs. Mem0 comparison framing) is still useful background for the rewritten harness. Specific paths like `tasks/locomo/environment/task_eval/evaluation.py` should be re-mapped to the new layout (e.g. `src/evals/qa_f1.py`) when this becomes a real blog post.
 
 ---
 
@@ -23,13 +25,13 @@ The **LoCoMo** (Long-term Conversational Memory) benchmark, published at ACL 202
 
 ---
 
-## 2. Why Compare PAM with Mem0?
+## 2. Why Compare Pam with Mem0?
 
 **Mem0** (Chhikara et al., 2025) is currently the leading open-source memory system for AI agents. Their paper, published in April 2025, reports state-of-the-art results on LoCoMo, outperforming six categories of baselines including RAG approaches, full-context processing, OpenAI's built-in memory, and other memory-augmented systems (MemGPT, MemoryBank, ReadAgent, A-Mem, LangMem, Zep).
 
 **Mem0 claimed SOTA:** 66.88% overall LLM-as-a-Judge accuracy, with a 26% relative improvement over OpenAI's proprietary memory feature.
 
-Comparing PAM against Mem0 on the same benchmark, using the same evaluation protocol, is the most direct way to demonstrate where PAM stands relative to the current best-in-class memory system.
+Comparing Pam against Mem0 on the same benchmark, using the same evaluation protocol, is the most direct way to demonstrate where Pam stands relative to the current best-in-class memory system.
 
 ---
 
@@ -45,7 +47,7 @@ All three systems in our comparison were evaluated on the LoCoMo benchmark under
 
 **Mem0 setup (from their paper):** Mem0 uses an incremental memory processing pipeline — it extracts salient facts from conversation pairs, consolidates them against existing memories (add/update/delete/noop), and stores them as dense natural-language memory entries. At query time, it retrieves relevant memories for both speakers and uses them as context for answer generation. All LLM operations use GPT-4o-mini.
 
-**PAM setup:** PAM (Proactive AI Manager) uses a local file-first memory architecture with a proprietary Memory Agent. Instead of storing memories in a database accessed through API calls, PAM processes conversations into structured local files organized by topic. At query time, the agent uses native file operations (search, read) to find relevant information in its file-based memory — aligning with the LLM's intrinsic strengths in reading files and executing commands.
+**Pam setup:** Pam (Proactive AI Manager) uses a local file-first memory architecture with a proprietary Memory Agent. Instead of storing memories in a database accessed through API calls, Pam processes conversations into structured local files organized by topic. At query time, the agent uses native file operations (search, read) to find relevant information in its file-based memory — aligning with the LLM's intrinsic strengths in reading files and executing commands.
 
 ---
 
@@ -55,25 +57,25 @@ All three systems in our comparison were evaluated on the LoCoMo benchmark under
 |--------|------------------------|-----------------|
 | OpenAI (ChatGPT memory) | 52.90% | — |
 | Mem0 (previous SOTA) | 66.88% | — |
-| **PAM (Ours)** | **74.35%** | **1,145 / 1,540** |
+| **Pam (Ours)** | **74.35%** | **1,145 / 1,540** |
 
 **Key findings:**
-- PAM achieves **74.35%** overall LLM-as-a-Judge accuracy, establishing a new state-of-the-art on LoCoMo
+- Pam achieves **74.35%** overall LLM-as-a-Judge accuracy, establishing a new state-of-the-art on LoCoMo
 - This represents a **+7.47 absolute point improvement** over Mem0 (66.88%), the previous best result
-- PAM outperforms OpenAI's built-in memory by **+21.45 absolute points** (a 40.5% relative improvement)
-- PAM outperforms Mem0 by **11.2% relative improvement**
+- Pam outperforms OpenAI's built-in memory by **+21.45 absolute points** (a 40.5% relative improvement)
+- Pam outperforms Mem0 by **11.2% relative improvement**
 
-**Per-category breakdown (PAM):**
-- Multi-hop: 80.1% (678/841) — strongest category, showing PAM's ability to synthesize scattered information
+**Per-category breakdown (Pam):**
+- Multi-hop: 80.1% (678/841) — strongest category, showing Pam's ability to synthesize scattered information
 - Temporal: 72.9% (233/321) — strong temporal reasoning from structured date/time in file memory
 - Single-hop: 69.9% (197/282) — reliable single-fact retrieval
 - Open-domain: 37.2% (37/96) — hardest category across all systems, requires inference beyond stated facts
 
 ---
 
-## 5. Why PAM Is Better: The File-First Architecture Advantage
+## 5. Why Pam Is Better: The File-First Architecture Advantage
 
-The key insight behind PAM's superior performance lies in a fundamental architectural difference: **how the agent interfaces with its memory.**
+The key insight behind Pam's superior performance lies in a fundamental architectural difference: **how the agent interfaces with its memory.**
 
 ### The problem with memory-as-a-database
 
@@ -83,13 +85,13 @@ Systems like Mem0, OpenAI, and Zep treat memory as a database — facts are stor
 2. **Lossy compression:** Converting rich conversation context into short memory entries inevitably loses nuance, relationships, and structure
 3. **Retrieval fragility:** Semantic search may miss relevant memories if the query doesn't closely match the stored representation
 
-### PAM's file-first approach
+### Pam's file-first approach
 
-PAM takes a fundamentally different approach. Instead of abstracting memory behind an API, PAM's Memory Agent processes conversations into **structured local files** organized by topic, person, and timeline — much like how a human might organize notes in folders.
+Pam takes a fundamentally different approach. Instead of abstracting memory behind an API, Pam's Memory Agent processes conversations into **structured local files** organized by topic, person, and timeline — much like how a human might organize notes in folders.
 
-This design gives PAM three distinct advantages:
+This design gives Pam three distinct advantages:
 
-1. **Native tooling alignment:** LLMs are exceptionally good at reading files and navigating directory structures — these are core capabilities from training data. By storing memory as files, PAM leverages the LLM's strongest modality rather than forcing it through an unfamiliar API layer.
+1. **Native tooling alignment:** LLMs are exceptionally good at reading files and navigating directory structures — these are core capabilities from training data. By storing memory as files, Pam leverages the LLM's strongest modality rather than forcing it through an unfamiliar API layer.
 
 2. **Richer context preservation:** File-based memory retains more structure and context than flat database entries. Related facts stay together in organized documents, preserving the relationships between pieces of information that database-style memory systems discard.
 
@@ -97,14 +99,14 @@ This design gives PAM three distinct advantages:
 
 ### The broader lesson
 
-The industry is focused on larger context windows and more sophisticated retrieval mechanisms. Our results suggest that **the interface between the agent and its memory matters more than the sophistication of the memory system itself.** By aligning memory architecture with how LLMs naturally process information — reading files, not querying databases — PAM achieves state-of-the-art results with a fundamentally simpler design.
+The industry is focused on larger context windows and more sophisticated retrieval mechanisms. Our results suggest that **the interface between the agent and its memory matters more than the sophistication of the memory system itself.** By aligning memory architecture with how LLMs naturally process information — reading files, not querying databases — Pam achieves state-of-the-art results with a fundamentally simpler design.
 
 ---
 
 ## Suggested assets to include
 
 - The performance comparison bar chart (docs/pam_performance_chart.html)
-- Per-category breakdown table from the PAM evaluation report
+- Per-category breakdown table from the Pam evaluation report
 - Link to the LoCoMo benchmark paper (Maharana et al., ACL 2024)
 - Link to the Mem0 paper (Chhikara et al., 2025)
-- Link to the previous PAM blog post ("The Architecture of Recall")
+- Link to the previous Pam blog post ("The Architecture of Recall")

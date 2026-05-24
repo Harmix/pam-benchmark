@@ -1,0 +1,47 @@
+# Pre-commit hooks. Mirrors what CI runs so a clean local commit means a green PR.
+#
+# One-time setup:
+#   uv sync                     # installs pre-commit into .venv
+#   uv run pre-commit install   # wires the hook into .git/hooks/pre-commit
+#
+# Manual run across the whole repo:
+#   uv run pre-commit run --all-files
+#
+# Notes:
+# - Dataset files (`src/datasets/**/data/`) and generated reports/outputs
+#   are excluded — we don't own their formatting and rewriting them silently
+#   breaks reproducibility.
+
+# Files matching this pattern are skipped by every hook.
+exclude: |
+  (?x)^(
+    src/datasets/.*/data/.*|
+    reports/.*|
+    outputs/.*|
+    uv\.lock|
+    .*\.lock
+  )$
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src|scripts|tests)/
+      - id: ruff-format
+        files: ^(src|scripts|tests)/
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        # Only touch source/text files we author.
+        files: \.(py|md|yaml|yml|toml|sh|j2|html\.j2|Dockerfile)$|^Dockerfile$|^cluster/Dockerfile$
+      - id: end-of-file-fixer
+        files: \.(py|md|yaml|yml|toml|sh|j2|html\.j2|Dockerfile)$|^Dockerfile$|^cluster/Dockerfile$
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]

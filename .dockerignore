@@ -1,0 +1,25 @@
+.git
+.gitignore
+.idea
+.venv
+venv
+bench_venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.mypy_cache
+outputs
+reports
+docs
+.memory-bank
+secrets.env
+*.md
+!README.md
+# Keep dataset bodies out of the image by default …
+src/datasets/*/data/
+# … but bake in the LoCoMo file because Cloud Run has no FS to mount it from.
+!src/datasets/locomo/data/
+*.DS_Store
+.python-version
