@@ -34,16 +34,22 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
     for row in ctx["per_category"]:
         lines.append(
             f"| {row['name']} | {row['count']} | "
-            f"{row['f1']*100:.1f}% | {row['judge_pct']:.1f}% ({row['judge_correct']}/{row['count']}) |"
+            f"{row['f1'] * 100:.1f}% | {row['judge_pct']:.1f}% ({row['judge_correct']}/{row['count']}) |"
         )
-    lines.extend(["", "## Per sample", "",
-                  "| Baseline | Seed | Sample | Q | F1 | Judge | Cost | p50/p95 ms | Wall-clock |",
-                  "|---|---|---|---:|---:|---:|---:|---:|---:|"])
+    lines.extend(
+        [
+            "",
+            "## Per sample",
+            "",
+            "| Baseline | Seed | Sample | Q | F1 | Judge | Cost | p50/p95 ms | Wall-clock |",
+            "|---|---|---|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
     for row in ctx["per_sample"]:
         lines.append(
             f"| {row['baseline']} | {row['seed']} | {row['sample_id']} | "
             f"{row['total_questions']} | "
-            f"{row['overall_accuracy']*100:.1f}% | {row['judge_accuracy']*100:.1f}% | "
+            f"{row['overall_accuracy'] * 100:.1f}% | {row['judge_accuracy'] * 100:.1f}% | "
             f"${row['total_cost_usd']:.4f} | "
             f"{row['p50_latency_ms']:.0f}/{row['p95_latency_ms']:.0f} | "
             f"{row['execution_time_seconds']:.1f}s |"

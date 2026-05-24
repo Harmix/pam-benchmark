@@ -39,9 +39,7 @@ class LoCoMoLoader:
 
     def get_sample(self, index: int) -> LoCoMoSample:
         if not 0 <= index < len(self._samples):
-            raise IndexError(
-                f"sample index {index} out of range (0..{len(self._samples) - 1})"
-            )
+            raise IndexError(f"sample index {index} out of range (0..{len(self._samples) - 1})")
         return self._samples[index]
 
     def iter_samples(self) -> Iterator[LoCoMoSample]:

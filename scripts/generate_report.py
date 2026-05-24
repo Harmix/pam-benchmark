@@ -30,9 +30,7 @@ console = Console()
 def main(
     exp_name: str = typer.Option(..., "--exp-name", help="Experiment identifier"),
     dataset: str = typer.Option("locomo", "--dataset", help="Dataset name"),
-    output_dir: str = typer.Option(
-        None, "--output-dir", help="Defaults to reports/<exp-name>"
-    ),
+    output_dir: str = typer.Option(None, "--output-dir", help="Defaults to reports/<exp-name>"),
     fmt: str = typer.Option("html", "--format", help="html | md"),
 ) -> None:
     """Pull Mongo rows for `--exp-name` and render the report."""

@@ -31,9 +31,11 @@ def get_dataset(name: str) -> DatasetLoader:
 # `tasks` is a callable that, given (sample, baseline, ...), runs the task.
 # Imported lazily to keep startup cheap when only listing options.
 
+
 def get_task_runner(name: str) -> Callable[..., Any]:
     if name == "locomo":
         from tasks.locomo.pipeline import run_sample
+
         return run_sample
     raise ValueError(f"unknown task: {name!r}. Available: ['locomo']")
 
@@ -45,9 +47,12 @@ def get_task_runner(name: str) -> Callable[..., Any]:
 # factories here.
 
 _BASELINE_ALIASES = {
-    "gpt-4-turbo", "gpt-4-turbo-2024-04-09",
-    "gpt-4o", "gpt-4o-mini",
-    "gpt-4", "gpt-3.5-turbo",
+    "gpt-4-turbo",
+    "gpt-4-turbo-2024-04-09",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-4",
+    "gpt-3.5-turbo",
 }
 
 

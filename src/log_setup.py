@@ -29,10 +29,28 @@ class _JsonFormatter(logging.Formatter):
             if k.startswith("_"):
                 continue
             if k in {
-                "args", "msg", "levelname", "name", "created", "exc_info", "exc_text",
-                "filename", "funcName", "levelno", "lineno", "module", "msecs",
-                "message", "pathname", "process", "processName", "relativeCreated",
-                "stack_info", "thread", "threadName", "taskName",
+                "args",
+                "msg",
+                "levelname",
+                "name",
+                "created",
+                "exc_info",
+                "exc_text",
+                "filename",
+                "funcName",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "message",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "stack_info",
+                "thread",
+                "threadName",
+                "taskName",
             }:
                 continue
             payload[k] = v

@@ -33,9 +33,7 @@ def main(
     max_questions: int = typer.Option(
         None, "--max-questions", help="Cap questions per sample (default: all)"
     ),
-    baseline_model: str = typer.Option(
-        None, "--baseline-model", help="Override baseline model id"
-    ),
+    baseline_model: str = typer.Option(None, "--baseline-model", help="Override baseline model id"),
     baseline_kwargs: str = typer.Option(
         "{}", "--baseline-kwargs", help="JSON dict of extra baseline kwargs"
     ),
@@ -43,9 +41,7 @@ def main(
     judge_concurrency: int = typer.Option(
         8, "--judge-concurrency", help="Max concurrent judge calls"
     ),
-    output_dir: str = typer.Option(
-        None, "--output-dir", help="Override outputs/<exp>/<seed>"
-    ),
+    output_dir: str = typer.Option(None, "--output-dir", help="Override outputs/<exp>/<seed>"),
     no_mongo: bool = typer.Option(False, "--no-mongo", help="Skip MongoDB writes"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Resolve config and exit"),
     log_format: str = typer.Option(

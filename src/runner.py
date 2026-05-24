@@ -43,9 +43,11 @@ def _provenance() -> dict[str, str]:
     """Best-effort git + image provenance for Mongo docs."""
     info: dict[str, str] = {}
     try:
-        info["git_commit"] = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-        ).decode().strip()
+        info["git_commit"] = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
     except Exception:
         info["git_commit"] = ""
     info["image_digest"] = (subprocess.os.environ.get("IMAGE_DIGEST") or "").strip()
@@ -53,6 +55,7 @@ def _provenance() -> dict[str, str]:
         lock = Path(__file__).resolve().parent.parent / "uv.lock"
         if lock.exists():
             from utils.io import sha256  # local import to avoid circulars
+
             info["uv_lock_hash"] = sha256(lock)
     except Exception:
         info["uv_lock_hash"] = ""
@@ -155,9 +158,7 @@ async def _process_sample(
     progress: Any,
 ) -> SampleResult:
     n_questions = (
-        len(sample.qa)
-        if cfg.max_questions is None
-        else min(cfg.max_questions, len(sample.qa))
+        len(sample.qa) if cfg.max_questions is None else min(cfg.max_questions, len(sample.qa))
     )
     task_id = add_sample_task(progress, sample.sample_id, n_questions)
 
@@ -217,9 +218,7 @@ async def _process_sample(
         **_provenance(),
     }
 
-    return SampleResult(
-        sample_id=sample.sample_id, sample_index=sample_index, document=document
-    )
+    return SampleResult(sample_id=sample.sample_id, sample_index=sample_index, document=document)
 
 
 async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
@@ -252,9 +251,7 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             if cfg.dry_run:
                 console.log(f"[yellow]dry-run[/yellow] would process {sample.sample_id}")
                 continue
-            r = await _process_sample(
-                sample, sample_index, cfg, baseline, task_runner, progress
-            )
+            r = await _process_sample(sample, sample_index, cfg, baseline, task_runner, progress)
             results.append(r)
             if cfg.mongo:
                 write_sample_result(dataset=cfg.dataset, document=r.document)

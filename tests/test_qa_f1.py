@@ -15,7 +15,12 @@ from evals.qa_f1 import score_locomo_qa
         # cat 2: temporal, exact match
         (2, "7 May 2023", "7 May 2023", 1.0),
         # cat 3: open-domain — semicolons split; first form is canonical
-        (3, "Psychology, counseling certification", "Psychology, counseling certification; psych cert", 1.0),
+        (
+            3,
+            "Psychology, counseling certification",
+            "Psychology, counseling certification; psych cert",
+            1.0,
+        ),
         # cat 4: multi-hop exact
         (4, "mental health", "mental health", 1.0),
     ],
@@ -26,9 +31,7 @@ def test_perfect_match_per_category(category, prediction, ground_truth, expected
 
 
 def test_partial_match_gives_partial_credit():
-    score = score_locomo_qa(
-        prediction="adoption", ground_truth="adoption agencies", category=4
-    )
+    score = score_locomo_qa(prediction="adoption", ground_truth="adoption agencies", category=4)
     assert 0.0 < score < 1.0
 
 
@@ -43,9 +46,7 @@ def test_cat5_correctly_refuses():
         "Not mentioned in the conversation.",
         "NOT MENTIONED anywhere",
     ]:
-        assert (
-            score_locomo_qa(prediction=refusal, ground_truth="ignored", category=5) == 1.0
-        )
+        assert score_locomo_qa(prediction=refusal, ground_truth="ignored", category=5) == 1.0
 
 
 def test_cat5_takes_the_bait_is_zero():

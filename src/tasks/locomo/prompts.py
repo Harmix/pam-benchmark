@@ -161,9 +161,7 @@ def build_prompt(
         else:
             opt_a, opt_b = correct, incorrect
             answer_key = {"a": correct, "b": incorrect}
-        question_text = (
-            f"{qa.question} Select the correct answer: (a) {opt_a} (b) {opt_b}."
-        )
+        question_text = f"{qa.question} Select the correct answer: (a) {opt_a} (b) {opt_b}."
         expected = correct
         is_adv = True
         question_block = QA_PROMPT_CAT_5.format(question=question_text)

@@ -45,7 +45,11 @@ def test_aggregate_per_category_breakdown(prediction_factory, judge_factory):
         prediction_factory(question_num=2, category=1, category_name="single_hop"),
         prediction_factory(question_num=3, category=2, category_name="temporal"),
     ]
-    judges = [judge_factory(correct=True), judge_factory(correct=False), judge_factory(correct=True)]
+    judges = [
+        judge_factory(correct=True),
+        judge_factory(correct=False),
+        judge_factory(correct=True),
+    ]
     f1 = [1.0, 0.0, 0.6]
     out = _aggregate(preds, f1, judges)
     assert out["category_single_hop_count"] == 2
@@ -84,17 +88,35 @@ def test_aggregate_latency_summary_present(prediction_factory, judge_factory):
 def test_qa_responses_shape_matches_mongo_schema(prediction_factory, judge_factory):
     preds = [
         prediction_factory(question_num=1, category=1, category_name="single_hop"),
-        prediction_factory(question_num=2, category=5, category_name="adversarial", is_adversarial=True),
+        prediction_factory(
+            question_num=2, category=5, category_name="adversarial", is_adversarial=True
+        ),
     ]
-    judges = [judge_factory(correct=True), judge_factory(correct=False, score=0.0, reasoning="wrong")]
+    judges = [
+        judge_factory(correct=True),
+        judge_factory(correct=False, score=0.0, reasoning="wrong"),
+    ]
     rows = _qa_responses(preds, [1.0, 0.0], judges)
     assert len(rows) == 2
     # Schema parity with §9.1 of the rewrite plan
     required = {
-        "question_num", "question", "expected_answer", "model_answer", "category",
-        "category_name", "evidence", "is_adversarial", "f1_score", "judge_correct",
-        "judge_score", "judge_confidence", "judge_reasoning",
-        "input_tokens", "output_tokens", "est_cost_usd", "latency_ms",
+        "question_num",
+        "question",
+        "expected_answer",
+        "model_answer",
+        "category",
+        "category_name",
+        "evidence",
+        "is_adversarial",
+        "f1_score",
+        "judge_correct",
+        "judge_score",
+        "judge_confidence",
+        "judge_reasoning",
+        "input_tokens",
+        "output_tokens",
+        "est_cost_usd",
+        "latency_ms",
     }
     assert required <= set(rows[0].keys())
     # Per-question fidelity

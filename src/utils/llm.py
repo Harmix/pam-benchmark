@@ -133,7 +133,9 @@ async def acompletion(
     async for attempt in AsyncRetrying(
         stop=stop_after_attempt(max_attempts),
         wait=wait_exponential(multiplier=1, min=2, max=30),
-        retry=retry_if_exception_type(_RETRYABLE) if _RETRYABLE else retry_if_exception_type(Exception),
+        retry=retry_if_exception_type(_RETRYABLE)
+        if _RETRYABLE
+        else retry_if_exception_type(Exception),
         reraise=True,
     ):
         with attempt:
