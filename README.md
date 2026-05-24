@@ -1,261 +1,156 @@
 # PAM Benchmark
 
-A Harbor-based benchmark for evaluating LLM agents on memory and context management tasks using the PAM (Proactive AI Manager) framework.
+A library-first benchmark for comparing our memory solution (PAM) against competing memory products and simple LLM baselines on memory-oriented datasets.
 
-## Overview
+The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed stats, reproducibility) so numbers stay defensible. The codebase is plain Python + `uv` + a single Dockerfile — no proprietary harness.
 
-This benchmark evaluates an LLM agent's ability to:
-1. Process event history data (Linear tickets and Slack messages) from JSON files
-2. Organize the data according to the PAM Memory Agent Guide structure
-3. Answer questions about the processed data based on the organized information
+## Status
 
-## Project Structure
+**Milestone 1 (active):** evaluate `gpt-4-turbo` on the **LoCoMo** dataset end-to-end. See `docs/benchmark_rewrite_plan.md` for scope, decisions, and the M2+ roadmap.
 
-```
-pam-benchmark/
-├── tasks/
-│   └── memtrack/                  # Harbor task definition
-│       ├── environment/
-│       │   ├── Dockerfile         # Container environment
-│       │   ├── docker-compose.yaml
-│       │   ├── requirements.txt   # Python dependencies
-│       │   ├── setup_and_run.sh   # Task execution script
-│       │   └── ...                # PAM guide files
-│       ├── solution/
-│       │   ├── solve.sh           # Entry point script
-│       │   └── llm_judge_eval.py  # LLM evaluation script
-│       ├── tests/
-│       │   └── test_outputs.py    # Verification tests
-│       ├── reports/               # Generated HTML reports
-│       ├── generate_report.py     # Report generation script
-│       ├── instruction.md         # Task description
-│       └── task.toml              # Harbor task config
-├── datasets/
-│   └── memtrack/                  # Dataset (separate from task)
-│       ├── test_configs/          # YAML configuration files
-│       ├── test_event_histories/  # JSON event history files
-│       └── registry.json          # Dataset registry metadata
-└── secrets.env                    # API keys (gitignored)
-```
+## Quick start (local)
 
-## Prerequisites
-
-1. Install [Harbor framework](https://harborframework.com/docs)
-2. Have Docker installed and running
-3. Create `secrets.env` in the project root with:
-   ```bash
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   OPENAI_API_KEY=your_openai_api_key
-   # Optional: MongoDB for results storage
-   DB_NAME=your_database_name
-   CONNECTION_STRING=mongodb://your_connection_string
-   ```
-
-## Quick Start
-
-### Running with Harbor
-
-Run tasks using the Harbor command with environment variables:
+Prerequisites: `uv >= 0.5`, Python 3.12, a populated `secrets.env` (see below), and the LoCoMo data file at `src/datasets/locomo/data/locomo10.json`.
 
 ```bash
-# Run multiple configs
-EXPERIMENT_NAME=my_experiment TASK_CONFIGS=config_1,config_2 harbor run \
-  -d memtrack@1.0 \
-  --registry-path datasets/memtrack/registry.json \
-  --force-build
+# 1. Sync deps
+uv sync
 
-# Run a single config
-EXPERIMENT_NAME=baseline_test TASK_CONFIGS=config_vg_15 harbor run \
-  -d memtrack@1.0 \
-  -a claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --registry-path datasets/memtrack/registry.json
+# 2. Verify the dataset is in place
+uv run python scripts/download_data.py --dataset locomo
 
-# Run with Daytona for cloud scaling
-EXPERIMENT_NAME=cloud_run TASK_CONFIGS=config_1,config_2,config_3 harbor run \
-  -d memtrack@1.0 \
-  -a claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --registry-path datasets/memtrack/registry.json \
-  --env daytona \
-  -n 8
+# 3. Smoke run — 1 sample, 5 questions, gpt-4-turbo
+uv run python scripts/run_benchmark.py \
+  --dataset locomo \
+  --baseline gpt-4-turbo \
+  --exp-name local_smoke \
+  --sample-index 0 \
+  --max-questions 5
+
+# 4. Render the HTML report (pulls from Mongo)
+uv run python scripts/generate_report.py --exp-name local_smoke
+open reports/local_smoke/report.html
 ```
 
-### Environment Variables
+The same scripts work without Mongo via `--no-mongo` (the report just won't have anything to pull).
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `EXPERIMENT_NAME` | Name for grouping results in MongoDB | (none) | `baseline_2025` |
-| `TASK_CONFIGS` | Comma-separated list of config names | `config_1` | `config_1,config_2,config_vg_15` |
-| `DEBUG` | Enable stub mode for faster development (skips agent execution) | `false` | `true` |
+## `secrets.env`
 
-**DEBUG Mode**: When `DEBUG=true`, the task uses a stub instead of running the actual agent. This speeds up development iteration by skipping the time-consuming agent execution. Useful for testing the evaluation pipeline, logging, and other infrastructure.
+Required keys (loaded by `python-dotenv`):
 
 ```bash
-# Fast development run with DEBUG mode
-DEBUG=true EXPERIMENT_NAME=dev_test TASK_CONFIGS=config_1 harbor run \
-  -d memtrack@1.0 \
-  --registry-path datasets/memtrack/registry.json \
-  --force-build
+OPENAI_API_KEY=sk-...
+CONNECTION_STRING=mongodb+srv://...
+DB_NAME=your-db
 ```
 
-To add a new environment variable, you need to define it in the terminal execution command and add it to `services.main.environment` in `tasks/memtrack/environment/docker-compose.yaml`.
+`secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
 
-### Available Configs
+## Repo layout
 
-List available configs:
-```bash
-ls datasets/memtrack/test_configs/
+```
+.
+├── cluster/                         # everything needed to run on a remote cluster
+│   ├── Dockerfile                   # single image; runs locally + Cloud Run Jobs
+│   ├── deploy.sh                    # build + push + gcloud run jobs deploy/update
+│   └── run_job.sh                   # gcloud run jobs execute with --args forwarding
+├── docs/
+│   ├── init_memory_bank.md          # methodology standards (datasheet, model card, …)
+│   └── benchmark_rewrite_plan.md    # M1 scope + open questions + roadmap
+├── .memory-bank/                    # populated per init_memory_bank.md
+├── scripts/                         # Python entrypoints; all accept --exp-name (except download)
+│   ├── run_benchmark.py             # the only benchmark-run entrypoint
+│   ├── generate_report.py           # pulls Mongo rows, renders HTML/MD
+│   └── download_data.py             # idempotent dataset verifier/downloader
+├── src/                             # PYTHONPATH=src; no wrapper package
+│   ├── cli.py runner.py registry.py config.py seeds.py env.py mongo.py …
+│   ├── datasets/<name>/             # one loader per dataset
+│   ├── baselines/<name>/            # one system-under-test per baseline
+│   ├── tasks/<name>/                # one pipeline + prompts per dataset task
+│   ├── evals/                       # shared metrics (F1, llm_judge, efficiency, runtime, stats)
+│   ├── reporting/                   # Mongo → HTML/MD renderer
+│   └── utils/                       # llm wrapper, io, timing
+├── tests/                           # unit tests for evals + judge schema
+├── pyproject.toml uv.lock           # uv-managed dependencies
+├── .python-version                  # 3.12
+├── .dockerignore .gitignore
+└── secrets.env                      # gitignored
 ```
 
-Common configs include:
-- `config_1` through `config_5` - Basic test scenarios
-- `config_vg_1` through `config_vg_32` - Extended validation scenarios
+## CLI surface
 
-## Build Configuration
+| Script | Required | Useful optional |
+|---|---|---|
+| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}` |
+| `scripts/generate_report.py` | `--exp-name` | `--dataset` (default `locomo`), `--format {html,md}`, `--output-dir` |
+| `scripts/download_data.py` | `--dataset` | `--force` |
 
-The Docker build uses `docker-compose.yaml` with the build context set to the **project root**. This allows direct access to:
-- `datasets/memtrack/` - the dataset files
-- `tasks/memtrack/environment/` - Dockerfile and environment files
-- `secrets.env` - API keys and credentials (at project root)
+The `--exp-name` value is the primary key for grouping Mongo records, output artifacts, and reports. For multi-seed runs invoke `run_benchmark.py` N times with the same `--exp-name` and different `--seed`.
 
-No dataset copying is required since the build context includes the entire project.
+## Outputs
 
-### Manual Build with Docker Compose
+Per-run local artifacts at `outputs/<exp-name>/<seed>/`:
+- `config.yaml` — resolved `RunConfig`
+- `metrics.json` — aggregate per-sample metrics (mirror of Mongo)
 
-```bash
-# From the project root
-CONTEXT_DIR=$(pwd)/tasks/memtrack/environment docker-compose -f tasks/memtrack/environment/docker-compose.yaml build
-```
+Per-sample Mongo document in `<dataset>_results` (e.g. `locomo_results`) — one document per `(exp_name, sample_id, seed)`, with the full per-question payload (question, expected, model answer, F1, judge verdict, tokens, latency) inside the `qa_responses` nested array. See `src/mongo.py` and `docs/benchmark_rewrite_plan.md` §9.1.
 
-### Docker Compose Environment Variables
+Reports at `reports/<exp-name>/report.html` are rendered on demand from Mongo by `scripts/generate_report.py`.
 
-The `docker-compose.yaml` expects these environment variables from Harbor:
-- `CONTEXT_DIR` - Absolute path to task's environment/ directory
-- `MAIN_IMAGE_NAME` - Name for the built image
-- `EXPERIMENT_NAME` - Experiment name for result grouping
-- `TASK_CONFIGS` - Comma-separated config names to run
-- `CPUS` / `MEMORY` - Resource limits
-- `NETWORK_MODE` - Docker network mode (defaults to "bridge")
-
-The following are hardcoded in `docker-compose.yaml` for MongoDB metadata:
-- `DATASET_NAME=memtrack@1.0`
-- `TASK_NAME=memtrack`
-- `PAM_AGENT_NAME=PAM@2.0`
-
-## Task Execution Flow
-
-1. **Initialization**: The agent receives a YAML config file and corresponding event history JSON
-2. **Memory Structure Creation**: Run `init.py` to create the PAM folder structure
-3. **Data Processing**: Process event history JSON and organize it into:
-   - Daily digests (chronological view)
-   - Linear objects (ticket history)
-   - Slack threads (channel conversations)
-4. **Question Answering**: Answer questions based on the organized data
-5. **Evaluation**: LLM judge evaluates answers against expected responses
-
-## Evaluation and Results
-
-### LLM-as-Judge Evaluation
-
-After each config execution, the system automatically:
-1. Evaluates agent answers using an LLM judge
-2. Calculates metrics: `total_questions`, `correct_count`, `accuracy`, `avg_score`, `avg_confidence`
-3. Logs execution time for the config
-4. Saves results to MongoDB (if configured)
-
-### MongoDB Results Structure
-
-Results are saved with the following structure:
-
-```json
-{
-  "experiment_name": "my_experiment",
-  "config_name": "config_1",
-  "dataset_name": "memtrack@1.0",
-  "agent_name": "PAM@2.0",
-  "task_name": "memtrack",
-  "total_questions": 3,
-  "correct_count": 2,
-  "accuracy": 0.6667,
-  "avg_score": 0.85,
-  "avg_confidence": 0.92,
-  "execution_time_seconds": 245.67,
-  "timestamp": "2025-01-16T14:30:22.123Z",
-  "incorrect_responses": [
-    {
-      "question_num": 2,
-      "question": "Who is the lead of that oldest reassigned ticket?",
-      "expected_answer": "charlie",
-      "agent_answer": "alice",
-      "score": 0.0,
-      "reasoning": "The agent provided the wrong lead name."
-    }
-  ]
-}
-```
-
-Note: The `incorrect_responses` array is only populated with questions that were marked as incorrect by the LLM judge, to save storage space.
-
-### Generating HTML Reports
-
-After running experiments, you can generate HTML reports from MongoDB data:
+## Docker (local parity with Cloud Run)
 
 ```bash
-# Generate report for a specific experiment
-python tasks/memtrack/generate_report.py --experiment-name my_experiment
+docker build -f cluster/Dockerfile -t pam-benchmark:dev .
 
-# Or using environment variable
-EXPERIMENT_NAME=my_experiment python tasks/memtrack/generate_report.py
-
-# Specify custom output directory
-python tasks/memtrack/generate_report.py --experiment-name my_experiment --output-dir ./my_reports
+docker run --rm \
+  --env-file secrets.env \
+  -v "$(pwd)/outputs:/app/outputs" \
+  pam-benchmark:dev \
+  scripts/run_benchmark.py \
+    --dataset locomo --baseline gpt-4-turbo \
+    --exp-name docker_smoke --sample-index 0 --max-questions 5
 ```
 
-Reports are saved to `tasks/memtrack/reports/` by default and include:
-- **Header**: Experiment name, dataset name, agent name, generation timestamp
-- **Summary Cards**: Total configs, total questions, overall accuracy, correct/total counts
-- **Results Table**: Per-config metrics including accuracy, execution time, and execution timestamp
-- **Incorrect Responses**: Detailed view of all incorrect answers with questions, expected answers, agent answers, and judge reasoning
+## Cloud Run Jobs
 
-## Output Structure
-
-After running tasks, logs are available at `/task_logs/` inside the container:
-
-```
-/task_logs/
-├── config_1_20250116_143022/
-│   ├── summary.txt              # Summary of the task run
-│   ├── processing.log           # Initial data processing log
-│   ├── execution_time.txt       # Execution duration in seconds
-│   ├── questions/
-│   │   ├── question_1.log       # Agent's answer to question 1
-│   │   ├── question_2.log       # Agent's answer to question 2
-│   │   └── ...
-│   └── llm_judge_results.json   # Evaluation results
-└── config_2_20250116_143545/
-    └── ...
-```
-
-## Interactive Environment
-
-To start an interactive environment for debugging:
+One-time setup: enable Artifact Registry + Cloud Run, create a repo (e.g. `pam-benchmark`), and put the required secrets in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
 
 ```bash
-harbor tasks start-env -p tasks/memtrack -e docker -a -i
+export GCP_PROJECT=<your-project>
+export GCP_REGION=europe-west1
+export AR_REPO=pam-benchmark
+export SECRETS=OPENAI_API_KEY=openai-key:latest,CONNECTION_STRING=mongo-uri:latest,DB_NAME=mongo-db:latest
+
+# Build, push, and create/update the job
+./cluster/deploy.sh
+
+# Execute one run (uses --wait to block until completion)
+./cluster/run_job.sh \
+  --exp-name locomo_gpt4_full \
+  --dataset locomo --baseline gpt-4-turbo
+
+# Then render the report from your laptop
+uv run python scripts/generate_report.py --exp-name locomo_gpt4_full
 ```
 
-Once inside, you can run tasks manually:
+Logs stream to Cloud Logging (use `--log-format json` for structured entries — `run_job.sh` adds this automatically).
+
+## Tests
 
 ```bash
-/task_data/setup_and_run.sh /task_data/test_configs/config_1.yaml
+env PYTHONPATH=src uv run pytest -q
 ```
 
-## Container Environment
+Unit tests cover the F1 scoring math and judge-rubric schema validation. They do not call any LLM.
 
-The Docker environment includes:
-- Python 3.11 with system dependencies (curl, git, jq, build-essential, tree)
-- yq for YAML parsing
-- Node.js 20 and Claude Code v2.0.76
-- Python packages: openai, pyyaml, pydantic, python-dotenv, pymongo
+## Adding a new dataset / baseline
 
+- **Dataset:** create `src/datasets/<name>/{loader.py,schemas.py}` implementing `DatasetLoader`; register it in `src/registry.py`. Existing dataset code is untouched.
+- **Baseline:** subclass `Baseline` from `src/baselines/base.py`; for plain LLMs reuse `LiteLLMBaseline`. Register in `src/registry.py`.
+- Add a system card to `.memory-bank/baselines/system-cards.md`.
+
+See `src/baselines/README.md` and `src/tasks/locomo/instruction.md` for the patterns.
+
+## License & data handling
+
+LoCoMo data is gitignored and bound by its upstream license — see `src/datasets/locomo/README.md`. Per-baseline vendor terms (e.g. published comparison rules) are tracked in `.memory-bank/ethics-and-licensing/licensing-and-data-handling.md`.

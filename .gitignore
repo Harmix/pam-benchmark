@@ -26,6 +26,13 @@ datasets/longmemeval/*.json
 
 src/datasets/**/data/**
 
+# Benchmark outputs and reports (regenerated)
+outputs/
+reports/
+
+# uv
+.uv/
+
 # Distribution / packaging
 .Python
 build/

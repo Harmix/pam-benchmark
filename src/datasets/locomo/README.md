@@ -1,46 +1,34 @@
 # LoCoMo Dataset
 
-The LoCoMo (Long Context Memory) benchmark is designed to evaluate the long-context memory capabilities of Large Language Models (LLMs) through question answering tasks over conversation histories.
+LoCoMo (Long Context Memory) — multi-session conversations between two people, with QA pairs that probe single-hop, temporal, open-domain, multi-hop, and adversarial recall.
 
-## Dataset Structure
+- **Paper:** *Evaluating Very Long-Term Conversational Memory of LLM Agents* (ACL 2024) — https://aclanthology.org/2024.acl-long.747.pdf
+- **GitHub:** https://github.com/snap-research/locomo
+- **License:** see upstream repo for terms before redistribution.
+
+## Files
 
 ```
-datasets/locomo/
+src/datasets/locomo/
+├── loader.py        # LoCoMoLoader (custom JSON loader)
+├── schemas.py       # pydantic models: LoCoMoSample, LoCoMoQA, LoCoMoTurn
 ├── data/
-│   └── locomo10.json      # Main dataset file with conversations and QA pairs
-├── registry.json          # Dataset registry for Harbor integration
-└── README.md              # This file
+│   └── locomo10.json  # gitignored; 10 samples × ~150–200 QA each
+└── README.md
 ```
 
-## Data Format
+`scripts/download_data.py --dataset locomo` verifies the file is present (M1 does not download; the file is shipped with the repo for now). If the upstream license allows hosted distribution, replace the verifier with a real downloader.
 
-The `locomo10.json` file contains samples with the following structure:
+## Sample shape
 
-```json
-{
-  "sample_id": "unique_identifier",
-  "qa": [
-    {
-      "question": "Question about the conversation",
-      "answer": "Expected answer",
-      "evidence": ["D1:3", "D2:5"],
-      "category": 1
-    }
-  ],
-  "conversation": [...]
-}
-```
+Each sample carries `sample_id`, a `qa` array (each QA has `question`, `answer` or `adversarial_answer`, `evidence`, `category`), and a `conversation` dict with `speaker_a`, `speaker_b`, and `session_{i}` / `session_{i}_date_time` keys for each session.
 
-### Question Categories
+## Question categories
 
-- **Category 1**: Single-hop factual questions
-- **Category 2**: Temporal reasoning questions
-- **Category 3**: Multi-hop reasoning questions
-
-## Usage
-
-This dataset is used with the `tasks/locomo` task for evaluating LLM memory capabilities.
-
-## Reference
-
-For more information about LoCoMo, see the original research materials in the `locomo/` directory.
+| ID | Name          | Notes |
+|----|---------------|-------|
+| 1  | single_hop    | Multi-answer factual; partial-F1 scoring per sub-answer |
+| 2  | temporal      | Date/time reasoning; prompt asks for approximate date |
+| 3  | open_domain   | Open-domain Q; uses first `;`-separated answer for scoring |
+| 4  | multi_hop     | Multi-hop reasoning |
+| 5  | adversarial   | Hallucination probe; prompt presented as two-option multiple choice |

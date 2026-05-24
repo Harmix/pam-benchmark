@@ -54,8 +54,8 @@ Create the following structure:
 │   └── evaluation-protocol.md
 ├── baselines/
 │   ├── README.md
-│   ├── system-cards.md
-│   └── results.md
+│   └── system-cards.md
+│   # (no results.md — results live in MongoDB + rendered reports, not the memory bank)
 ├── reproducibility/
 │   ├── README.md
 │   ├── reproducibility-checklist.md
@@ -337,7 +337,8 @@ Our system plus the competitors / baselines we compare against. We document each
 same standard so comparisons are defensible.
 
 - [System Cards](./system-cards.md) — model card per baseline (ours + competitors)
-- [Results](./results.md)
+
+**Note on results.** Results are not stored in the memory bank. Per-run records live in MongoDB (`<dataset>_results`); rendered reports are produced on demand by the reporting pipeline.
 ```
 
 #### baselines/system-cards.md
@@ -362,53 +363,16 @@ flag the rest as "undisclosed".
 - **Cost & latency profile**: $/1k requests, median + p95 latency observed in our runs.
 - **License / terms of service**: commercial-use status, data-handling terms (does the
   vendor train on inputs?), whether we are allowed to publish comparative numbers.
-- **Metrics on this benchmark**: link to [[results]].
+- **Metrics on this benchmark**: queried from the dataset's MongoDB collection (`<dataset>_results`, filter by `exp_name`); rendered via the reporting pipeline. Not duplicated here.
 - **Known failure modes / caveats**.
 - **Date of last evaluation**: vendor systems change; record when we last re-ran.
 ```
 
-#### baselines/results.md
+#### Results (intentionally not a file)
 
-```markdown
-# Results
+Results are **not** stored as a markdown file in the memory bank. Per-run records live in MongoDB (`<dataset>_results`, one document per `(exp_name, sample_id, seed)`, with the full per-question payload in the `qa_responses` nested array). Rendered reports (HTML/Markdown) are produced on demand from Mongo by the reporting pipeline and live under `reports/<exp-name>/`.
 
-Report mean ± std (or 95% CI) across ≥ 3 seeds / runs. Single-run numbers are not
-acceptable for any claim that drives a decision. See [[statistical-reporting]].
-
-## Headline Comparison
-
-| System | Track | Metric₁ (↑/↓) | Metric₂ (↑/↓) | Cost / 1k | p50 Latency | Runs | Date |
-|--------|-------|---------------|---------------|-----------|-------------|------|------|
-| Ours (current) | out-of-the-box | x ± s | x ± s | … | … | 5 | … |
-| Competitor A   | out-of-the-box | x ± s | x ± s | … | … | 5 | … |
-| Competitor B   | out-of-the-box | x ± s | x ± s | … | … | 5 | … |
-| Open baseline  | out-of-the-box | x ± s | x ± s | … | … | 5 | … |
-| Trivial (random / majority) | — | x ± s | x ± s | — | — | 5 | … |
-
-## Per-Task / Per-Slice Breakdown
-
-Include subgroup performance (by domain, customer segment, language, difficulty,
-demographic when relevant). Headline averages hide the cases that matter for individual
-customer pitches.
-
-## Significance Tests
-
-State which pairwise comparisons are significant and under what test (paired bootstrap,
-permutation, McNemar) with corrections for multiple comparisons. Without this, "we beat
-Competitor A by 1.2 points" is not a defensible claim.
-
-## Release-over-Release Tracking (Our System)
-
-| Version | Date | Metric₁ | Metric₂ | Δ vs. prev | Notes |
-|---------|------|---------|---------|------------|-------|
-
-Used to detect regressions and quantify each release's contribution.
-
-## Headroom
-
-Gap between the best system and a human / oracle / theoretical ceiling. If everyone is
-saturated, the benchmark is no longer useful for differentiation and should be revised.
-```
+When you cite a number in slides or docs, link to a specific `exp_name` (and `seed(s)`, image digest, date, judge model, dispersion). Quote the dispersion that's required by [[statistical-reporting]]; for cross-baseline comparisons run ≥ 3 seeds and report mean ± 95% bootstrap CI plus significance.
 
 #### reproducibility/README.md
 
@@ -447,7 +411,7 @@ Adapted from the NeurIPS Reproducibility Checklist and ML Reproducibility Checkl
 - [ ] Number of seeds / runs and how seeds were selected
 - [ ] Hardware reported (GPU model, count, memory, interconnect, or "hosted API: vendor X")
 - [ ] Wall-clock time and total compute cost per experiment
-- [ ] Evaluation scripts produce identical numbers to those in [[results]] from raw model outputs
+- [ ] Evaluation scripts produce stable numbers across two re-runs at the same `--seed` (verify by diffing `qa_responses[*].f1_score` between runs)
 
 ## Results
 
@@ -805,7 +769,7 @@ After creating all files, print a summary:
     each competitor)
   - `reproducibility/reproducibility-checklist.md`
   - `reproducibility/compute-and-environment.md`
-  - `baselines/results.md` (≥ 3 runs and significance tests for any comparison)
+  - A complete results snapshot in MongoDB + rendered report (≥ 3 runs and significance tests for any comparative claim; results are NOT stored in the memory bank)
   - `distribution/hosting-and-versioning.md`
 - Suggest adding this to the project's AI assistant prompt:
   `Read .memory-bank/index.md and linked files to understand this benchmark's specification, evaluation protocol, and reproducibility standards before answering.`

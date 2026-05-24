@@ -595,7 +595,7 @@ Deferred to M2 when we run ≥3 seeds:
   - `benchmark-spec/tasks-and-metrics.md` — F1 + LLM-judge + token/runtime efficiency.
   - `benchmark-spec/evaluation-protocol.md` — single-call, no RAG, gpt-4-turbo configuration.
   - `baselines/system-cards.md` — gpt-4-turbo card (vendor, version, cost, ToS notes).
-  - `baselines/results.md` — table skeleton (filled after T12.1).
+  - (no `baselines/results.md` — results live only in MongoDB + the rendered HTML report; the memory bank does not duplicate them.)
   - `reproducibility/compute-and-environment.md` — Docker image digest, uv.lock hash, `gcloud` job spec.
   - `reproducibility/reproducibility-checklist.md` — tick what M1 satisfies, flag what M2 owes.
   - `ethics-and-licensing/datasheet.md` — LoCoMo datasheet (paper-derived).

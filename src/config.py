@@ -1,0 +1,50 @@
+"""RunConfig — the single struct that fully describes one benchmark run."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RunConfig(BaseModel):
+    """One invocation of `scripts/run_benchmark.py`.
+
+    A single `(exp_name, dataset, baseline, seed)` tuple is the unit of work.
+    Multi-seed runs = multiple invocations with the same `exp_name` and
+    different `seed` values.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Identity
+    exp_name: str
+    dataset: str
+    task: str | None = None  # defaults to `dataset` at resolve time
+    baseline: str
+    seed: int = 42
+
+    # Baseline configuration
+    baseline_model: str | None = None  # overrides registry default
+    baseline_kwargs: dict[str, Any] = Field(default_factory=dict)
+
+    # Judge
+    judge_model: str = "gpt-4o"
+    judge_concurrency: int = 8
+
+    # Scope
+    sample_index: int | None = None  # None = all
+    max_questions: int | None = None  # None = all per sample
+
+    # Outputs
+    output_dir: Path | None = None  # defaults to ./outputs/<exp>/<seed>
+    log_format: str = "rich"  # "rich" | "json"
+    mongo: bool = True
+    dry_run: bool = False
+
+    def resolved_task(self) -> str:
+        return self.task or self.dataset
+
+    def resolved_output_dir(self) -> Path:
+        return self.output_dir or Path("outputs") / self.exp_name / str(self.seed)
