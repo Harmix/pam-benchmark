@@ -1,6 +1,6 @@
 # LongMemEval (placeholder)
 
-Slot reserved for the LongMemEval dataset. Not implemented in M1.
+Slot reserved for the LongMemEval dataset — long-conversation memory eval added in M7 of [Harmix](https://manager.harmix.ai)'s Pam benchmark. Not implemented in M1.
 
 When added:
 - `loader.py` — implements `DatasetLoader` from `datasets.base`

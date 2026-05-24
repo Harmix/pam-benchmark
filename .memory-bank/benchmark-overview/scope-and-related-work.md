@@ -2,9 +2,11 @@
 
 ## What our benchmark adds (beyond public benchmarks)
 
+For [Harmix](https://manager.harmix.ai), the value isn't a new public dataset — it's a uniform harness where Pam and every competing memory product produce directly comparable numbers on the same data, scored the same way, with full provenance.
+
 1. **Uniform harness across competing memory products.** Same data, same scoring script commit, same `--exp-name` for every system in a head-to-head.
 2. **Two metrics in parallel.** LoCoMo's F1 (paper parity) **and** an LLM-as-a-judge rubric (cross-baseline primary metric) reported on every QA.
-3. **Cost + latency alongside quality.** Per-question token usage, USD estimate, and p50/p95 latency captured on every run.
+3. **Cost + latency alongside quality.** Per-question token usage, USD estimate, and p50/p95 latency captured on every run — important because Pam's enterprise pricing has to clear unit economics that pure quality benchmarks ignore.
 4. **MongoDB-first storage with full per-question payloads.** Every question's prompt, prediction, judge verdict, and reasoning live in `qa_responses` — the report renders detail without re-running.
 5. **Cloud Run-native execution.** One container image deploys both locally and on GCP for fan-out across configurations.
 
@@ -21,4 +23,4 @@
 
 ## Positioning Statement
 
-Unlike running competitors via each vendor's own demo notebook, PAM Benchmark gives us a single Mongo collection per dataset whose rows are directly comparable across vendors, dated for vendor-API drift, and tagged with provenance (`git_commit`, `image_digest`, `uv_lock_hash`) so any number on a slide can be traced back to exact artifacts.
+Unlike running competitors via each vendor's own demo notebook, Pam Benchmark gives Harmix a single Mongo collection per dataset whose rows are directly comparable across vendors, dated for vendor-API drift, and tagged with provenance (`git_commit`, `image_digest`, `uv_lock_hash`) so any number that ends up on a slide deck or in a customer conversation traces back to exact artifacts.

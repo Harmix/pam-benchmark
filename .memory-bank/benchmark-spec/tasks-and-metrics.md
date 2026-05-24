@@ -7,7 +7,7 @@
 - **Input format:** one LoCoMo sample = `(speaker_a, speaker_b, multi-session conversation, list of QA pairs with ground truth)`.
 - **Output format:** one short-phrase answer per question, plus token usage and latency.
 - **Task definition:** for each QA, build a single prompt packing as much of the conversation (newest sessions first, reversed turns) as fits in the baseline's context window, then ask the model to answer in a short phrase.
-- **Why:** links to [[goals-and-questions]] Q1 (F1 parity with paper) and Q2 (judge ↔ F1 agreement).
+- **Why:** the baseline-capability check before Pam joins the benchmark in M2 — confirms F1 parity with the LoCoMo paper and exercises every part of the harness on real data.
 
 ## Metrics
 
@@ -31,4 +31,4 @@
 - **F1** is normalization-sensitive; equivalent phrasing can score < 1. That's why F1 is paper-parity only.
 - **LLM-judge** has a small false-positive rate on hedged answers; mitigated by an explicit "no partial credit for hedges" instruction in the rubric.
 - **Token counts** are provider-reported and may not include hidden system tokens.
-- **Cost estimates** come from LiteLLM's pricing table; for custom-priced contracts the estimate will be off — treat as a rough comparator, not an invoice.
+- **Cost estimates** come from LiteLLM's pricing table; for Harmix's enterprise contracts (custom OpenAI/Anthropic pricing) the estimate will be off — treat as a rough comparator, not an invoice.

@@ -60,7 +60,7 @@ def get_baseline(name: str, *, model: str | None = None, **kwargs: Any) -> Basel
     """Resolve a baseline.
 
     For now any name is interpreted as a LiteLLM model id (or the explicit
-    `model=` override wins). Future PAM/Honcho/etc. baselines will branch here.
+    `model=` override wins). Future Pam/Honcho/etc. baselines will branch here.
     """
     chosen_model = model or name
     return LiteLLMBaseline(model=chosen_model, name=name, **kwargs)

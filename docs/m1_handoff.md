@@ -1,6 +1,8 @@
 # M1 Hand-off — How to Run the Acceptance Run
 
-The implementation work for M1 is complete. The remaining items (T12.1, T12.2 in `benchmark_rewrite_plan.md`) cost real money and touch your GCP project, so they're left for you to run.
+> **Status: complete.** T12.1 (acceptance run) and T12.2 (`m1` tag) both done. This document is preserved as a runbook for re-running the M1 harness in the future (e.g. as a regression check against a new `gpt-4-turbo` snapshot).
+
+The implementation work for the M1 vertical slice (the harness that [Harmix](https://manager.harmix.ai) will use to compare Pam against memory competitors from M2 onward) is complete. The remaining items (T12.1, T12.2 in `benchmark_rewrite_plan.md`) cost real money and touch the Harmix GCP project, so they're left for you to run.
 
 ## What's done
 
@@ -83,10 +85,10 @@ After the run succeeds and the headline F1 looks reasonable (sanity check: withi
 
 ## Things I noticed that you may want to look at
 
-- **F1 parity sanity check (Q1 in `goals-and-questions.md`).** If the headline F1 is off by more than ~1 pp from the old Harbor number, compare a few specific QA records between old and new on the same sample/seed before concluding the port is wrong — most drift is from different gpt-4-turbo snapshots, not the prompt.
+- **F1 parity sanity check.** If the headline F1 is off by more than ~1 pp from the old Harbor number, compare a few specific QA records between old and new on the same sample/seed before concluding the port is wrong — most drift is from different gpt-4-turbo snapshots, not the prompt.
 - **`reports/` at project root** still has old generated HTML from before the rewrite. The new layout writes to `reports/<exp-name>/`. Old files are now under `reports/` and are gitignored. Safe to `rm -rf reports/conversation_*.html reports/pam_*.html` if you want a clean slate.
 - **Old `src/datasets/memtrack/data/`** still contains the legacy YAML test configs from the Harbor flow. They're gitignored and harmless; the new MEMTRACK loader (M2+) will decide whether to reuse them.
-- **`pam-agent-credentials.json` at repo root** is gitignored and presumably from the old PAM flow; nothing in the new code reads it.
+- **`pam-agent-credentials.json` at repo root** is gitignored and presumably from the old Pam flow; nothing in the new code reads it.
 - **`bench_venv/` and `venv/` at repo root** — old virtualenvs. Now that uv manages `.venv/`, these can be `rm -rf`'d safely (your call; they're gitignored).
 
 ## CLI cheat sheet

@@ -8,10 +8,12 @@ Full datasheet at [[datasheet]].
 |---|---|---|---|---|---|---|
 | LoCoMo | 1.0 | 10 | ~2000 | Upstream — see source repo for terms | https://github.com/snap-research/locomo | **Active (M1)** |
 | LongMemEval | — | — | — | — | upstream | Slot reserved (M7) |
-| MEMTRACK | — | — | — | — | internal | Slot reserved (M2+) |
+| MEMTRACK | — | — | — | — | Harmix-internal (synthetic Linear + Slack histories) | Slot reserved (M2+) |
 | BEAM | — | — | — | — | upstream | M3 priority |
 | DRBench | — | — | — | — | upstream | M3 priority |
 | MemoryAgentBench | — | — | — | — | upstream | M7 |
+
+**MEMTRACK relevance.** MEMTRACK is Harmix's internal dataset of synthetic Linear + Slack event histories. It's the closest public-style benchmark to what Pam ([manager.harmix.ai](https://manager.harmix.ai)) sees in production — multi-tool coordination data with cross-system references — and the dataset Harmix prospects will most likely ask about.
 
 ## Splits
 
@@ -21,7 +23,7 @@ LoCoMo ships as 10 fixed samples without a train/val/test partition. Everything 
 
 - **Contamination risk:** unknown overlap with `gpt-4-turbo`'s training data. The LoCoMo paper documents the source generation pipeline; samples are synthetic conversations seeded from personas, so verbatim presence on the public web is unlikely but not measured.
 - **Audit method:** not run for M1; flagged for M2 (run dedup against a recent Common Crawl sample).
-- **No data ever flows into training:** baselines we control (PAM, our LLM configs) MUST NOT train or fine-tune on LoCoMo data. Enforced by policy + by never exposing labels at inference.
+- **No data ever flows into training:** baselines Harmix controls (Pam, our LLM configs) MUST NOT train or fine-tune on LoCoMo data. Enforced by policy + by never exposing labels at inference.
 
 ## Data Statement / Provenance
 

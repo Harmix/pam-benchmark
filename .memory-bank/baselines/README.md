@@ -1,6 +1,6 @@
 # Baselines
 
-Systems under test — our solution and each competitor we compare against. Every baseline gets a card in [[system-cards]] regardless of whether it's open source, hosted API, or our own product.
+Systems under test — Harmix's Pam ([manager.harmix.ai](https://manager.harmix.ai)) and each memory product we compare it against. Every baseline gets a card in [[system-cards]] regardless of whether it's open source, hosted API, or Pam itself.
 
 - [System Cards](./system-cards.md)
 

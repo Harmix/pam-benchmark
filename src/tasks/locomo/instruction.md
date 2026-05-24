@@ -1,6 +1,6 @@
 # LoCoMo task
 
-Evaluates an LLM's long-context conversational memory by answering questions about multi-session conversations between two people.
+Evaluates an LLM's long-context conversational memory by answering questions about multi-session conversations between two people. For [Harmix](https://manager.harmix.ai), LoCoMo is the M1 baseline-capability check before Pam and the dedicated memory competitors join the benchmark in later milestones — if a plain LLM can already answer well on full-context recall, the marginal value of a memory product on this dataset is bounded.
 
 - **Paper:** *Evaluating Very Long-Term Conversational Memory of LLM Agents* (ACL 2024) — https://aclanthology.org/2024.acl-long.747.pdf
 - **Source:** https://github.com/snap-research/locomo

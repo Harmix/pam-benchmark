@@ -1,6 +1,8 @@
 # MEMTRACK (placeholder)
 
-Slot reserved for the MEMTRACK dataset. **Not active in M1** — kept for the future port off the legacy Harbor flow.
+Slot reserved for the MEMTRACK dataset — Harmix's internal synthetic dataset of Linear + Slack event histories. **Not active in M1** — kept for the future port off the legacy Harbor flow.
+
+MEMTRACK is the closest public-style benchmark to what [Pam](https://manager.harmix.ai) sees in production: multi-tool coordination data with cross-system references. It's the dataset Harmix prospects will most likely ask about when evaluating Pam's memory layer.
 
 Existing assets under `data/`:
 - `test_configs/` — YAML files defining benchmark scenarios (Linear + Slack)

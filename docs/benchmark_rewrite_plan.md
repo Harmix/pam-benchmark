@@ -1,4 +1,4 @@
-# PAM Benchmark — Rewrite & Architecture Plan
+# Pam Benchmark — Rewrite & Architecture Plan
 
 Status: **Draft for review** — no code has been written yet.
 Owner: Denys
@@ -8,9 +8,11 @@ Last updated: 2026-05-23
 
 ## 1. Goal
 
-Rewrite the `pam-benchmark` repo into a clean, library-first benchmark whose primary purpose is to compare **our memory solution (PAM)** against competing memory products and simple LLM baselines on memory-oriented datasets (LoCoMo, BEAM, DRBench, LongMemEval, MEMTRACK, MemoryAgentBench).
+Rewrite the `pam-benchmark` repo into a clean, library-first benchmark whose primary purpose is to compare **Pam** — [Harmix](https://manager.harmix.ai)'s Proactive AI Manager — against competing memory products and simple LLM baselines on memory-oriented datasets (LoCoMo, BEAM, DRBench, LongMemEval, MEMTRACK, MemoryAgentBench).
 
-The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed runs, statistical reporting, reproducibility) so that any number we publish internally or externally is defensible — but the codebase is **not** structured around an academic submission.
+Pam's value as Harmix's enterprise AI business assistant depends on long-horizon recall of organizational data (ERP/CRM systems, documents, Linear, Slack). This benchmark exists to keep that memory layer honest against best-in-class memory products.
+
+The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed runs, statistical reporting, reproducibility) so any number we publish internally or externally is defensible — but the codebase is **not** structured around an academic submission.
 
 ## 2. Constraints & Principles
 
@@ -46,7 +48,7 @@ What ships in M1:
 
 What is **deferred**:
 - BEAM, DRBench, LongMemEval, MEMTRACK, MemoryAgentBench datasets.
-- PAM, Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md / Obsidian, OpenClaw baselines.
+- Pam, Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md / Obsidian, OpenClaw baselines.
 - Retrieval / RAG baselines (rank-bm25, sentence-transformers, faiss).
 - Multi-seed statistical significance (single seed for M1; framework supports ≥3 seeds from day one but we don't run them yet).
 - Cost / latency dashboards.
@@ -60,8 +62,8 @@ What is **deferred**:
 | `src/tasks/locomo/environment/Dockerfile` | Delete | Single project-root `Dockerfile` instead |
 | `src/tasks/locomo/environment/docker-compose.yaml` | Delete | Not needed; Cloud Run Jobs has no compose |
 | `src/tasks/locomo/environment/requirements.txt` | Delete | Replaced by `pyproject.toml` + `uv.lock` |
-| `src/tasks/locomo/environment/pam_*.sh`, `run_pam_locomo.sh` | Delete from M1 scope | PAM baseline deferred to M2+ |
-| `src/tasks/locomo/environment/INIT.md`, `INTRO_TEMPLATE.md`, `init.py`, `pam_utils.py`, `pam_evaluate.py` | Delete | PAM agent files; out of M1 scope. Git history preserves them for the M2 PAM port. (`CLAUDE.md` already removed manually.) |
+| `src/tasks/locomo/environment/pam_*.sh`, `run_pam_locomo.sh` | Delete from M1 scope | Pam baseline deferred to M2+ |
+| `src/tasks/locomo/environment/INIT.md`, `INTRO_TEMPLATE.md`, `init.py`, `pam_utils.py`, `pam_evaluate.py` | Delete | Pam agent files; out of M1 scope. Git history preserves them for the M2 Pam port. (`CLAUDE.md` already removed manually.) |
 | `src/tasks/locomo/environment/task_eval/{gpt,claude,gemini,hf_llm}_utils.py` | Delete | Replaced by `LiteLLMBaseline` + per-task prompt code |
 | `src/tasks/locomo/environment/task_eval/{evaluate_qa,evaluation,evaluation_stats}.py` | Port logic into `src/evals/qa_f1.py` and `src/evals/stats.py` | Keep the F1 math, drop the harness |
 | `src/tasks/locomo/environment/task_eval/{get_facts,get_session_summaries,rag_utils}.py` | Defer to retrieval milestone | Not needed for M1 |
@@ -205,7 +207,7 @@ class BaselineResponse:
 ```
 
 - M1 only ships `LiteLLMBaseline(model="gpt-4-turbo")`. The same class handles any LiteLLM-supported model in M2+.
-- PAM, Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md will each be a separate `baselines/<name>/` subpackage in later milestones.
+- Pam, Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md will each be a separate `baselines/<name>/` subpackage in later milestones.
 
 ### 6.3 `tasks/`
 
@@ -521,7 +523,7 @@ Deferred to M2 when we run ≥3 seeds:
 - [ ] **T1.4** Update `.gitignore` for `outputs/`, `reports/`, `bench_venv/`, `venv/`, `.uv/`.
 
 ### Old code removal / migration
-- [ ] **T2.1** Delete `src/tasks/locomo/environment/INIT.md`, `INTRO_TEMPLATE.md`, `init.py`, `pam_utils.py`, `pam_evaluate.py`, `pam_*.sh`, `run_pam_locomo.sh`. Git history preserves them for the M2 PAM port. `CLAUDE.md` already removed.
+- [ ] **T2.1** Delete `src/tasks/locomo/environment/INIT.md`, `INTRO_TEMPLATE.md`, `init.py`, `pam_utils.py`, `pam_evaluate.py`, `pam_*.sh`, `run_pam_locomo.sh`. Git history preserves them for the M2 Pam port. `CLAUDE.md` already removed.
 - [ ] **T2.2** Delete `src/tasks/locomo/{tests,solution}/`, `src/tasks/locomo/environment/{Dockerfile,docker-compose.yaml,requirements.txt}`.
 - [ ] **T2.3** Delete `src/tasks/locomo/environment/task_eval/{claude_utils,gemini_utils,gpt_utils,hf_llm_utils,rag_utils,get_facts,get_session_summaries}.py`.
 - [ ] **T2.4** Move `src/tasks/locomo/environment/prompt_examples/` up one level to `src/tasks/locomo/prompt_examples/`.
@@ -588,7 +590,7 @@ Deferred to M2 when we run ≥3 seeds:
 
 ### Documentation & memory bank
 - [ ] **T11.1** Rewrite `README.md`: new quickstart (uv + Docker + Cloud Run), no Harbor references.
-- [ ] **T11.2** Rewrite `src/tasks/locomo/instruction.md`: drop Harbor, drop PAM, document new CLI flags + outputs + Mongo schema.
+- [ ] **T11.2** Rewrite `src/tasks/locomo/instruction.md`: drop Harbor, drop Pam, document new CLI flags + outputs + Mongo schema.
 - [ ] **T11.3** Initialize `.memory-bank/` per `docs/init_memory_bank.md`. Pre-fill from M1 reality:
   - `benchmark-overview/` — purpose, goals, scope as defined here.
   - `benchmark-spec/datasets-and-splits.md` — LoCoMo only for now; placeholders for others.
@@ -610,7 +612,7 @@ Deferred to M2 when we run ≥3 seeds:
 ## 13. Resolved decisions
 
 - **Folder layout.** No wrapper package; `src/` on `PYTHONPATH` with subdirs as top-level packages. Existing empty `src/agents/` is renamed to `src/baselines/`.
-- **Legacy PAM files.** Deleted outright in T2.1; rely on git history for the M2 PAM port. No `legacy/` quarantine folder.
+- **Legacy Pam files.** Deleted outright in T2.1; rely on git history for the M2 Pam port. No `legacy/` quarantine folder.
 - **HF `datasets` shadow.** Custom loaders only — M1 ships a JSON loader for LoCoMo; HF `datasets` is not a dependency. Same approach for every future memory dataset that ships as JSON. Revisit only if a dataset is HF-Hub-only and not easily exportable.
 - **Judge default model.** `gpt-4o` by default; overridable via `--judge-model` on `scripts/run_benchmark.py`.
 - **LLM-judge vs. F1.** Report **both** wherever both are well-defined; LLM-judge is the **primary** metric for cross-baseline comparison. F1 stays for parity with the LoCoMo paper.
@@ -623,7 +625,7 @@ No questions remain open. Ready to implement after sign-off.
 
 ## 14. Future milestones (preview, not committed)
 
-- **M2** — PAM baseline ported off Harbor; ≥3 seeds; statistical significance; HTML report polish; cost/latency dashboard.
+- **M2** — Pam baseline ported off Harbor; ≥3 seeds; statistical significance; HTML report polish; cost/latency dashboard.
 - **M3** — Add BEAM and DRBench datasets (per stated priority).
 - **M4** — Add Honcho, Supermemory, mem0, Zep baselines (reuse their existing metrics where applicable; otherwise our `evals/`).
 - **M5** — Claude Code + Memory.md, Claude Code + Obsidian, OpenClaw + .md baselines.

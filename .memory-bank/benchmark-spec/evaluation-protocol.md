@@ -34,4 +34,4 @@
 
 - Test labels never sent to baselines.
 - Periodic blind re-runs of hosted-API competitors to detect drift.
-- External-publication sign-off per [[licensing-and-data-handling]].
+- External-publication sign-off per [[licensing-and-data-handling]] — any Harmix-facing claim about Pam vs. competitor X must clear this gate before reaching a slide deck or [manager.harmix.ai](https://manager.harmix.ai).

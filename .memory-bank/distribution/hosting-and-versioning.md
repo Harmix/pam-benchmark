@@ -19,6 +19,6 @@
 
 ## Maintenance
 
-- **Owner:** Denys.
+- **Owner:** Denys (Harmix).
 - **Triage SLA:** broken download / scoring bug → fix before next external claim; vendor-API drift → re-run quarterly.
-- **Re-run cadence for hosted-API competitors:** quarterly; record `baseline_kwargs.model` snapshot per run so drift is visible.
+- **Re-run cadence for hosted-API competitors:** quarterly; record `baseline_kwargs.model` snapshot per run so drift is visible. Tied to Pam ([manager.harmix.ai](https://manager.harmix.ai)) release cadence — every Pam release also re-runs the benchmark for regression detection.

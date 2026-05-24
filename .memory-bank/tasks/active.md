@@ -2,15 +2,13 @@
 
 ## Milestone
 
-**M1:** evaluate `gpt-4-turbo` on LoCoMo end-to-end on the new (post-Harbor) architecture.
-Detailed scope + TODO list: `docs/benchmark_rewrite_plan.md`.
+**M2 (next):** port Pam ([manager.harmix.ai](https://manager.harmix.ai)) off Harbor onto the new harness as the system under test, then run ≥3 seeds and report results with bootstrap CIs / paired bootstrap significance.
+
+M1 is complete: the rewritten harness ran `gpt-4-turbo` on LoCoMo end-to-end, results landed in MongoDB, and the repo is tagged `m1`. Detailed plan: `docs/benchmark_rewrite_plan.md` §14 (M2 line item).
 
 ## In Progress
 
-| Task | Owner | Status | Notes |
-|---|---|---|---|
-| M1 acceptance run (T12.1): `gpt-4-turbo` on all 10 LoCoMo samples, all questions, seed=42, locally + Cloud Run | Denys | pending | requires deploy of the image; numbers land in MongoDB + the rendered report |
-| M1 tag (T12.2): tag repo `m1`, capture image digest in [[system-cards]] | Denys | pending | after T12.1 succeeds |
+_None yet — M2 scoping pending._
 
 ## Blocked / Needs Decision
 

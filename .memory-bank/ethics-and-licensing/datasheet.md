@@ -33,7 +33,7 @@ Per Gebru et al., "Datasheets for Datasets" (2021). LoCoMo is the only active da
 ## Uses
 
 - **Already used for:** the paper's published baseline evaluations.
-- **Our internal use:** M1 baseline check + ongoing regression detection for any baseline we add.
+- **Harmix internal use:** M1 baseline check + ongoing regression detection for any baseline added thereafter (Pam in M2, dedicated memory competitors in M4–M5).
 - **Should NOT be used for:** training or fine-tuning baselines we evaluate on it.
 
 ## Distribution
@@ -43,7 +43,7 @@ Per Gebru et al., "Datasheets for Datasets" (2021). LoCoMo is the only active da
 
 ## Maintenance
 
-- **Owner:** Denys (until a successor is named).
-- **Issue reporting:** via repo issues / Slack.
+- **Owner:** Denys (Harmix; until a successor is named).
+- **Issue reporting:** via repo issues / Harmix Slack.
 - **Update cadence:** upstream-driven; we pin our copy by `sha256` (TODO: add to `scripts/download_data.py` before M2).
 - **Retention:** indefinite; LoCoMo is a public synthetic corpus.

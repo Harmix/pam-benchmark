@@ -2,12 +2,12 @@
 
 (Mirror of `docs/benchmark_rewrite_plan.md` §14. Kept here too so the memory bank is self-contained.)
 
-## M2 — PAM baseline + multi-seed
+## M2 — Pam baseline + multi-seed
 
-- Port PAM off Harbor onto the new harness (baselines/pam/ subpackage).
+- Port Pam ([manager.harmix.ai](https://manager.harmix.ai)) off Harbor onto the new harness (`baselines/pam/` subpackage).
 - Run ≥ 3 seeds; add bootstrap CIs and paired bootstrap tests to the report.
 - HTML report polish: error bars, win-rate matrix.
-- Compute/cost dashboard.
+- Compute/cost dashboard (matters for Harmix unit economics on enterprise contracts).
 
 ## M3 — BEAM + DRBench
 

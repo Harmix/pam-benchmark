@@ -16,7 +16,7 @@ Adapted from the NeurIPS Reproducibility Checklist + ML Reproducibility Checklis
 - [x] Number of seeds reported — `seed` field on every Mongo doc. M1 = 1 seed; M2 target ≥ 3.
 - [x] Hardware reported — for hosted-API runs we record `image_digest`; the GCP region runs on Cloud Run Jobs (CPU-only).
 - [x] Wall-clock time and cost per experiment — `execution_time_seconds`, `total_cost_usd` per doc.
-- [ ] Evaluation scripts produce numbers stable across re-runs at the same `--seed` — to be verified after first acceptance run by re-running and diffing `qa_responses[*].f1_score` across two runs.
+- [x] Evaluation scripts produce numbers stable across re-runs at the same `--seed` — verified via the M1 acceptance run (`gpt-4-turbo` × LoCoMo, seed 42); re-run on the same image digest reproduces `qa_responses[*].f1_score` exactly.
 
 ## Results
 

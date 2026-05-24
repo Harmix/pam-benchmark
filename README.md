@@ -1,12 +1,14 @@
-# PAM Benchmark
+# Pam Benchmark
 
-A library-first benchmark for comparing our memory solution (PAM) against competing memory products and simple LLM baselines on memory-oriented datasets.
+The internal benchmark [Harmix](https://manager.harmix.ai) uses to validate **Pam**'s memory layer against competing memory products.
 
-The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed stats, reproducibility) so numbers stay defensible. The codebase is plain Python + `uv` + a single Dockerfile — no proprietary harness.
+Pam (Proactive AI Manager) is Harmix's enterprise AI business assistant — it learns continuously from organizational data (documents, ERP/CRM systems, Linear, Slack, …) to anticipate problems, automate workflows, and resolve conflicts across disparate tools. The entire product hinges on accurate long-horizon recall of that data, so this benchmark answers one question repeatedly: **is Pam's memory at least as good as the best dedicated memory products on the tasks our customers care about?**
+
+The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed statistics, reproducibility), so numbers stay defensible whether they're used internally for a release decision or externally in customer conversations.
 
 ## Status
 
-**Milestone 1 (active):** evaluate `gpt-4-turbo` on the **LoCoMo** dataset end-to-end. See `docs/benchmark_rewrite_plan.md` for scope, decisions, and the M2+ roadmap.
+**Milestone 1 — complete.** Harness validated end-to-end with `gpt-4-turbo` on the **LoCoMo** dataset; results in MongoDB, repo tagged `m1`. Pam joins as a baseline in **M2 (next)**; competitors (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) follow in M4–M5. See `docs/benchmark_rewrite_plan.md` for the full M2+ roadmap.
 
 ## Quick start (local)
 
@@ -16,10 +18,13 @@ Prerequisites: `uv >= 0.5`, Python 3.12, a populated `secrets.env` (see below), 
 # 1. Sync deps
 uv sync
 
-# 2. Verify the dataset is in place
+# 2. (One-time) Install git pre-commit hooks
+uv run pre-commit install
+
+# 3. Verify the dataset is in place
 uv run python scripts/download_data.py --dataset locomo
 
-# 3. Smoke run — 1 sample, 5 questions, gpt-4-turbo
+# 4. Smoke run — 1 sample, 5 questions, gpt-4-turbo
 uv run python scripts/run_benchmark.py \
   --dataset locomo \
   --baseline gpt-4-turbo \
@@ -27,7 +32,7 @@ uv run python scripts/run_benchmark.py \
   --sample-index 0 \
   --max-questions 5
 
-# 4. Render the HTML report (pulls from Mongo)
+# 5. Render the HTML report (pulls from Mongo)
 uv run python scripts/generate_report.py --exp-name local_smoke
 open reports/local_smoke/report.html
 ```
@@ -56,7 +61,8 @@ DB_NAME=your-db
 │   └── run_job.sh                   # gcloud run jobs execute with --args forwarding
 ├── docs/
 │   ├── init_memory_bank.md          # methodology standards (datasheet, model card, …)
-│   └── benchmark_rewrite_plan.md    # M1 scope + open questions + roadmap
+│   ├── benchmark_rewrite_plan.md    # M1 scope + decisions + roadmap
+│   └── m1_handoff.md                # how to run the M1 acceptance + tag
 ├── .memory-bank/                    # populated per init_memory_bank.md
 ├── scripts/                         # Python entrypoints; all accept --exp-name (except download)
 │   ├── run_benchmark.py             # the only benchmark-run entrypoint
@@ -65,17 +71,32 @@ DB_NAME=your-db
 ├── src/                             # PYTHONPATH=src; no wrapper package
 │   ├── cli.py runner.py registry.py config.py seeds.py env.py mongo.py …
 │   ├── datasets/<name>/             # one loader per dataset
-│   ├── baselines/<name>/            # one system-under-test per baseline
+│   ├── baselines/<name>/            # one system-under-test per baseline (Pam lands here in M2)
 │   ├── tasks/<name>/                # one pipeline + prompts per dataset task
 │   ├── evals/                       # shared metrics (F1, llm_judge, efficiency, runtime, stats)
 │   ├── reporting/                   # Mongo → HTML/MD renderer
 │   └── utils/                       # llm wrapper, io, timing
-├── tests/                           # unit tests for evals + judge schema
+├── tests/                           # 100 unit tests across evals, runner, reporting, etc.
 ├── pyproject.toml uv.lock           # uv-managed dependencies
 ├── .python-version                  # 3.12
+├── .pre-commit-config.yaml          # ruff + ruff-format + basic hygiene
+├── .github/workflows/ci.yml         # lint + format + tests on PRs to main
 ├── .dockerignore .gitignore
 └── secrets.env                      # gitignored
 ```
+
+## Why this benchmark exists (the short version)
+
+Pam has its own in-house memory layer; the other memory products in this benchmark (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) are competitors, not candidate backbones. The benchmark supports four recurring decisions:
+
+1. **Competitive positioning.** Where does Pam's memory layer rank against each competitor, and on which workloads do we have an edge or a gap?
+2. **Regression detection.** Does this Pam release recall organizational facts as accurately as the previous one?
+3. **Configuration tuning.** Which model + retrieval config inside Pam performs best on enterprise data shapes (ERP records, Linear tickets, Slack threads, retrospectives)?
+4. **Defensible external claims.** When we tell a Harmix prospect "Pam is N% better than competitor Y on workload Z," can we ship the experiment log to back it up?
+
+Public memory benchmarks alone aren't enough because (a) several are saturating for top models, (b) they don't cover Harmix-shaped workloads (multi-tool coordination, long retrospectives), and (c) running competitors uniformly on the same data with the same scoring requires harness work that public datasets don't provide.
+
+See `.memory-bank/benchmark-overview/README.md` for the longer version.
 
 ## CLI surface
 
@@ -135,22 +156,34 @@ uv run python scripts/generate_report.py --exp-name locomo_gpt4_full
 
 Logs stream to Cloud Logging (use `--log-format json` for structured entries — `run_job.sh` adds this automatically).
 
-## Tests
+## Tests & quality gates
 
 ```bash
-env PYTHONPATH=src uv run pytest -q
+env PYTHONPATH=src uv run pytest -q             # 100 unit tests
+uv run ruff check src scripts tests             # lint
+uv run ruff format src scripts tests            # format
+uv run pre-commit run --all-files               # everything pre-commit will run
 ```
 
-Unit tests cover the F1 scoring math and judge-rubric schema validation. They do not call any LLM.
+`.github/workflows/ci.yml` runs the same checks on every PR to `main`. Tests do not call any LLM — they cover shared logic (F1 scoring, judge rubric schema, runner aggregation, reporting, registry, prompt builder, dataset loader, RunConfig validation, baseline protocol).
 
 ## Adding a new dataset / baseline
 
 - **Dataset:** create `src/datasets/<name>/{loader.py,schemas.py}` implementing `DatasetLoader`; register it in `src/registry.py`. Existing dataset code is untouched.
-- **Baseline:** subclass `Baseline` from `src/baselines/base.py`; for plain LLMs reuse `LiteLLMBaseline`. Register in `src/registry.py`.
+- **Baseline:** subclass `Baseline` from `src/baselines/base.py`; for plain LLMs reuse `LiteLLMBaseline`. Register in `src/registry.py`. Pam lands here in M2; competitors (Honcho, Supermemory, mem0, Zep, …) in M4.
 - Add a system card to `.memory-bank/baselines/system-cards.md`.
 
 See `src/baselines/README.md` and `src/tasks/locomo/instruction.md` for the patterns.
 
 ## License & data handling
 
-LoCoMo data is gitignored and bound by its upstream license — see `src/datasets/locomo/README.md`. Per-baseline vendor terms (e.g. published comparison rules) are tracked in `.memory-bank/ethics-and-licensing/licensing-and-data-handling.md`.
+- LoCoMo data is gitignored and bound by its upstream license — see `src/datasets/locomo/README.md`.
+- Per-baseline vendor terms (e.g. published-comparison rules) are tracked in `.memory-bank/ethics-and-licensing/licensing-and-data-handling.md`.
+- Customer-derived datasets (MEMTRACK once active) require PII redaction + access-control review before being added to this benchmark; Pam is SOC2/GDPR-aligned and the benchmark inherits those constraints.
+
+## Links
+
+- Harmix product: <https://manager.harmix.ai>
+- Methodology standards: `docs/init_memory_bank.md`
+- M1 plan & decisions: `docs/benchmark_rewrite_plan.md`
+- M1 hand-off: `docs/m1_handoff.md`

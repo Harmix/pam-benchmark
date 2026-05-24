@@ -5,6 +5,8 @@ allowed-tools: Bash, Read, Write, Glob, Grep, AskUserQuestion
 
 Initialize a Memory Bank for an **internal ML benchmark** whose primary purpose is to compare our company's solution against competing solutions on tasks we care about. The methodology is held to the standard of top ML conferences (NeurIPS, ICML, ICLR) so that results are defensible internally and externally, but the templates do **not** assume an academic submission.
 
+> **Customized for the [Harmix](https://manager.harmix.ai) Pam benchmark.** The `.memory-bank/` produced from this template in this repo describes the benchmark Harmix uses to compare Pam (Proactive AI Manager) against competing memory products. Other Harmix benchmark repos may re-use this template as-is.
+
 Memory Bank is a `.memory-bank` folder in the project root that serves as the persistent knowledge base for the benchmark's motivation, task/dataset/metric specifications, evaluation protocol, baseline competitors and our system, reproducibility plan, ethics and licensing, and ongoing experiments.
 
 The templates here are aligned with community standards so the results stand up to scrutiny:
