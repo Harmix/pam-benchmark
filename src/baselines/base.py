@@ -11,6 +11,9 @@ class TokenUsage:
     input_tokens: int = 0
     output_tokens: int = 0
     est_cost_usd: float = 0.0
+    # External-memory baselines (e.g. Pam) report how many tokens the retriever
+    # pulled from memory and fed to the answering model. LiteLLM leaves this 0.
+    injected_tokens: int = 0
 
 
 @dataclass
@@ -29,16 +32,66 @@ class Baseline(Protocol):
 
     Lifecycle:
         await baseline.setup(seed=...)
-        for prompt in prompts:
-            r = await baseline.answer(prompt, max_tokens=...)
+        for sample in samples:
+            await baseline.prepare_for_sample(sample)
+            for chunk in chunks(sample.qa, baseline.batch_size):
+                rs = await baseline.answer_batch([prompt_for(qa) for qa in chunk])
+            await baseline.cleanup_sample()
         await baseline.teardown()
+
+    `prepare_for_sample`, `cleanup_sample`, and `answer_batch` have sensible
+    defaults in `BaselineBase` so single-call baselines (LiteLLM) need only
+    implement `answer`.
     """
 
     name: str
-    track: str  # "out_of_the_box" | "tuned"
+    track: str  # "out_of_the_box" | "memory_product" | ...
+
+    # When True, the harness skips conversation-packing and passes a bare
+    # question prompt — the baseline already has the conversation in memory.
+    external_memory: bool
+
+    # How many questions the baseline answers per `answer_batch` call.
+    # `1` = the harness loops `answer()` (LiteLLM behavior).
+    batch_size: int
 
     async def setup(self, *, seed: int) -> None: ...
 
+    async def prepare_for_sample(self, sample: Any) -> None: ...
+
     async def answer(self, prompt: str, *, max_tokens: int | None = None) -> BaselineResponse: ...
 
+    async def answer_batch(self, prompts: list[str]) -> list[BaselineResponse]: ...
+
+    async def cleanup_sample(self) -> None: ...
+
     async def teardown(self) -> None: ...
+
+    def extras(self) -> dict[str, Any]: ...
+
+
+class BaselineBase:
+    """Default implementations for the optional hooks.
+
+    Subclasses MUST override `setup`, `answer`, and `teardown`. They MAY
+    override `prepare_for_sample` / `cleanup_sample` / `answer_batch` /
+    `extras` when they need them (Pam does; LiteLLM doesn't).
+    """
+
+    external_memory: bool = False
+    batch_size: int = 1
+
+    async def prepare_for_sample(self, sample: Any) -> None:
+        return None
+
+    async def cleanup_sample(self) -> None:
+        return None
+
+    async def answer_batch(self, prompts: list[str]) -> list[BaselineResponse]:
+        out: list[BaselineResponse] = []
+        for prompt in prompts:
+            out.append(await self.answer(prompt))  # type: ignore[attr-defined]
+        return out
+
+    def extras(self) -> dict[str, Any]:
+        return {}

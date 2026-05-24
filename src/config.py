@@ -43,6 +43,10 @@ class RunConfig(BaseModel):
     mongo: bool = True
     dry_run: bool = False
 
+    # Pam-specific (ignored by other baselines)
+    pam_batch_size: int = 10
+    pam_debug_user_id: int | None = None
+
     def resolved_task(self) -> str:
         return self.task or self.dataset
 

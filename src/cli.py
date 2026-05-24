@@ -47,6 +47,14 @@ def main(
     log_format: str = typer.Option(
         "rich", "--log-format", help="rich | json (json for Cloud Logging)"
     ),
+    pam_batch_size: int = typer.Option(
+        10, "--pam-batch-size", help="Pam: questions per SSE batch (ignored by other baselines)"
+    ),
+    pam_debug_user_id: int = typer.Option(
+        None,
+        "--pam-debug-user-id",
+        help="Pam: reuse this user id instead of creating + uploading + building a fresh memory",
+    ),
 ) -> None:
     """Run one (dataset, baseline, seed) end-to-end."""
     load_secrets()
@@ -73,6 +81,8 @@ def main(
         mongo=not no_mongo,
         dry_run=dry_run,
         log_format=log_format,
+        pam_batch_size=pam_batch_size,
+        pam_debug_user_id=pam_debug_user_id,
     )
     run(cfg)
 

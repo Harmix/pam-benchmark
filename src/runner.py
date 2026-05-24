@@ -199,6 +199,13 @@ async def _process_sample(
     aggregate = _aggregate(predictions, f1_scores, judge_results)
     qa_rows = _qa_responses(predictions, f1_scores, judge_results)
 
+    baseline_extras: dict[str, Any] = {}
+    if hasattr(baseline, "extras"):
+        try:
+            baseline_extras = baseline.extras() or {}
+        except Exception:  # pragma: no cover — defensive; baselines shouldn't raise here
+            baseline_extras = {}
+
     document: dict[str, Any] = {
         "exp_name": cfg.exp_name,
         "sample_id": sample.sample_id,
@@ -210,6 +217,7 @@ async def _process_sample(
         "dataset_name": f"{cfg.dataset}@1.0",
         "task_name": cfg.resolved_task(),
         **aggregate,
+        **baseline_extras,
         "qa_responses": qa_rows,
         "execution_time_seconds": round(answer_seconds + judge_seconds, 2),
         "answer_phase_seconds": round(answer_seconds, 2),
@@ -225,7 +233,17 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     seed_all(cfg.seed)
     loader = get_dataset(cfg.dataset)
     task_runner = get_task_runner(cfg.resolved_task())
-    baseline = get_baseline(cfg.baseline, model=cfg.baseline_model, **cfg.baseline_kwargs)
+    baseline_extra: dict[str, Any] = {}
+    if cfg.baseline == "pam":
+        baseline_extra = {
+            "batch_size": cfg.pam_batch_size,
+            "debug_user_id": cfg.pam_debug_user_id,
+        }
+    baseline = get_baseline(
+        cfg.baseline,
+        model=cfg.baseline_model,
+        **{**cfg.baseline_kwargs, **baseline_extra},
+    )
     await baseline.setup(seed=cfg.seed)
 
     # Decide which samples to process
