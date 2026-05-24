@@ -19,6 +19,11 @@ from tenacity import (
     wait_exponential,
 )
 
+# Silently drop params the provider doesn't support (e.g. `seed` on Anthropic).
+# Keeps `LiteLLMBaseline` truly provider-agnostic: we forward `seed=...` to every
+# completion call, and LiteLLM strips it where the provider would 400 on it.
+litellm.drop_params = True
+
 # Per-process registry of (model -> limiter). Sized lazily on first use.
 _limiters: dict[str, AsyncLimiter] = {}
 _limiters_lock = asyncio.Lock()
