@@ -8,7 +8,9 @@ The methodology follows the standards in `docs/init_memory_bank.md` (datasheets,
 
 ## Status
 
-**Milestone 1 — complete.** Harness validated end-to-end with `gpt-4-turbo` on the **LoCoMo** dataset; results in MongoDB, repo tagged `m1`. Pam joins as a baseline in **M2 (next)**; competitors (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) follow in M4–M5. See `docs/benchmark_rewrite_plan.md` for the full M2+ roadmap.
+**Milestone 1 — complete.** Harness validated end-to-end with `gpt-4-turbo` on the **LoCoMo** dataset; results in MongoDB, repo tagged `m1`.
+
+**Milestone 2 — Pam baseline shipped.** `--baseline pam` runs Pam end-to-end on LoCoMo via the Pam API (one memory per conversation, batched SSE chat). Configuration via `--pam-batch-size` and `--pam-debug-user-id`. Competitors (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) follow in M4–M5. See `docs/m2_pam_baseline_plan.md` and `docs/benchmark_rewrite_plan.md` for the roadmap.
 
 ## Quick start (local)
 
@@ -47,6 +49,10 @@ Required keys (loaded by `python-dotenv`):
 OPENAI_API_KEY=sk-...
 CONNECTION_STRING=mongodb+srv://...
 DB_NAME=your-db
+# Required when --baseline pam
+PAM_API_HOST=...
+PAM_API_USER=...
+PAM_API_PASSWORD=...
 ```
 
 `secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
@@ -102,7 +108,7 @@ See `.memory-bank/benchmark-overview/README.md` for the longer version.
 
 | Script | Required | Useful optional |
 |---|---|---|
-| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}` |
+| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}`, `--pam-batch-size` (default 10), `--pam-debug-user-id` |
 | `scripts/generate_report.py` | `--exp-name` | `--dataset` (default `locomo`), `--format {html,md}`, `--output-dir` |
 | `scripts/download_data.py` | `--dataset` | `--force` |
 

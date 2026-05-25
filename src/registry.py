@@ -47,6 +47,7 @@ def get_task_runner(name: str) -> Callable[..., Any]:
 # factories here.
 
 _BASELINE_ALIASES = {
+    "pam",
     "gpt-4-turbo",
     "gpt-4-turbo-2024-04-09",
     "gpt-4o",
@@ -59,9 +60,14 @@ _BASELINE_ALIASES = {
 def get_baseline(name: str, *, model: str | None = None, **kwargs: Any) -> Baseline:
     """Resolve a baseline.
 
-    For now any name is interpreted as a LiteLLM model id (or the explicit
-    `model=` override wins). Future Pam/Honcho/etc. baselines will branch here.
+    `name == "pam"` returns the in-house Pam memory baseline. Everything else
+    is interpreted as a LiteLLM model id (or the explicit `model=` override).
     """
+    if name == "pam":
+        from baselines.pam.baseline import PamBaseline
+
+        return PamBaseline(**kwargs)
+
     chosen_model = model or name
     return LiteLLMBaseline(model=chosen_model, name=name, **kwargs)
 

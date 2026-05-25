@@ -187,6 +187,62 @@ def build_prompt(
     )
 
 
+def build_bare_prompt(
+    qa: LoCoMoQA,
+    *,
+    sample: LoCoMoSample,
+    seed: int = 42,
+) -> BuiltPrompt:
+    """Like `build_prompt`, but skips the conversation context.
+
+    Used by external-memory baselines (e.g. Pam): the baseline already has the
+    conversation in memory, so we only need the question text — but we still
+    reuse the cat-2 (temporal) and cat-5 (adversarial MC) shaping so scoring
+    behaves identically to the LiteLLM path. The cat-5 (a)/(b) randomization
+    stays seeded against the same key so two runs with the same seed see the
+    same ordering across baselines.
+    """
+    if qa.category == 2:
+        question_text = (
+            qa.question + " Use DATE of CONVERSATION to answer with an approximate date."
+        )
+        return BuiltPrompt(
+            prompt=question_text,
+            expected_answer=qa.answer or "",
+            is_adversarial=False,
+            cat5_answer_key=None,
+        )
+
+    if qa.category == 5:
+        correct = qa.answer if qa.answer is not None else "Not mentioned in the conversation"
+        incorrect = (
+            qa.adversarial_answer
+            if qa.adversarial_answer is not None
+            else "Not mentioned in the conversation"
+        )
+        rng = random.Random(f"{seed}|{sample.sample_id}|{qa.question}")
+        if rng.random() < 0.5:
+            opt_a, opt_b = incorrect, correct
+            answer_key = {"a": incorrect, "b": correct}
+        else:
+            opt_a, opt_b = correct, incorrect
+            answer_key = {"a": correct, "b": incorrect}
+        question_text = f"{qa.question} Select the correct answer: (a) {opt_a} (b) {opt_b}."
+        return BuiltPrompt(
+            prompt=question_text,
+            expected_answer=correct,
+            is_adversarial=True,
+            cat5_answer_key=answer_key,
+        )
+
+    return BuiltPrompt(
+        prompt=qa.question,
+        expected_answer=qa.answer if qa.answer is not None else "",
+        is_adversarial=False,
+        cat5_answer_key=None,
+    )
+
+
 def resolve_cat5_answer(model_text: str, answer_key: dict[str, str]) -> str:
     """Translate a one-letter model reply ("a"/"(a)"/"b"/...) into its text."""
     s = model_text.strip().lower()

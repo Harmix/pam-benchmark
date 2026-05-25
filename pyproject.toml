@@ -20,6 +20,7 @@ dependencies = [
     "scipy>=1.14",
     "nltk>=3.9",
     "regex>=2024.5.15",
+    "requests>=2.32",
 ]
 
 [dependency-groups]
@@ -49,4 +50,6 @@ ignore = ["E501"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
-addopts = "-ra"
+# importlib mode lets the mirrored tests/<subpkg>/ layout work without
+# __init__.py files — and avoids tests/baselines/ shadowing src/baselines/.
+addopts = "-ra --import-mode=importlib"

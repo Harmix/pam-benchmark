@@ -6,12 +6,12 @@ from typing import Any
 
 import litellm
 
-from baselines.base import Baseline, BaselineResponse, TokenUsage
+from baselines.base import Baseline, BaselineBase, BaselineResponse, TokenUsage
 from utils.llm import DEFAULT_RPM, acompletion
 from utils.timing import timed
 
 
-class LiteLLMBaseline(Baseline):
+class LiteLLMBaseline(BaselineBase, Baseline):
     """Single-call baseline backed by LiteLLM.
 
     `model` is any LiteLLM-supported model identifier (e.g. "gpt-4-turbo",
@@ -23,6 +23,8 @@ class LiteLLMBaseline(Baseline):
     """
 
     track = "out_of_the_box"
+    external_memory = False
+    batch_size = 1
 
     def __init__(
         self,

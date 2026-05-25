@@ -21,14 +21,20 @@ One card per baseline. M1 ships exactly one (`gpt-4-turbo`). M2 adds **Pam** ([m
 
 ---
 
-## Baseline: Pam (Harmix) — M2 target
+## Baseline: Pam (Harmix) — M2
 
 - **Identity:** Pam (Proactive AI Manager), Harmix's enterprise AI business assistant. Product page: <https://manager.harmix.ai>.
-- **Type:** the system under test — the reason this benchmark exists.
+- **Type:** the system under test — the reason this benchmark exists. `track = "memory_product"`.
 - **What it is:** Pam learns continuously from organizational data (documents, ERP/CRM systems, Linear, Slack, retrospectives) to anticipate problems, automate workflows, and resolve conflicts across disparate tools. The memory layer being benchmarked here is the foundation those higher-level capabilities sit on top of.
-- **Configuration in this benchmark:** documented at integration time in M2; exact memory backbone, model, and retrieval config will be recorded in `baseline_kwargs` on every Mongo doc for reproducibility.
+- **Integration:** `src/baselines/pam/`. Per LoCoMo sample, the harness creates a fresh Pam user, uploads the sample's conversation as `<sample_id>_conversation.json` (preserving original session order from `locomo10.json`), triggers Pam's `benchmark_memory` pipeline (polled every 30s until terminal status), then answers the sample's questions in batches via SSE. The user is deleted after the sample completes.
+- **Batched-question protocol:** one SSE call per chunk of `--pam-batch-size` questions (default 10). The prompt is a numbered Q1..QN block asking for A1..AN-shaped replies; a regex parser extracts each answer back into per-question rows. Per-batch latency and `injected_tokens` are distributed evenly across the questions in the batch.
+- **Configuration in this benchmark:** CLI flags `--pam-batch-size` and `--pam-debug-user-id`. The Mongo doc records `pam_user_id`, `pam_batch_size`, and `memory_creation_duration_sec` per sample. Pam-internal model/retrieval config is not exposed by the API.
+- **Secrets required:** `PAM_API_HOST`, `PAM_API_USER`, `PAM_API_PASSWORD` (admin credentials). Loaded from `secrets.env` locally; from Secret Manager on Cloud Run.
+- **Cost & latency profile:** Pam is internal infra — `est_cost_usd` is recorded as `0.0`. Latency rows in Mongo reflect SSE round-trip time divided by batch size. `memory_creation_duration_sec` is the dominant cost per sample (single-digit minutes).
+- **Token accounting:** `injected_tokens` (from Pam's SSE `usage`) tracks how many tokens the retriever fed to the answering model — the closest analog to "input tokens" for a memory product. `input_tokens` is left at 0 (Pam does not expose the underlying LLM's input-token count). `output_tokens` is estimated by tokenizing each answer with `cl100k_base` for cross-baseline comparability.
 - **License / ToS:** Harmix-internal. Published comparisons follow [[licensing-and-data-handling]].
-- **Date of last evaluation:** N/A until M2.
+- **Caveats:** Pam's memory-build is a long-poll background job; transient poll errors are tolerated up to 3 in a row before the sample is marked failed. The full Pam stack (backbone model, embedding model, retriever) can change between releases — record the Pam release in `exp_name` (e.g. `locomo_pam_2026_05_24`).
+- **Date of last evaluation:** N/A until M2 acceptance run is published.
 
 ---
 
