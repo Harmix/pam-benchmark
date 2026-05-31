@@ -55,6 +55,14 @@ def main(
         "--pam-debug-user-id",
         help="Pam: reuse this user id instead of creating + uploading + building a fresh memory",
     ),
+    backup_memory: bool = typer.Option(
+        False,
+        "--backup-memory",
+        help=(
+            "Pam: when set, the per-conversation delete-account call preserves "
+            "the user's GCS memory directory instead of wiping it."
+        ),
+    ),
 ) -> None:
     """Run one (dataset, baseline, seed) end-to-end."""
     load_secrets()
@@ -83,6 +91,7 @@ def main(
         log_format=log_format,
         pam_batch_size=pam_batch_size,
         pam_debug_user_id=pam_debug_user_id,
+        backup_memory=backup_memory,
     )
     run(cfg)
 

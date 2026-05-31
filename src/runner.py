@@ -238,6 +238,7 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
         baseline_extra = {
             "batch_size": cfg.pam_batch_size,
             "debug_user_id": cfg.pam_debug_user_id,
+            "backup_memory": cfg.backup_memory,
         }
     baseline = get_baseline(
         cfg.baseline,

@@ -1,14 +1,26 @@
 """Sync HTTP client for the Pam API.
 
-Ported from the reference `PAMClient` in
-`pam-benchmark-main/tasks/memtrack/environment/run_memtrack_pam_v2.py` with:
-  - Pam naming throughout (no "PAM" in strings/comments)
-  - tenacity for retries (matches the rest of the harness; the reference used backoff)
-  - `backup_workspace` dropped (Pam handles workspace backup server-side)
+Endpoints exercised by the benchmark:
+  - `POST /v1/auth/login`                                          (admin login)
+  - `POST /v1/admin/create-account`                                (per-sample user)
+  - `DELETE /v1/admin/delete-account/{user_id}`                    (per-sample user)
+  - `POST /v1/memory/process-generic-files/{user_id}`              (upload + kick off memory pipeline)
+  - `GET  /v1/memory/get-memory-pipeline-status/{user_id}/{run_id}` (poll status)
+  - `POST /v1/messages/stream`                                     (SSE chat — questions)
+
+Auth model:
+  - Steps 2-4 require a bearer token that belongs to ``{user_id}``.
+    ``create_account`` mints that per-user token and ``_headers()`` prefers
+    it over the admin token.
+  - ``401`` from these endpoints triggers a single refresh-and-retry (handles
+    token expiry mid memory build); a persistent ``401`` or any ``403`` is
+    raised as ``PamAuthError`` so the polling loop fails fast rather than
+    treating bad creds like a stuck ``pending`` job.
+  - ``delete-account`` keeps using the admin token regardless of which
+    per-user token is currently "current".
 
 The client is intentionally synchronous; the async harness wraps calls with
-`asyncio.to_thread`. Polling cadence and SSE parsing match the reference
-verbatim so behavior on the Pam side is unchanged.
+`asyncio.to_thread`. SSE parsing is unchanged.
 """
 
 from __future__ import annotations
@@ -30,6 +42,23 @@ from tenacity import (
 logger = logging.getLogger(__name__)
 
 
+class PamAuthError(RuntimeError):
+    """Pam returned 401/403 — fatal misconfiguration, not a transient error.
+
+    Raised after a single refresh on 401, or immediately on 403 (the bearer
+    token doesn't belong to ``{user_id}``). The memory-pipeline polling loop
+    catches this explicitly and re-raises, so a misconfigured token fails fast
+    instead of looking like a stuck ``pending`` job for ``MAX_CONSECUTIVE_POLL_ERRORS``
+    iterations before propagating.
+    """
+
+    def __init__(self, status_code: int, url: str, body: str):
+        self.status_code = status_code
+        self.url = url
+        self.body = body
+        super().__init__(f"Pam auth failure (HTTP {status_code}) at {url}: {body[:300]}")
+
+
 class PamClient:
     """Client for the Pam API.
 
@@ -41,12 +70,9 @@ class PamClient:
     MAX_FILES_PER_REQUEST = 5
     SSE_TIMEOUT = 600
 
-    # Memory pipeline polling (kept identical to the reference)
-    MEMORY_POLL_INTERVAL = 30  # seconds between status checks
-    TERMINAL_STATUSES: ClassVar[frozenset[str]] = frozenset(
-        {"completed", "failed", "stopped", "cancelled"}
-    )
-    PIPELINE_TYPE = "benchmark_memory"
+    # Memory pipeline polling: seconds between status checks + how many
+    # consecutive transient errors to tolerate before propagating.
+    MEMORY_POLL_INTERVAL = 30
     MAX_CONSECUTIVE_POLL_ERRORS = 3
 
     _TRANSIENT_HTTP_ERRORS: ClassVar[tuple[type[BaseException], ...]] = (
@@ -81,6 +107,14 @@ class PamClient:
             retry=retry_if_exception_type(self._TRANSIENT_HTTP_ERRORS),
             reraise=True,
         )
+
+    @staticmethod
+    def _raise_for_auth(resp: requests.Response, url: str) -> None:
+        # Distinct from generic HTTPError so the polling loop can fail fast on
+        # bad creds (token missing / wrong user_id) instead of waiting out the
+        # transient-error budget.
+        if resp.status_code in (401, 403):
+            raise PamAuthError(resp.status_code, url, resp.text)
 
     # --- 0. Admin login ----------------------------------------------------
 
@@ -153,139 +187,176 @@ class PamClient:
         self._user_password = password
         return data
 
-    def delete_account(self) -> None:
-        url = f"{self.base_url}/admin/delete-account/{self.user_id}"
-        resp = self.session.delete(url, headers=self._headers(), timeout=180)
+    def _admin_headers(self) -> dict[str, str]:
+        # delete-account is an admin endpoint; once one per-user token has been
+        # superseded by another, we can't rely on `_headers()`. Force the admin
+        # token explicitly so deletes work no matter which user is "current".
+        if self.admin_token:
+            return {"Authorization": f"Bearer {self.admin_token}"}
+        return {}
+
+    def delete_account(
+        self,
+        user_id: int | None = None,
+        *,
+        backup_memory: bool = False,
+    ) -> None:
+        """Delete the user. When `backup_memory=True`, the endpoint preserves
+        the user's memory directory in GCS instead of wiping it (all other
+        records are still deleted).
+        """
+        uid = user_id if user_id is not None else self.user_id
+        if uid is None:
+            raise ValueError("delete_account requires a user_id")
+        url = f"{self.base_url}/admin/delete-account/{uid}"
+        # `backup_memory` is a query param on the Pam endpoint.
+        params = {"backup_memory": "true" if backup_memory else "false"}
+        resp = self.session.delete(url, headers=self._admin_headers(), params=params, timeout=180)
         if resp.status_code == 401:
             self.refresh_token()
-            resp = self.session.delete(url, headers=self._headers(), timeout=180)
+            resp = self.session.delete(
+                url, headers=self._admin_headers(), params=params, timeout=180
+            )
         resp.raise_for_status()
 
-    # --- 2. File upload ----------------------------------------------------
+    # --- 2. Process generic files → kick off memory pipeline --------------
 
-    def upload_generic_files(self, file_tuples: list[tuple[str, bytes]]) -> list[dict[str, Any]]:
-        """Upload files in batches of MAX_FILES_PER_REQUEST.
+    def process_generic_files(self, file_tuples: list[tuple[str, bytes]]) -> list[str]:
+        """Upload files and trigger memory creation in one shot per batch.
 
-        Args:
-            file_tuples: list of (filename, file_bytes) pairs.
-
-        Returns:
-            Aggregated list of upload-result dicts from the Pam API.
+        Calls `POST /v1/memory/process-generic-files/{user_id}` once per batch
+        of up to `MAX_FILES_PER_REQUEST` files. Each call returns a `run_id`
+        for the kicked-off memory pipeline; we return the list of run_ids
+        ready to be polled via `wait_for_memory`.
         """
-        all_results: list[dict[str, Any]] = []
+        if self.user_id is None:
+            raise RuntimeError(
+                "process_generic_files requires user_id (call login + create_account first)"
+            )
+
+        url = f"{self.base_url}/memory/process-generic-files/{self.user_id}"
+        run_ids: list[str] = []
         for batch_start in range(0, len(file_tuples), self.MAX_FILES_PER_REQUEST):
             batch = file_tuples[batch_start : batch_start + self.MAX_FILES_PER_REQUEST]
             files_payload = [
                 ("files", (fname, io.BytesIO(fbytes), "text/plain")) for fname, fbytes in batch
             ]
-            resp = self.session.post(
-                f"{self.base_url}/files/upload-generic/{self.user_id}",
-                headers=self._headers(),
-                files=files_payload,
-                timeout=180,
-            )
+            resp = self.session.post(url, headers=self._headers(), files=files_payload, timeout=300)
+            if resp.status_code == 401:
+                # Token may have expired during a long memory build — refresh
+                # once and retry. A second 401 (or any 403) means the bearer
+                # genuinely doesn't authorize this user_id; fail fast.
+                self.refresh_token()
+                resp = self.session.post(
+                    url, headers=self._headers(), files=files_payload, timeout=300
+                )
+            self._raise_for_auth(resp, url)
+            if not resp.ok:
+                logger.warning(
+                    "Pam process_generic_files failed: %s %s",
+                    resp.status_code,
+                    resp.text[:500],
+                )
             resp.raise_for_status()
-            all_results.extend(resp.json())
-        return all_results
+            data = resp.json()
+            run_id = data.get("run_id")
+            if not run_id:
+                raise RuntimeError(f"process_generic_files: no run_id in response: {data!r}")
+            run_ids.append(run_id)
+        return run_ids
 
-    # --- 3. Memory creation (async server-side pipeline) -------------------
+    # --- 3. Memory pipeline status polling --------------------------------
 
-    def trigger_memory_pipeline(self, max_files: int | None = None, batch_size: int = 500) -> str:
-        """Start the async `benchmark_memory` pipeline and return the run_id."""
-        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/run"
-        body = {
-            "sync_type": "initial",
-            "params": {"max_files": max_files, "batch_size": batch_size},
-        }
-        kwargs = dict(
-            params={"user_id": self.user_id},
-            json=body,
-            headers=self._headers(),
-            timeout=180,
-        )
-        resp = self.session.post(url, **kwargs)
-        if resp.status_code == 401:
-            self.refresh_token()
-            kwargs["headers"] = self._headers()
-            resp = self.session.post(url, **kwargs)
-        if resp.status_code not in (200, 202):
-            logger.warning(
-                "Pam trigger_memory_pipeline failed: %s %s",
-                resp.status_code,
-                resp.text[:500],
-            )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["run_id"]
+    def get_memory_pipeline_status(self, run_id: str, user_id: int | None = None) -> dict[str, Any]:
+        """Single status check against `GET /v1/memory/get-memory-pipeline-status/...`.
 
-    def poll_memory_status(self) -> dict[str, Any]:
-        """Get the current status of the Pam memory pipeline.
-
-        Refreshes the auth token on 401 and retries once.
+        Endpoint normalizes Pam's internal `pipeline_runs.run_status` to one of
+        `completed` / `failed` / `pending`. We surface that shape unchanged so
+        the polling loop can branch on `status`.
         """
-        url = f"{self.base_url}/memory/pipeline/{self.PIPELINE_TYPE}/status"
-        resp = self.session.get(
-            url,
-            params={"user_id": self.user_id},
-            headers=self._headers(),
-            timeout=120,
-        )
+        uid = user_id if user_id is not None else self.user_id
+        if uid is None:
+            raise ValueError("get_memory_pipeline_status requires user_id")
+        url = f"{self.base_url}/memory/get-memory-pipeline-status/{uid}/{run_id}"
+        resp = self.session.get(url, headers=self._headers(), timeout=120)
         if resp.status_code == 401:
             self.refresh_token()
-            resp = self.session.get(
-                url,
-                params={"user_id": self.user_id},
-                headers=self._headers(),
-                timeout=120,
-            )
+            resp = self.session.get(url, headers=self._headers(), timeout=120)
+        # 401-after-refresh or any 403 → PamAuthError. Surfaced distinctly
+        # from `{"status": "pending"}` so the polling loop fails fast.
+        self._raise_for_auth(resp, url)
         resp.raise_for_status()
         return resp.json()
 
-    def create_memory(self, max_files: int | None = None, batch_size: int = 500) -> dict[str, Any]:
-        """Trigger the memory pipeline and poll until a terminal status is reached.
+    def wait_for_memory(self, run_ids: list[str], user_id: int | None = None) -> None:
+        """Poll each `run_id` until it reaches a terminal status.
 
-        Tolerates up to `MAX_CONSECUTIVE_POLL_ERRORS` transient poll failures
-        in a row before propagating the underlying error.
+        - `status == "completed"` → return success.
+        - `status == "failed"`    → raise RuntimeError with stage/message.
+        - anything else (`pending` or unknown) → keep polling.
+
+        Tolerates up to `MAX_CONSECUTIVE_POLL_ERRORS` transient HTTP errors
+        per run before propagating.
         """
-        run_id = self.trigger_memory_pipeline(max_files=max_files, batch_size=batch_size)
+        uid = user_id if user_id is not None else self.user_id
+        if uid is None:
+            raise ValueError("wait_for_memory requires user_id")
+        for run_id in run_ids:
+            self._wait_for_one(run_id, uid)
+
+    def _wait_for_one(self, run_id: str, user_id: int) -> None:
         logger.info(
-            "Pam memory pipeline triggered (run_id=%s); polling every %ss",
+            "Pam memory pipeline polling: user_id=%s run_id=%s every %ss",
+            user_id,
             run_id,
             self.MEMORY_POLL_INTERVAL,
         )
-
         start = time.time()
         consecutive_errors = 0
         while True:
             time.sleep(self.MEMORY_POLL_INTERVAL)
 
             try:
-                status_resp = self.poll_memory_status()
+                status_resp = self.get_memory_pipeline_status(run_id, user_id=user_id)
                 consecutive_errors = 0
+            except PamAuthError:
+                # Bad creds won't fix themselves by retrying — surface the
+                # misconfiguration immediately instead of letting it look like
+                # a stuck pipeline for MAX_CONSECUTIVE_POLL_ERRORS iterations.
+                raise
             except Exception as e:
                 consecutive_errors += 1
                 elapsed_min = (time.time() - start) / 60
                 logger.warning(
-                    "Pam memory pipeline poll error [%.1fm] (%d/%d): %r",
+                    "Pam memory pipeline poll error [%.1fm] (%d/%d) run_id=%s: %r",
                     elapsed_min,
                     consecutive_errors,
                     self.MAX_CONSECUTIVE_POLL_ERRORS,
+                    run_id,
                     e,
                 )
                 if consecutive_errors >= self.MAX_CONSECUTIVE_POLL_ERRORS:
                     raise
                 continue
 
-            run_info = status_resp.get("run", status_resp)
-            last_status = run_info.get("run_status", run_info.get("status", "unknown"))
+            status = status_resp.get("status", "pending")
             elapsed_min = (time.time() - start) / 60
-            logger.info("Pam memory pipeline [%.1fm] status=%s", elapsed_min, last_status)
+            logger.info(
+                "Pam memory pipeline [%.1fm] run_id=%s status=%s",
+                elapsed_min,
+                run_id,
+                status,
+            )
 
-            if last_status in self.TERMINAL_STATUSES:
-                if last_status != "completed":
-                    error_msg = run_info.get("run_error_message", "no details")
-                    raise RuntimeError(f"Pam memory pipeline {last_status}: {error_msg}")
-                return status_resp
+            if status == "completed":
+                return
+            if status == "failed":
+                err_stage = status_resp.get("error_stage", "unknown")
+                err_msg = status_resp.get("error_message", "no details")
+                raise RuntimeError(
+                    f"Pam memory pipeline failed (run_id={run_id}, stage={err_stage}): {err_msg}"
+                )
+            # else: pending / unknown — keep polling
 
     # --- 4. Chat (SSE) -----------------------------------------------------
 
