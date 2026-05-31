@@ -270,9 +270,10 @@ class PamClient:
     def get_memory_pipeline_status(self, run_id: str, user_id: int | None = None) -> dict[str, Any]:
         """Single status check against `GET /v1/memory/get-memory-pipeline-status/...`.
 
-        Endpoint normalizes Pam's internal `pipeline_runs.run_status` to one of
-        `completed` / `failed` / `pending`. We surface that shape unchanged so
-        the polling loop can branch on `status`.
+        The endpoint returns the pipeline's real `run_status` directly as
+        `status` (`pending` / `running` / `queued` / `completed` / `failed`).
+        We surface that shape unchanged so the polling loop can branch on
+        `status`.
         """
         uid = user_id if user_id is not None else self.user_id
         if uid is None:
@@ -339,6 +340,8 @@ class PamClient:
                     raise
                 continue
 
+            # The endpoint returns the real run_status directly as `status`
+            # (pending / running / queued / completed / failed).
             status = status_resp.get("status", "pending")
             elapsed_min = (time.time() - start) / 60
             logger.info(
@@ -356,7 +359,7 @@ class PamClient:
                 raise RuntimeError(
                     f"Pam memory pipeline failed (run_id={run_id}, stage={err_stage}): {err_msg}"
                 )
-            # else: pending / unknown — keep polling
+            # else: pending / running / queued / unknown — keep polling
 
     # --- 4. Chat (SSE) -----------------------------------------------------
 
