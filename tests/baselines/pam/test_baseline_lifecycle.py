@@ -26,8 +26,9 @@ class StubPamClient:
     distinct ids per conversation.
     """
 
-    def __init__(self, host: str):
+    def __init__(self, host: str, api_key: str | None = None):
         self.host = host
+        self.api_key = api_key
         self.user_id: int | None = None
         self.admin_token: str | None = None
         self.access_token: str | None = None
@@ -81,9 +82,17 @@ class StubPamClient:
         lines = [f"A{i}: stub-answer-{i}" for i in range(1, n + 1)]
         return "\n".join(lines), 100 * n  # injected_tokens scales with batch
 
-    def delete_account(self, user_id: int | None = None, *, backup_memory: bool = False) -> None:
+    def issue_user_tokens(self, user_id: int) -> str:
+        # Mirrors PamClient.issue_user_tokens: sets a per-user access token so
+        # chat runs as the reused user (not admin).
+        self.user_id = user_id
+        self.access_token = f"user-{user_id}-minted-token"
+        self._log("issue_user_tokens", user_id=user_id)
+        return self.access_token
+
+    def delete_account(self, user_id: int | None = None) -> None:
         uid = user_id if user_id is not None else self.user_id
-        self._log("delete_account", user_id=uid, backup_memory=backup_memory)
+        self._log("delete_account", user_id=uid)
 
 
 def _sample(n_questions: int) -> LoCoMoSample:
@@ -195,11 +204,11 @@ def test_delete_runs_per_conversation(monkeypatch: pytest.MonkeyPatch) -> None:
     assert deleted_ids == [12345, 12346, 12347]
 
 
-def test_backup_memory_flag_forwarded_to_delete_account(
+def test_backup_memory_skips_delete_account(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`--backup-memory` rides through PamBaseline into the delete_account
-    call so the Pam endpoint preserves the user's GCS memory dir."""
+    """`--backup-memory` keeps the account entirely: no delete_account call,
+    so the user + its built memory survive for later --pam-debug-user-id reuse."""
     _set_env(monkeypatch)
     monkeypatch.setattr(pam_baseline_mod, "PamClient", StubPamClient)
 
@@ -213,13 +222,17 @@ def test_backup_memory_flag_forwarded_to_delete_account(
 
     asyncio.run(_go())
 
-    delete_call = next(c for c in baseline.client.calls if c[0] == "delete_account")
-    assert delete_call[1]["backup_memory"] is True
+    methods = [c[0] for c in baseline.client.calls]
+    # Account is created and questioned, but never deleted.
+    assert "create_account" in methods
+    assert "send_message" in methods
+    assert "delete_account" not in methods
 
 
-def test_backup_memory_defaults_to_false_on_delete(
+def test_no_backup_memory_deletes_account(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Without --backup-memory the per-conversation account is wiped."""
     _set_env(monkeypatch)
     monkeypatch.setattr(pam_baseline_mod, "PamClient", StubPamClient)
 
@@ -233,15 +246,19 @@ def test_backup_memory_defaults_to_false_on_delete(
 
     asyncio.run(_go())
 
-    delete_call = next(c for c in baseline.client.calls if c[0] == "delete_account")
-    assert delete_call[1]["backup_memory"] is False
+    delete_calls = [c for c in baseline.client.calls if c[0] == "delete_account"]
+    assert len(delete_calls) == 1
+    assert delete_calls[0][1]["user_id"] == 12345
 
 
 def test_debug_user_id_skips_create_upload_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    """--pam-debug-user-id reuses an existing user: skip create/upload/memory
+    build and delete, but mint a per-user token so chat runs as THAT user
+    (queries its existing memory, not the admin's)."""
     _set_env(monkeypatch)
     monkeypatch.setattr(pam_baseline_mod, "PamClient", StubPamClient)
 
-    baseline = pam_baseline_mod.PamBaseline(batch_size=5, debug_user_id=999)
+    baseline = pam_baseline_mod.PamBaseline(batch_size=5, debug_user_id=999, api_key="harmix-key")
     sample = _sample(5)
 
     async def _go():
@@ -252,10 +269,14 @@ def test_debug_user_id_skips_create_upload_memory(monkeypatch: pytest.MonkeyPatc
     asyncio.run(_go())
 
     methods = [call[0] for call in baseline.client.calls]
-    # No create_account / process_generic_files / wait_for_memory;
-    # no delete_account either.
-    assert methods == ["login", "send_message"]
+    # login -> mint per-user token -> chat. No create / upload / memory build,
+    # and no delete_account.
+    assert methods == ["login", "issue_user_tokens", "send_message"]
+    mint_call = next(c for c in baseline.client.calls if c[0] == "issue_user_tokens")
+    assert mint_call[1]["user_id"] == 999
     assert baseline.client.user_id == 999
+    # Chat runs with the minted per-user token, NOT the admin token.
+    assert baseline.client.access_token == "user-999-minted-token"
 
 
 def test_serialize_upload_payload_matches_sample(monkeypatch: pytest.MonkeyPatch) -> None:

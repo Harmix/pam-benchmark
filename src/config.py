@@ -46,9 +46,9 @@ class RunConfig(BaseModel):
     # Pam-specific (ignored by other baselines)
     pam_batch_size: int = 10
     pam_debug_user_id: int | None = None
-    # Forwarded as a query param to Pam's delete-account endpoint. When True
-    # the user's GCS memory directory is preserved after delete; all other
-    # records are still wiped.
+    # When True the per-conversation Pam account is NOT deleted after the run;
+    # the account and its built memory are kept so they can be reused later via
+    # pam_debug_user_id.
     backup_memory: bool = False
 
     def resolved_task(self) -> str:

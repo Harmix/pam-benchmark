@@ -3,6 +3,7 @@
 Endpoints exercised by the benchmark:
   - `POST /v1/auth/login`                                          (admin login)
   - `POST /v1/admin/create-account`                                (per-sample user)
+  - `POST /v1/admin/users/{user_id}/tokens`                        (mint per-user token — debug reuse)
   - `DELETE /v1/admin/delete-account/{user_id}`                    (per-sample user)
   - `POST /v1/memory/process-generic-files/{user_id}`              (upload + kick off memory pipeline)
   - `GET  /v1/memory/get-memory-pipeline-status/{user_id}/{run_id}` (poll status)
@@ -80,10 +81,14 @@ class PamClient:
         requests.exceptions.Timeout,
     )
 
-    def __init__(self, api_host: str):
+    def __init__(self, api_host: str, api_key: str | None = None):
         self.host = api_host.rstrip("/")
         self.base_url = f"{self.host}/v1"
         self.session = requests.Session()
+        # Harmix API key (server-side `HARMIX_API_KEY`). Only needed to mint a
+        # per-user token for an existing user (debug mode); the normal run uses
+        # the admin bearer + per-user tokens from create_account.
+        self.api_key = api_key
         self.admin_token: str | None = None
         self.access_token: str | None = None
         self.user_id: int | None = None
@@ -195,28 +200,50 @@ class PamClient:
             return {"Authorization": f"Bearer {self.admin_token}"}
         return {}
 
-    def delete_account(
-        self,
-        user_id: int | None = None,
-        *,
-        backup_memory: bool = False,
-    ) -> None:
-        """Delete the user. When `backup_memory=True`, the endpoint preserves
-        the user's memory directory in GCS instead of wiping it (all other
-        records are still deleted).
+    def issue_user_tokens(self, user_id: int) -> str:
+        """Mint a per-user access token for an EXISTING user and store it.
+
+        Calls `POST /v1/admin/users/{user_id}/tokens` with the Harmix `api-key`
+        header (not a bearer). Used by debug mode so chat/memory calls run as
+        the reused user — `messages/stream` answers from whichever user the
+        bearer belongs to, so the admin token would query the wrong memory.
+
+        Returns the access token (also set on `self.access_token` /
+        `self.user_id`).
+        """
+        if not self.api_key:
+            raise RuntimeError(
+                "issue_user_tokens requires an api_key (set PAM_API_KEY) — needed to "
+                "mint a per-user token for --pam-debug-user-id reuse"
+            )
+        url = f"{self.base_url}/admin/users/{user_id}/tokens"
+        headers = {"api-key": self.api_key}
+        resp = self.session.post(url, headers=headers, timeout=120)
+        self._raise_for_auth(resp, url)
+        if not resp.ok:
+            logger.warning("Pam issue_user_tokens failed: %s %s", resp.status_code, resp.text[:500])
+        resp.raise_for_status()
+        data = resp.json()
+        access_token = data["access_token"]
+        self.access_token = access_token
+        self.user_id = user_id
+        return access_token
+
+    def delete_account(self, user_id: int | None = None) -> None:
+        """Delete the user and all of their records (the full wipe).
+
+        The benchmark only calls this when ``--backup-memory`` is NOT set; when
+        it is set the account is kept entirely (see `PamBaseline.cleanup_sample`)
+        so it can be reused later via ``--pam-debug-user-id``.
         """
         uid = user_id if user_id is not None else self.user_id
         if uid is None:
             raise ValueError("delete_account requires a user_id")
         url = f"{self.base_url}/admin/delete-account/{uid}"
-        # `backup_memory` is a query param on the Pam endpoint.
-        params = {"backup_memory": "true" if backup_memory else "false"}
-        resp = self.session.delete(url, headers=self._admin_headers(), params=params, timeout=180)
+        resp = self.session.delete(url, headers=self._admin_headers(), timeout=180)
         if resp.status_code == 401:
             self.refresh_token()
-            resp = self.session.delete(
-                url, headers=self._admin_headers(), params=params, timeout=180
-            )
+            resp = self.session.delete(url, headers=self._admin_headers(), timeout=180)
         resp.raise_for_status()
 
     # --- 2. Process generic files → kick off memory pipeline --------------

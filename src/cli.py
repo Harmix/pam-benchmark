@@ -59,8 +59,10 @@ def main(
         False,
         "--backup-memory",
         help=(
-            "Pam: when set, the per-conversation delete-account call preserves "
-            "the user's GCS memory directory instead of wiping it."
+            "Pam: keep each conversation's user account after the run instead of "
+            "deleting it (no delete-account call). The account and its built "
+            "memory are preserved so they can be reused later via "
+            "--pam-debug-user-id."
         ),
     ),
 ) -> None:

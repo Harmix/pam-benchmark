@@ -254,6 +254,50 @@ def test_process_generic_files_returns_run_id_on_success(
     assert run_ids == ["run-ok-0"]
 
 
+# --- issue_user_tokens (debug-mode per-user token mint) -------------------
+
+
+def test_issue_user_tokens_sends_api_key_and_sets_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mints a per-user token via the api-key admin endpoint and adopts it as
+    the current access token (so chat runs as that user)."""
+    c = PamClient("http://stub", api_key="harmix-secret")
+    seen: dict[str, Any] = {}
+
+    def fake_post(url, headers=None, timeout=None, **_kw):
+        seen["url"] = url
+        seen["headers"] = headers
+        return _FakeResp(200, b'{"access_token": "tok-777", "refresh_token": "ref-777"}')
+
+    monkeypatch.setattr(c.session, "post", fake_post)
+
+    token = c.issue_user_tokens(777)
+    assert token == "tok-777"
+    assert c.access_token == "tok-777"
+    assert c.user_id == 777
+    assert seen["url"].endswith("/admin/users/777/tokens")
+    # api-key header, NOT a bearer.
+    assert seen["headers"] == {"api-key": "harmix-secret"}
+
+
+def test_issue_user_tokens_requires_api_key() -> None:
+    c = PamClient("http://stub")  # no api_key configured
+    with pytest.raises(RuntimeError, match="requires an api_key"):
+        c.issue_user_tokens(777)
+
+
+def test_issue_user_tokens_raises_pam_auth_error_on_403(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A bad/absent api-key surfaces as PamAuthError, not a silent failure."""
+    c = PamClient("http://stub", api_key="wrong-key")
+    monkeypatch.setattr(c.session, "post", lambda *_a, **_kw: _FakeResp(403, b"bad key"))
+    with pytest.raises(PamAuthError) as ei:
+        c.issue_user_tokens(777)
+    assert ei.value.status_code == 403
+
+
 def test_process_generic_files_retry_resends_full_body_not_empty(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
