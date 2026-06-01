@@ -252,3 +252,41 @@ def test_process_generic_files_returns_run_id_on_success(
 
     run_ids = c.process_generic_files([("x.json", b"{}")])
     assert run_ids == ["run-ok-0"]
+
+
+def test_process_generic_files_retry_resends_full_body_not_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression: a 401-then-retry must transmit the real file bytes again.
+
+    `requests` reads each upload stream to EOF while encoding the multipart
+    body, so reusing one BytesIO across the retry would send an empty file —
+    which the server stages as a zero-byte `*_conversation.json` in the zip.
+    Each attempt must build a fresh stream. We simulate `requests` by draining
+    every file stream on each POST and recording what was read.
+    """
+    c = _client_with_user()
+    monkeypatch.setattr(c, "refresh_token", lambda: None)
+
+    content = b'{"sample_id": "conv-26", "session_1": [{"text": "hi"}]}'
+    bodies_seen: list[bytes] = []
+    statuses = iter([401, 200])
+
+    def fake_post(url, headers=None, files=None, timeout=None, **_kw):
+        # Mimic requests: read each stream to EOF (consuming it).
+        drained = b"".join(stream.read() for _field, (_name, stream, _ctype) in files)
+        bodies_seen.append(drained)
+        code = next(statuses)
+        body = b'{"run_id": "run-ok-0"}' if code == 200 else b"unauthorized"
+        return _FakeResp(code, body)
+
+    monkeypatch.setattr(c.session, "post", fake_post)
+
+    run_ids = c.process_generic_files([("conv-26_conversation.json", content)])
+
+    assert run_ids == ["run-ok-0"]
+    # Two attempts were made, and BOTH carried the full content — the retry
+    # was not an empty body.
+    assert len(bodies_seen) == 2
+    assert bodies_seen[0] == content
+    assert bodies_seen[1] == content

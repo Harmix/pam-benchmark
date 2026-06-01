@@ -221,6 +221,18 @@ class PamClient:
 
     # --- 2. Process generic files → kick off memory pipeline --------------
 
+    @staticmethod
+    def _build_files_payload(
+        batch: list[tuple[str, bytes]],
+    ) -> list[tuple[str, tuple[str, io.BytesIO, str]]]:
+        """Build a fresh `requests` multipart payload from `(name, bytes)` pairs.
+
+        Each call wraps the bytes in a NEW `BytesIO`, so the payload can be
+        rebuilt per HTTP attempt instead of reusing a stream that `requests`
+        has already drained to EOF.
+        """
+        return [("files", (fname, io.BytesIO(fbytes), "text/plain")) for fname, fbytes in batch]
+
     def process_generic_files(self, file_tuples: list[tuple[str, bytes]]) -> list[str]:
         """Upload files and trigger memory creation in one shot per batch.
 
@@ -238,17 +250,24 @@ class PamClient:
         run_ids: list[str] = []
         for batch_start in range(0, len(file_tuples), self.MAX_FILES_PER_REQUEST):
             batch = file_tuples[batch_start : batch_start + self.MAX_FILES_PER_REQUEST]
-            files_payload = [
-                ("files", (fname, io.BytesIO(fbytes), "text/plain")) for fname, fbytes in batch
-            ]
-            resp = self.session.post(url, headers=self._headers(), files=files_payload, timeout=300)
+
+            # A fresh multipart payload per attempt — `requests` reads each file
+            # stream to EOF while encoding the body, so reusing one BytesIO on
+            # the retry would transmit an empty file (which the server then zips
+            # as a zero-byte `*_conversation.json`).
+            resp = self.session.post(
+                url, headers=self._headers(), files=self._build_files_payload(batch), timeout=300
+            )
             if resp.status_code == 401:
                 # Token may have expired during a long memory build — refresh
                 # once and retry. A second 401 (or any 403) means the bearer
                 # genuinely doesn't authorize this user_id; fail fast.
                 self.refresh_token()
                 resp = self.session.post(
-                    url, headers=self._headers(), files=files_payload, timeout=300
+                    url,
+                    headers=self._headers(),
+                    files=self._build_files_payload(batch),
+                    timeout=300,
                 )
             self._raise_for_auth(resp, url)
             if not resp.ok:
