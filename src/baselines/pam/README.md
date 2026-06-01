@@ -34,7 +34,7 @@ teardown               → no-op
 After a `--backup-memory` run, you can re-run the questions against an existing user's already-built memory without rebuilding it:
 
 - `prepare_for_sample` skips create / upload / memory-build.
-- It mints a **per-user** access token for that user via `POST /v1/admin/users/{user_id}/tokens` (sent with the `api-key: <PAM_API_KEY>` header — the Harmix API key). This is required because `POST /v1/messages/stream` answers from whichever user the bearer token belongs to; using the admin token would query the admin's memory, not the reused user's.
+- It mints a **per-user** access token for that user via `POST /v1/admin/users/{user_id}/tokens`, sent with **both** the `api-key: <PAM_API_KEY>` header (the route's own gate) **and** the admin `Authorization: Bearer` token (the API edge/gateway rejects bearer-less requests with `401 Authentication required`). This is required because `POST /v1/messages/stream` answers from whichever user the bearer token belongs to; using the admin token there would query the admin's memory, not the reused user's.
 - `cleanup_sample` does not delete the user.
 
 The serializer (`serialize.py`) emits **one JSON file per LoCoMo sample**
