@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import re
 import time
 import uuid
@@ -96,18 +97,28 @@ class PamBaseline(BaselineBase):
         *,
         batch_size: int = 10,
         debug_user_id: int | None = None,
+        backup_memory: bool = False,
+        api_key: str | None = None,
         **_ignored: Any,
     ) -> None:
-        self.client = PamClient(host or require("PAM_API_HOST"))
+        # PAM_API_KEY is optional: only debug mode (`--pam-debug-user-id`) needs
+        # it, to mint a per-user token for the reused account. A normal run
+        # never touches it, so don't `require` it here.
+        self._api_key = api_key or os.environ.get("PAM_API_KEY")
+        self.client = PamClient(host or require("PAM_API_HOST"), api_key=self._api_key)
         self._admin_email = admin_email or require("PAM_API_USER")
         self._admin_password = admin_password or require("PAM_API_PASSWORD")
         self.batch_size = max(1, int(batch_size or 1))
         self._debug_user_id = debug_user_id
+        # When True, the account is preserved entirely (not deleted) so it can
+        # be reused later via --pam-debug-user-id. See `cleanup_sample`.
+        self._backup_memory = bool(backup_memory)
 
         self._encoder = tiktoken.get_encoding(_OUTPUT_TOKEN_ENCODER_NAME)
         self._memory_creation_sec: float = 0.0
         self._pam_user_id: int | None = None
         self._current_sample_id: str | None = None
+        self._last_memory_run_ids: list[str] = []
 
     # ----- lifecycle ------------------------------------------------------
 
@@ -119,13 +130,18 @@ class PamBaseline(BaselineBase):
         self._memory_creation_sec = 0.0
 
         if self._debug_user_id is not None:
-            # Reuse an existing Pam user — skip create / upload / memory build.
-            self.client.user_id = self._debug_user_id
-            # Use the admin token; in debug mode there's no per-user login.
-            self.client.access_token = self.client.admin_token
+            # Reuse an existing Pam user (e.g. one kept alive by a prior
+            # --backup-memory run) — skip create / upload / memory build and go
+            # straight to asking questions against its existing memory.
+            #
+            # `messages/stream` answers from whichever user the bearer token
+            # belongs to, so we must run as the reused user, NOT as admin. Mint
+            # a per-user access token for `debug_user_id` via the api-key admin
+            # endpoint and use it for the SSE chat calls.
+            await asyncio.to_thread(self.client.issue_user_tokens, self._debug_user_id)
             self._pam_user_id = self._debug_user_id
             logger.info(
-                "Pam debug mode: reusing user_id=%s for sample=%s",
+                "Pam debug mode: reusing user_id=%s (minted per-user token) for sample=%s",
                 self._debug_user_id,
                 sample.sample_id,
             )
@@ -143,24 +159,29 @@ class PamBaseline(BaselineBase):
         self._pam_user_id = self.client.user_id
         logger.info("Pam created user_id=%s for sample=%s", self._pam_user_id, sample.sample_id)
 
-        # 2. Upload the single conversation JSON.
+        # 2. Process generic files: uploads the conversation JSON AND kicks
+        # off the memory pipeline in one call per batch (max 5 files per call).
+        # Returns the run_id(s) we then poll for completion.
         files = serialize_sample(sample)
-        await asyncio.to_thread(self.client.upload_generic_files, files)
+        mem_start = time.time()
+        run_ids = await asyncio.to_thread(self.client.process_generic_files, files)
+        self._last_memory_run_ids = list(run_ids)
         logger.info(
-            "Pam uploaded %d file(s) for sample=%s (user_id=%s)",
-            len(files),
+            "Pam process_generic_files for sample=%s (user_id=%s) -> run_ids=%s",
             sample.sample_id,
             self._pam_user_id,
+            run_ids,
         )
 
-        # 3. Build memory (long-poll on the Pam side; tolerate transient errors).
-        mem_start = time.time()
-        await asyncio.to_thread(self.client.create_memory)
+        # 3. Poll each memory pipeline run until terminal status. Raises
+        # RuntimeError on `failed`; returns once all runs are `completed`.
+        await asyncio.to_thread(self.client.wait_for_memory, run_ids)
         self._memory_creation_sec = round(time.time() - mem_start, 2)
         logger.info(
-            "Pam memory built for sample=%s in %.2fs",
+            "Pam memory built for sample=%s in %.2fs (run_ids=%s)",
             sample.sample_id,
             self._memory_creation_sec,
+            run_ids,
         )
 
     async def answer(self, prompt: str, *, max_tokens: int | None = None) -> BaselineResponse:
@@ -215,16 +236,32 @@ class PamBaseline(BaselineBase):
         return out
 
     async def cleanup_sample(self) -> None:
+        # Delete the account for the just-finished conversation. Doing this
+        # per-sample (instead of deferring to teardown) avoids leaving stale
+        # users around and prevents memory versions from accumulating server-side.
+        # `_pam_user_id` / `_current_sample_id` are intentionally NOT cleared
+        # here so the runner can still read them via `extras()` for the Mongo
+        # doc; the next `prepare_for_sample` overwrites them.
         if self._debug_user_id is not None:
             logger.info("Pam debug mode: skipping delete_account")
             return
-        if self.client.user_id is None:
+        if self._backup_memory:
+            # `--backup-memory`: keep the whole account (and its built memory)
+            # so it can be reused later via `--pam-debug-user-id`. Nothing is
+            # deleted — no records, no memory.
+            logger.info(
+                "Pam backup mode: preserving user_id=%s (account NOT deleted)",
+                self._pam_user_id,
+            )
+            return
+        uid = self._pam_user_id
+        if uid is None:
             return
         try:
-            await asyncio.to_thread(self.client.delete_account)
-            logger.info("Pam deleted user_id=%s", self._pam_user_id)
+            await asyncio.to_thread(self.client.delete_account, user_id=uid)
+            logger.info("Pam deleted user_id=%s", uid)
         except Exception as e:
-            logger.warning("Pam delete_account failed for user_id=%s: %r", self._pam_user_id, e)
+            logger.warning("Pam delete_account failed for user_id=%s: %r", uid, e)
 
     async def teardown(self) -> None:
         return None
@@ -234,6 +271,7 @@ class PamBaseline(BaselineBase):
             "memory_creation_duration_sec": self._memory_creation_sec,
             "pam_user_id": self._pam_user_id,
             "pam_batch_size": self.batch_size,
+            "pam_memory_run_ids": list(self._last_memory_run_ids),
         }
 
     def _empty_response(self, latency_ms: float) -> BaselineResponse:

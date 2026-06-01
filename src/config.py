@@ -46,6 +46,10 @@ class RunConfig(BaseModel):
     # Pam-specific (ignored by other baselines)
     pam_batch_size: int = 10
     pam_debug_user_id: int | None = None
+    # When True the per-conversation Pam account is NOT deleted after the run;
+    # the account and its built memory are kept so they can be reused later via
+    # pam_debug_user_id.
+    backup_memory: bool = False
 
     def resolved_task(self) -> str:
         return self.task or self.dataset

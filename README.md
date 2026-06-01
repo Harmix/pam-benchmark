@@ -53,6 +53,8 @@ DB_NAME=your-db
 PAM_API_HOST=...
 PAM_API_USER=...
 PAM_API_PASSWORD=...
+# Only needed for --pam-debug-user-id reuse (mints a per-user token)
+PAM_API_KEY=...
 ```
 
 `secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
@@ -108,7 +110,7 @@ See `.memory-bank/benchmark-overview/README.md` for the longer version.
 
 | Script | Required | Useful optional |
 |---|---|---|
-| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}`, `--pam-batch-size` (default 10), `--pam-debug-user-id` |
+| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}`, `--pam-batch-size` (default 10), `--pam-debug-user-id`, `--backup-memory` |
 | `scripts/generate_report.py` | `--exp-name` | `--dataset` (default `locomo`), `--format {html,md}`, `--output-dir` |
 | `scripts/download_data.py` | `--dataset` | `--force` |
 
