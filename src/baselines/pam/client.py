@@ -200,13 +200,22 @@ class PamClient:
             return {"Authorization": f"Bearer {self.admin_token}"}
         return {}
 
+    def _issue_user_tokens_headers(self) -> dict[str, str]:
+        # Two headers are needed: the admin `Authorization: Bearer` (the API
+        # edge/gateway rejects bearer-less requests with 401 "Authentication
+        # required" before they reach the route) AND the Harmix `api-key` (the
+        # route's own `require_harmix_api_key` gate). Without the bearer the
+        # request never reaches the app.
+        return {"api-key": self.api_key or "", **self._admin_headers()}
+
     def issue_user_tokens(self, user_id: int) -> str:
         """Mint a per-user access token for an EXISTING user and store it.
 
-        Calls `POST /v1/admin/users/{user_id}/tokens` with the Harmix `api-key`
-        header (not a bearer). Used by debug mode so chat/memory calls run as
-        the reused user — `messages/stream` answers from whichever user the
-        bearer belongs to, so the admin token would query the wrong memory.
+        Calls `POST /v1/admin/users/{user_id}/tokens` with the admin bearer
+        token AND the Harmix `api-key` header. Used by debug mode so chat/memory
+        calls run as the reused user — `messages/stream` answers from whichever
+        user the bearer belongs to, so the admin token would query the wrong
+        memory.
 
         Returns the access token (also set on `self.access_token` /
         `self.user_id`).
@@ -217,8 +226,12 @@ class PamClient:
                 "mint a per-user token for --pam-debug-user-id reuse"
             )
         url = f"{self.base_url}/admin/users/{user_id}/tokens"
-        headers = {"api-key": self.api_key}
-        resp = self.session.post(url, headers=headers, timeout=120)
+        resp = self.session.post(url, headers=self._issue_user_tokens_headers(), timeout=120)
+        if resp.status_code == 401:
+            # Admin bearer may have expired — refresh once and retry. A second
+            # 401 (edge) or any 403 (api-key wrong) is fatal.
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._issue_user_tokens_headers(), timeout=120)
         self._raise_for_auth(resp, url)
         if not resp.ok:
             logger.warning("Pam issue_user_tokens failed: %s %s", resp.status_code, resp.text[:500])

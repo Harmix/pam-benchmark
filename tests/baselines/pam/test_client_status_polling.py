@@ -257,12 +257,14 @@ def test_process_generic_files_returns_run_id_on_success(
 # --- issue_user_tokens (debug-mode per-user token mint) -------------------
 
 
-def test_issue_user_tokens_sends_api_key_and_sets_token(
+def test_issue_user_tokens_sends_api_key_and_admin_bearer_and_sets_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Mints a per-user token via the api-key admin endpoint and adopts it as
-    the current access token (so chat runs as that user)."""
+    """Mints a per-user token via the admin endpoint and adopts it as the
+    current access token (so chat runs as that user). The request must carry
+    BOTH the api-key header (route gate) AND the admin bearer (API edge gate)."""
     c = PamClient("http://stub", api_key="harmix-secret")
+    c.admin_token = "admin-jwt"  # set by login() in a real run
     seen: dict[str, Any] = {}
 
     def fake_post(url, headers=None, timeout=None, **_kw):
@@ -277,8 +279,39 @@ def test_issue_user_tokens_sends_api_key_and_sets_token(
     assert c.access_token == "tok-777"
     assert c.user_id == 777
     assert seen["url"].endswith("/admin/users/777/tokens")
-    # api-key header, NOT a bearer.
-    assert seen["headers"] == {"api-key": "harmix-secret"}
+    # Both headers present: api-key (route) + admin bearer (edge).
+    assert seen["headers"]["api-key"] == "harmix-secret"
+    assert seen["headers"]["Authorization"] == "Bearer admin-jwt"
+
+
+def test_issue_user_tokens_refreshes_admin_bearer_on_401(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A first 401 (expired admin bearer at the edge) → refresh once and retry."""
+    c = PamClient("http://stub", api_key="harmix-secret")
+    c.admin_token = "stale-jwt"
+    c._admin_email = "admin@stub"
+    c._admin_password = "pw"
+
+    def fake_refresh() -> None:
+        c.admin_token = "fresh-jwt"
+
+    monkeypatch.setattr(c, "refresh_token", fake_refresh)
+
+    seen_auth: list[str | None] = []
+    statuses = iter([401, 200])
+
+    def fake_post(url, headers=None, timeout=None, **_kw):
+        seen_auth.append(headers.get("Authorization"))
+        code = next(statuses)
+        body = b'{"access_token": "tok-1"}' if code == 200 else b"unauth"
+        return _FakeResp(code, body)
+
+    monkeypatch.setattr(c.session, "post", fake_post)
+
+    assert c.issue_user_tokens(5) == "tok-1"
+    # First attempt used the stale bearer; retry used the refreshed one.
+    assert seen_auth == ["Bearer stale-jwt", "Bearer fresh-jwt"]
 
 
 def test_issue_user_tokens_requires_api_key() -> None:
