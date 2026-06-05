@@ -87,3 +87,61 @@ def test_parser_empty_stream_returns_empty():
     text, injected = PamClient._parse_sse_stream(iter([]))
     assert text == ""
     assert injected == 0
+
+
+# --- result-frame answer (the real Pam shape) ----------------------------
+
+
+def test_parser_prefers_result_frame_text_when_assistant_turns_empty():
+    """Real Pam case: the final answer arrives ONLY in the terminal `result`
+    frame (assistant frames were tool-use/thinking), so the parser must read
+    content_new.text from the result frame instead of returning empty."""
+    answer = "A1: Approximately 3 years ago (May 7, 2023)\nA2: 2022\nA3: Counseling"
+    lines = [
+        _sse({"role": "tool_use"}),
+        _sse({"role": "tool_result"}),
+        _sse({"role": "result", "content_new": {"type": "text", "text": answer}}),
+    ]
+    text, _ = PamClient._parse_sse_stream(iter(lines))
+    assert text == answer
+
+
+def test_parser_result_frame_text_wins_over_assistant_turns():
+    """Even when assistant text turns exist, the aggregated result frame is the
+    authoritative answer."""
+    lines = [
+        _sse({"role": "assistant", "content_new": {"type": "text", "text": "Let me check..."}}),
+        _sse({"role": "tool_use"}),
+        _sse({"role": "tool_result"}),
+        _sse({"role": "assistant", "content_new": {"type": "text", "text": "A1: partial"}}),
+        _sse(
+            {
+                "role": "result",
+                "content_new": {"type": "text", "text": "A1: full\nA2: full"},
+            }
+        ),
+    ]
+    text, _ = PamClient._parse_sse_stream(iter(lines))
+    assert text == "A1: full\nA2: full"
+
+
+def test_parser_falls_back_to_assistant_turn_when_result_has_no_text():
+    """A result frame with empty/absent text → keep the old last-turn behavior."""
+    lines = [
+        _sse({"role": "assistant", "content_new": {"type": "text", "text": "Final answer."}}),
+        _sse({"role": "result", "content_new": {"type": "text", "text": ""}}),
+    ]
+    text, _ = PamClient._parse_sse_stream(iter(lines))
+    assert text == "Final answer."
+
+
+def test_parser_last_result_frame_wins_on_auto_continue():
+    """Workflow auto-continue can emit multiple result frames; use the last."""
+    lines = [
+        _sse({"role": "result", "content_new": {"type": "text", "text": "first"}}),
+        _sse({"role": "assistant", "content_new": {"type": "text", "text": "more work"}}),
+        _sse({"role": "tool_use"}),
+        _sse({"role": "result", "content_new": {"type": "text", "text": "second (final)"}}),
+    ]
+    text, _ = PamClient._parse_sse_stream(iter(lines))
+    assert text == "second (final)"
