@@ -461,12 +461,23 @@ class PamClient:
     def _parse_sse_stream(lines: Any) -> tuple[str, int]:
         """Extract `(final_answer_text, injected_tokens)` from Pam's SSE stream.
 
-        Split out from `send_message` so it can be unit-tested against
-        captured byte streams without a live server.
+        Pam (OpenClaw gateway) emits a terminal ``role == "result"`` frame whose
+        ``content_new.text`` is the agent's full, aggregated final answer
+        (`response_data["result"]` server-side). That frame is the authoritative
+        answer — the per-`assistant` text frames in between are interleaved with
+        tool-use cycles and may not contain the whole reply (or any of it).
+
+        So we PREFER the result frame's text. Only if the result frame carries
+        no text (or never arrives) do we fall back to the last accumulated
+        `assistant` text turn.
+
+        Split out from `send_message` so it can be unit-tested against captured
+        streams without a live server.
         """
         all_turns: list[list[str]] = []
         current_turn: list[str] = []
         injected_tokens: int = 0
+        result_text: str | None = None  # authoritative answer from the `result` frame
 
         for line in lines:
             if not line:
@@ -494,14 +505,22 @@ class PamClient:
                     all_turns.append(current_turn)
                     current_turn = []
             elif role == "result":
+                # Capture the aggregated answer + usage. Don't break: a workflow
+                # auto-continue can emit several result frames, and the stream
+                # closes itself when truly done — keep the LAST result text.
+                content_new = payload.get("content_new") or {}
+                text = content_new.get("text")
+                if text:
+                    result_text = text
                 usage = payload.get("usage") or {}
-                injected_tokens = (
-                    payload.get("injected_tokens") or usage.get("injected_tokens") or 0
-                )
-                break
+                injected = payload.get("injected_tokens") or usage.get("injected_tokens")
+                if injected:
+                    injected_tokens = injected
 
         if current_turn:
             all_turns.append(current_turn)
 
-        answer = "".join(all_turns[-1]) if all_turns else ""
+        # Prefer the aggregated result-frame text; fall back to the last
+        # accumulated assistant turn only if the result frame had no text.
+        answer = result_text or ("".join(all_turns[-1]) if all_turns else "")
         return answer, int(injected_tokens or 0)
