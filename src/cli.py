@@ -44,6 +44,14 @@ def main(
     output_dir: str = typer.Option(None, "--output-dir", help="Override outputs/<exp>/<seed>"),
     no_mongo: bool = typer.Option(False, "--no-mongo", help="Skip MongoDB writes"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Resolve config and exit"),
+    save_responses: bool = typer.Option(
+        False,
+        "--save-responses",
+        help=(
+            "Write every question + expected answer + baseline answer to "
+            "responses.log in the output dir (debugging aid)."
+        ),
+    ),
     log_format: str = typer.Option(
         "rich", "--log-format", help="rich | json (json for Cloud Logging)"
     ),
@@ -90,6 +98,7 @@ def main(
         output_dir=output_dir,
         mongo=not no_mongo,
         dry_run=dry_run,
+        save_responses=save_responses,
         log_format=log_format,
         pam_batch_size=pam_batch_size,
         pam_debug_user_id=pam_debug_user_id,

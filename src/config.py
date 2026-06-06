@@ -42,6 +42,9 @@ class RunConfig(BaseModel):
     log_format: str = "rich"  # "rich" | "json"
     mongo: bool = True
     dry_run: bool = False
+    # When True, dump every question + expected answer + baseline answer to a
+    # human-readable `responses.log` in the output dir. Debug aid only.
+    save_responses: bool = False
 
     # Pam-specific (ignored by other baselines)
     pam_batch_size: int = 10

@@ -67,7 +67,9 @@ class LiteLLMBaseline(BaselineBase, Baseline):
                 est_cost_usd=cost,
             ),
             latency_ms=t.ms,
-            raw=result.raw,
+            # `raw_prompt` / `raw_response` are the exact model in/out, surfaced
+            # for the --save-responses debug log.
+            raw={**(result.raw or {}), "raw_prompt": prompt, "raw_response": result.text},
         )
 
     async def teardown(self) -> None:

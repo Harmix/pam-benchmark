@@ -149,6 +149,46 @@ def _qa_responses(
     return rows
 
 
+def _append_log(path: Path, text: str) -> None:
+    """Append `text` and flush — opened per call so the log is readable mid-run."""
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(text)
+
+
+def _responses_log_header(sample_id: str, sample_index: int) -> str:
+    return "\n".join(["=" * 78, f"Sample: {sample_id} (index {sample_index})", "=" * 78, "", ""])
+
+
+def _responses_log_entry(preds: list[LoCoMoPrediction]) -> str:
+    """One batch's raw prompt + raw model response, written as soon as the model
+    answers (before judging — no f1/judge fields here). A batch shares one model
+    exchange, so the prompt/response are printed once and the per-question
+    expected/parsed answers are listed below them."""
+    if not preds:
+        return ""
+    nums = [p.question_num for p in preds]
+    span = f"Q{nums[0]}" if len(nums) == 1 else f"Q{nums[0]}-Q{nums[-1]}"
+    expected = "\n".join(f"Q{p.question_num}: {p.expected_answer}" for p in preds)
+    parsed = "\n".join(f"A{p.question_num}: {p.model_answer}" for p in preds)
+    return (
+        "\n".join(
+            [
+                f"[Batch {span}]",
+                "--- RAW PROMPT ---",
+                preds[0].raw_prompt,
+                "--- RAW MODEL RESPONSE ---",
+                preds[0].raw_response_text,
+                "--- EXPECTED ---",
+                expected,
+                "--- PARSED ANSWER ---",
+                parsed,
+                "",
+            ]
+        )
+        + "\n"
+    )
+
+
 async def _process_sample(
     sample: LoCoMoSample,
     sample_index: int,
@@ -156,14 +196,23 @@ async def _process_sample(
     baseline: Any,
     task_runner: Any,
     progress: Any,
+    responses_log: Path | None = None,
 ) -> SampleResult:
     n_questions = (
         len(sample.qa) if cfg.max_questions is None else min(cfg.max_questions, len(sample.qa))
     )
     task_id = add_sample_task(progress, sample.sample_id, n_questions)
 
+    if responses_log is not None:
+        _append_log(responses_log, _responses_log_header(sample.sample_id, sample_index))
+
     def _advance(_pred: LoCoMoPrediction) -> None:
         progress.advance(task_id, 1)
+
+    def _log_batch(preds: list[LoCoMoPrediction]) -> None:
+        # Flush each batch to disk immediately so the log can be tailed live.
+        if responses_log is not None:
+            _append_log(responses_log, _responses_log_entry(preds))
 
     start = time.perf_counter()
     predictions: list[LoCoMoPrediction] = await task_runner(
@@ -173,6 +222,7 @@ async def _process_sample(
         model_name=cfg.baseline_model or cfg.baseline,
         max_questions=cfg.max_questions,
         on_question_done=_advance,
+        on_batch_done=_log_batch,
     )
     answer_seconds = time.perf_counter() - start
 
@@ -263,6 +313,10 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     write_json(out_dir / "config.yaml", cfg.model_dump())
 
+    responses_log: Path | None = out_dir / "responses.log" if cfg.save_responses else None
+    if responses_log is not None:
+        responses_log.unlink(missing_ok=True)  # fresh log per run
+
     results: list[SampleResult] = []
     with progress_for(console=console) as progress:
         for sample_index in indices:
@@ -270,7 +324,9 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             if cfg.dry_run:
                 console.log(f"[yellow]dry-run[/yellow] would process {sample.sample_id}")
                 continue
-            r = await _process_sample(sample, sample_index, cfg, baseline, task_runner, progress)
+            r = await _process_sample(
+                sample, sample_index, cfg, baseline, task_runner, progress, responses_log
+            )
             results.append(r)
             if cfg.mongo:
                 write_sample_result(dataset=cfg.dataset, document=r.document)
@@ -301,6 +357,8 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     }
     write_json(out_dir / "metrics.json", overall)
     console.log(f"[green]Run complete.[/green] metrics → {out_dir / 'metrics.json'}")
+    if responses_log is not None and not cfg.dry_run:
+        console.log(f"[green]Saved responses[/green] → {responses_log}")
     return overall
 
 

@@ -29,6 +29,11 @@ class LoCoMoPrediction:
     latency_ms: float
     injected_tokens: int = 0
     raw_response: dict[str, Any] = field(default_factory=dict)
+    # Exact model in/out for the --save-responses debug log. `raw_prompt` is the
+    # string actually sent to the model (the rendered batch prompt for Pam);
+    # `raw_response_text` is the full model output before parsing/resolution.
+    raw_prompt: str = ""
+    raw_response_text: str = ""
 
 
 def _build_one(
@@ -101,6 +106,8 @@ def _build_prediction(
         est_cost_usd=response.usage.est_cost_usd,
         latency_ms=response.latency_ms,
         injected_tokens=response.usage.injected_tokens,
+        raw_prompt=str(response.raw.get("raw_prompt", built.prompt)),
+        raw_response_text=str(response.raw.get("raw_response", response.text)),
     )
 
 
@@ -112,13 +119,17 @@ async def run_sample(
     model_name: str,
     max_questions: int | None = None,
     on_question_done=None,
+    on_batch_done=None,
 ) -> list[LoCoMoPrediction]:
     """Drive one sample through the baseline.
 
     Calls `prepare_for_sample` once, then chunks questions by `baseline.batch_size`
     and dispatches each chunk via `answer_batch`. Cleanup runs even on failure.
     `on_question_done(prediction)` fires after each completed question so the
-    runner can advance progress bars / log lines.
+    runner can advance progress bars / log lines. `on_batch_done(predictions)`
+    fires once per chunk with all of that chunk's predictions — the chunk shares
+    one model prompt/response, so this is the right granularity for the raw-
+    exchange debug log.
     """
     qa_items = sample.qa if max_questions is None else sample.qa[:max_questions]
     batch_size = max(1, getattr(baseline, "batch_size", 1) or 1)
@@ -144,14 +155,18 @@ async def run_sample(
                     f"baseline.answer_batch returned {len(responses)} responses "
                     f"for {len(chunk)} prompts"
                 )
+            batch_preds: list[LoCoMoPrediction] = []
             for qa, built, response in zip(chunk, builts, responses, strict=True):
                 question_num += 1
                 prediction = _build_prediction(
                     question_num=question_num, qa=qa, built=built, response=response
                 )
                 out.append(prediction)
+                batch_preds.append(prediction)
                 if on_question_done is not None:
                     on_question_done(prediction)
+            if on_batch_done is not None:
+                on_batch_done(batch_preds)
     finally:
         await baseline.cleanup_sample()
     return out

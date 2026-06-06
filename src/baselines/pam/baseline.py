@@ -39,16 +39,57 @@ _OUTPUT_TOKEN_ENCODER_NAME = "cl100k_base"
 
 
 _ANSWER_LINE_RE = re.compile(r"^\s*A(\d+)\s*[:\.\)]\s*(.*)$", re.IGNORECASE)
+# Fallback for a line where the model dropped the "A" prefix (e.g. "9: Camping"
+# instead of "A9: Camping"). Only honored when the bare number is the next
+# sequential slot (see parse_batch_response) so numbered lists *inside* an
+# answer aren't mistaken for new answers.
+_BARE_NUM_LINE_RE = re.compile(r"^\s*(\d+)\s*[:\.\)]\s*(.*)$")
+
+# Reasoning models sometimes wrap the reply in <think>...</think> and/or a
+# <final>...</final> block. The SSE stream can even begin mid-thought (the
+# opening <think> already gone), so the reasoning text gets glued onto the same
+# line as the first answer, e.g.
+#   ...output it exactly as requested.</think><final>A1: Progressive/liberal
+# which leaves `A1:` off the line start and drops slot 1. Cutting everything up
+# to the last such boundary tag restores a clean `A1:`-first answer block.
+_SCAFFOLD_BOUNDARIES = ("</think>", "<final>")
+
+
+def _strip_reasoning_scaffold(text: str) -> str:
+    cut = 0
+    for marker in _SCAFFOLD_BOUNDARIES:
+        idx = text.rfind(marker)
+        if idx != -1:
+            cut = max(cut, idx + len(marker))
+    if cut:
+        text = text[cut:]
+    return text.replace("</final>", "").strip()
 
 
 def _render_batch_prompt(prompts: list[str]) -> str:
-    """Render a numbered Q1..QN prompt asking for A1..AN-formatted answers."""
+    """Render a numbered Q1..QN prompt asking for A1..AN-formatted answers.
+
+    The format rules are deliberately strict: Pam sits behind a tool-using agent
+    that sometimes streams status narration ("I'm searching your memory...") or
+    wraps its reply in reasoning tags, and occasionally drops the "A" prefix on a
+    line. The instructions below push it toward a clean, complete answer block so
+    every slot parses; the parser is tolerant of the rest.
+    """
     questions_block = "\n".join(f"Q{i}: {p}" for i, p in enumerate(prompts, start=1))
     template_block = "\n".join(f"A{i}: <short answer>" for i in range(1, len(prompts) + 1))
+    n = len(prompts)
     return (
         "Answer each of the following questions about the conversation in memory.\n"
-        "Reply in the EXACT format below, one answer per line, with the number "
-        "matching the question. Keep each answer concise.\n\n"
+        "Reply in the EXACT format below: one answer per line, each line starting "
+        'with a capital "A" followed by the question number and a colon. Keep each '
+        "answer concise.\n\n"
+        "Rules:\n"
+        f"- Output ONLY the {n} answer lines (A1..A{n}). No preamble, no status "
+        "updates, no reasoning, no thinking tags, no closing remarks.\n"
+        '- Begin every line with "A" and the matching number (A1, A2, ...). Never '
+        'drop the "A" and never merge two answers onto one line.\n'
+        "- Provide an answer for every question. If you are unsure, give your best "
+        "guess from memory; never leave a line blank.\n\n"
         f"{template_block}\n\n"
         f"{questions_block}"
     )
@@ -62,7 +103,13 @@ def parse_batch_response(text: str, n_expected: int) -> list[str]:
     appended to the most recently captured answer. Missing slots get empty
     strings — the caller logs a warning so the F1/judge pipeline still sees
     something for each question.
+
+    A leading <think>/<final> reasoning scaffold (which can land glued onto the
+    first answer line) is stripped first — see `_strip_reasoning_scaffold`. A
+    line that drops the "A" prefix ("9:" instead of "A9:") is recovered when its
+    number is the next expected slot.
     """
+    text = _strip_reasoning_scaffold(text)
     answers: dict[int, list[str]] = {}
     current_idx: int | None = None
 
@@ -71,7 +118,20 @@ def parse_batch_response(text: str, n_expected: int) -> list[str]:
         if m:
             current_idx = int(m.group(1))
             answers.setdefault(current_idx, []).append(m.group(2).strip())
-        elif current_idx is not None and raw_line.strip():
+            continue
+
+        bare = _BARE_NUM_LINE_RE.match(raw_line)
+        if bare:
+            idx = int(bare.group(1))
+            # Accept a missing-"A" line only if it's the next slot we expect and
+            # we haven't already captured it — keeps numbered lists inside an
+            # answer from masquerading as new answers.
+            if idx == (current_idx or 0) + 1 and 1 <= idx <= n_expected and idx not in answers:
+                current_idx = idx
+                answers.setdefault(idx, []).append(bare.group(2).strip())
+                continue
+
+        if current_idx is not None and raw_line.strip():
             answers[current_idx].append(raw_line.strip())
 
     out: list[str] = []
@@ -202,7 +262,8 @@ class PamBaseline(BaselineBase):
             logger.warning("Pam send_message failed for batch of %d: %r", len(prompts), e)
             # Surface as empty answers so downstream scorers still get rows.
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
-            return [self._empty_response(elapsed_ms / len(prompts)) for _ in prompts]
+            raw = {"raw_prompt": rendered, "raw_response": f"<send_message failed: {e!r}>"}
+            return [self._empty_response(elapsed_ms / len(prompts), raw=raw) for _ in prompts]
 
         total_latency_ms = (time.perf_counter() - t0) * 1000.0
         parsed = parse_batch_response(answer_text, len(prompts))
@@ -230,7 +291,10 @@ class PamBaseline(BaselineBase):
                         injected_tokens=per_question_injected,
                     ),
                     latency_ms=per_question_latency,
-                    raw={},
+                    # The whole batch shares one Pam exchange: the rendered Q1..QN
+                    # prompt and the full A1..AN reply (before per-question split).
+                    # Surfaced for the --save-responses debug log.
+                    raw={"raw_prompt": rendered, "raw_response": answer_text},
                 )
             )
         return out
@@ -274,10 +338,12 @@ class PamBaseline(BaselineBase):
             "pam_memory_run_ids": list(self._last_memory_run_ids),
         }
 
-    def _empty_response(self, latency_ms: float) -> BaselineResponse:
+    def _empty_response(
+        self, latency_ms: float, raw: dict[str, Any] | None = None
+    ) -> BaselineResponse:
         return BaselineResponse(
             text="",
             usage=TokenUsage(input_tokens=0, output_tokens=0, est_cost_usd=0.0, injected_tokens=0),
             latency_ms=latency_ms,
-            raw={},
+            raw=raw or {},
         )
