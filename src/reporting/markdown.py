@@ -23,7 +23,6 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
         "",
         f"- LLM-judge accuracy: **{h['judge_accuracy_pct']}%** ({h['judge_correct']}/{h['judge_total']})",
         f"- F1 (weighted): **{h['f1_pct']}%**",
-        f"- Total cost: ${h['total_cost_usd']:.4f}",
         f"- Avg latency / question: {h['avg_latency_ms']:.0f} ms",
         "",
         "## Per category",
@@ -41,8 +40,8 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             "",
             "## Per sample",
             "",
-            "| Baseline | Seed | Sample | Q | F1 | Judge | Cost | p50/p95 ms | Wall-clock |",
-            "|---|---|---|---:|---:|---:|---:|---:|---:|",
+            "| Baseline | Seed | Sample | Q | F1 | Judge | p50/p95 ms | Wall-clock |",
+            "|---|---|---|---:|---:|---:|---:|---:|",
         ]
     )
     for row in ctx["per_sample"]:
@@ -50,7 +49,6 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             f"| {row['baseline']} | {row['seed']} | {row['sample_id']} | "
             f"{row['total_questions']} | "
             f"{row['overall_accuracy'] * 100:.1f}% | {row['judge_accuracy'] * 100:.1f}% | "
-            f"${row['total_cost_usd']:.4f} | "
             f"{row['p50_latency_ms']:.0f}/{row['p95_latency_ms']:.0f} | "
             f"{row['execution_time_seconds']:.1f}s |"
         )

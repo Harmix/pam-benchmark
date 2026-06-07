@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -40,17 +39,8 @@ class SampleResult:
 
 
 def _provenance() -> dict[str, str]:
-    """Best-effort git + image provenance for Mongo docs."""
+    """Best-effort dependency provenance for Mongo docs."""
     info: dict[str, str] = {}
-    try:
-        info["git_commit"] = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
-            .decode()
-            .strip()
-        )
-    except Exception:
-        info["git_commit"] = ""
-    info["image_digest"] = (subprocess.os.environ.get("IMAGE_DIGEST") or "").strip()
     try:
         lock = Path(__file__).resolve().parent.parent / "uv.lock"
         if lock.exists():

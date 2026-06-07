@@ -91,10 +91,6 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
         <div class="card-label">Total questions</div>
       </div>
       <div class="card">
-        <div class="card-value">${{ '%.4f'|format(headline.total_cost_usd) }}</div>
-        <div class="card-label">Total cost (USD est.)</div>
-      </div>
-      <div class="card">
         <div class="card-value">{{ '%.0f'|format(headline.avg_latency_ms) }} ms</div>
         <div class="card-label">Avg latency / question</div>
       </div>
@@ -127,7 +123,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <table>
       <thead><tr>
         <th>Baseline</th><th>Seed</th><th>Sample</th><th>Q</th>
-        <th>F1</th><th>Judge</th><th>Cost</th><th>p50 / p95 latency</th><th>Wall-clock</th>
+        <th>F1</th><th>Judge</th><th>p50 / p95 latency</th><th>Wall-clock</th>
       </tr></thead>
       <tbody>
       {% for row in per_sample %}
@@ -138,7 +134,6 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
           <td>{{ row.total_questions }}</td>
           <td>{{ '%.1f'|format(row.overall_accuracy*100) }}%</td>
           <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
-          <td>${{ '%.4f'|format(row.total_cost_usd) }}</td>
           <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
           <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
         </tr>

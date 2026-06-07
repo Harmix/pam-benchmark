@@ -37,7 +37,6 @@ def _aggregate_headline(docs: list[dict[str, Any]]) -> dict[str, Any]:
     total_q = sum(d.get("total_questions", 0) for d in docs)
     judge_correct = sum(d.get("judge_correct_count", 0) for d in docs)
     f1_sum = sum(d.get("total_f1_sum", 0.0) for d in docs)
-    cost = sum(d.get("total_cost_usd", 0.0) for d in docs)
     latencies = []
     for d in docs:
         avg = d.get("avg_latency_ms", 0) or 0
@@ -55,7 +54,6 @@ def _aggregate_headline(docs: list[dict[str, Any]]) -> dict[str, Any]:
         "judge_class": _accuracy_class(judge_pct),
         "f1_pct": round(f1_pct, 1),
         "f1_class": _accuracy_class(f1_pct),
-        "total_cost_usd": cost,
         "avg_latency_ms": avg_latency,
     }
 
@@ -123,7 +121,6 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "overall_accuracy": d.get("overall_accuracy", 0.0) or 0.0,
                 "judge_accuracy": judge_acc,
                 "judge_class": _accuracy_class(judge_acc * 100),
-                "total_cost_usd": d.get("total_cost_usd", 0.0) or 0.0,
                 "p50_latency_ms": d.get("p50_latency_ms", 0.0) or 0.0,
                 "p95_latency_ms": d.get("p95_latency_ms", 0.0) or 0.0,
                 "execution_time_seconds": d.get("execution_time_seconds", 0.0) or 0.0,

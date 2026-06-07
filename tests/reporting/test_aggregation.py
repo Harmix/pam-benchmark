@@ -100,7 +100,8 @@ def test_headline_combines_across_docs():
     assert h["total_questions"] == 3
     assert h["judge_correct"] == 2
     assert h["judge_accuracy_pct"] == pytest.approx(round(2 / 3 * 100, 1))
-    assert h["total_cost_usd"] == pytest.approx(0.03)
+    # Cost is intentionally absent from the report headline.
+    assert "total_cost_usd" not in h
 
 
 def test_per_category_groups_canonical_order():
