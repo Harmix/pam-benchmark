@@ -14,6 +14,25 @@ class TokenUsage:
     # External-memory baselines (e.g. Pam) report how many tokens the retriever
     # pulled from memory and fed to the answering model. LiteLLM leaves this 0.
     injected_tokens: int = 0
+    # `prompt_tokens` = tokens of the question prompt sent to the model.
+    # `context_tokens` = input_tokens - prompt_tokens (the rest of the input,
+    # e.g. system/template/retrieved context). See `split_input_tokens`.
+    prompt_tokens: int = 0
+    context_tokens: int = 0
+
+
+def split_input_tokens(input_tokens: int, prompt_tokens: int) -> tuple[int, int]:
+    """Return `(prompt_tokens, context_tokens)` for a response.
+
+    `context_tokens` is `input_tokens - prompt_tokens`. When `input_tokens` is 0
+    (the baseline doesn't expose input usage), `prompt_tokens` is forced to 0 too
+    so `context_tokens` never goes negative. `prompt_tokens` is also capped at
+    `input_tokens` for the same reason.
+    """
+    if input_tokens <= 0:
+        return 0, 0
+    prompt_tokens = max(0, min(prompt_tokens, input_tokens))
+    return prompt_tokens, input_tokens - prompt_tokens
 
 
 @dataclass

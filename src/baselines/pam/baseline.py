@@ -22,7 +22,7 @@ import time
 import uuid
 from typing import Any
 
-import tiktoken
+import litellm
 
 from baselines.base import BaselineBase, BaselineResponse, TokenUsage
 from baselines.pam.client import PamClient
@@ -32,10 +32,20 @@ from env import require
 
 logger = logging.getLogger(__name__)
 
-# Output-token estimate via a fixed encoder so the report shows a comparable
+# Output-token estimate via a fixed counter so the report shows a comparable
 # value alongside other baselines. Pam does not expose the underlying LLM's
-# token usage directly.
-_OUTPUT_TOKEN_ENCODER_NAME = "cl100k_base"
+# token usage directly. The counter's model id is a secret — supplied via this
+# env var (set it in secrets.env / Secret Manager), never hardcoded.
+_OUTPUT_TOKEN_MODEL_ENV = "PAM_OUTPUT_TOKEN_MODEL"
+
+
+def _count_output_tokens(model: str | None, text: str) -> int:
+    if not text or not model:
+        return 0
+    try:
+        return int(litellm.token_counter(model=model, text=text))
+    except Exception:
+        return 0
 
 
 _ANSWER_LINE_RE = re.compile(r"^\s*A(\d+)\s*[:\.\)]\s*(.*)$", re.IGNORECASE)
@@ -174,7 +184,15 @@ class PamBaseline(BaselineBase):
         # be reused later via --pam-debug-user-id. See `cleanup_sample`.
         self._backup_memory = bool(backup_memory)
 
-        self._encoder = tiktoken.get_encoding(_OUTPUT_TOKEN_ENCODER_NAME)
+        # Model id whose tokenizer counts Pam's output tokens — supplied via env
+        # (secret), never hardcoded. Missing => output_tokens fall back to 0.
+        self._output_token_model = os.environ.get(_OUTPUT_TOKEN_MODEL_ENV)
+        if not self._output_token_model:
+            logger.warning(
+                "%s not set; Pam output_tokens will be reported as 0",
+                _OUTPUT_TOKEN_MODEL_ENV,
+            )
+
         self._memory_creation_sec: float = 0.0
         self._pam_user_id: int | None = None
         self._current_sample_id: str | None = None
@@ -280,13 +298,16 @@ class PamBaseline(BaselineBase):
 
         out: list[BaselineResponse] = []
         for answer in parsed:
-            out_tokens = len(self._encoder.encode(answer)) if answer else 0
             out.append(
                 BaselineResponse(
                     text=answer,
                     usage=TokenUsage(
+                        # Pam does not expose the underlying model's input usage,
+                        # so input/prompt/context tokens stay 0.
                         input_tokens=0,
-                        output_tokens=out_tokens,
+                        output_tokens=_count_output_tokens(self._output_token_model, answer),
+                        prompt_tokens=0,
+                        context_tokens=0,
                         est_cost_usd=0.0,
                         injected_tokens=per_question_injected,
                     ),

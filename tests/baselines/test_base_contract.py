@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 
-from baselines.base import Baseline, BaselineResponse, TokenUsage
+from baselines.base import Baseline, BaselineResponse, TokenUsage, split_input_tokens
 from baselines.litellm_baseline import LiteLLMBaseline
 from datasets.base import DatasetLoader
 from datasets.locomo.loader import LoCoMoLoader
@@ -31,6 +31,23 @@ def test_token_usage_defaults_zero():
     assert u.input_tokens == 0
     assert u.output_tokens == 0
     assert u.est_cost_usd == 0.0
+    assert u.prompt_tokens == 0
+    assert u.context_tokens == 0
+
+
+def test_split_input_tokens_normal_case():
+    # context = input - prompt
+    assert split_input_tokens(1000, 40) == (40, 960)
+
+
+def test_split_input_tokens_zero_input_forces_zero_prompt():
+    # input==0 → prompt forced to 0 so context is never negative
+    assert split_input_tokens(0, 40) == (0, 0)
+
+
+def test_split_input_tokens_caps_prompt_at_input():
+    # prompt count exceeding input (tokenizer mismatch) is capped, context >= 0
+    assert split_input_tokens(30, 50) == (30, 0)
 
 
 def test_baseline_response_default_usage():

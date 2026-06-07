@@ -28,6 +28,8 @@ class LoCoMoPrediction:
     est_cost_usd: float
     latency_ms: float
     injected_tokens: int = 0
+    prompt_tokens: int = 0
+    context_tokens: int = 0
     raw_response: dict[str, Any] = field(default_factory=dict)
     # Exact model in/out for the --save-responses debug log. `raw_prompt` is the
     # string actually sent to the model (the rendered batch prompt for Pam);
@@ -106,6 +108,8 @@ def _build_prediction(
         est_cost_usd=response.usage.est_cost_usd,
         latency_ms=response.latency_ms,
         injected_tokens=response.usage.injected_tokens,
+        prompt_tokens=response.usage.prompt_tokens,
+        context_tokens=response.usage.context_tokens,
         raw_prompt=str(response.raw.get("raw_prompt", built.prompt)),
         raw_response_text=str(response.raw.get("raw_response", response.text)),
     )

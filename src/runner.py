@@ -87,6 +87,8 @@ def _aggregate(
     latencies = summarize_latencies(p.latency_ms for p in predictions)
     total_in_tok = sum(p.input_tokens for p in predictions)
     total_out_tok = sum(p.output_tokens for p in predictions)
+    total_prompt_tok = sum(p.prompt_tokens for p in predictions)
+    total_context_tok = sum(p.context_tokens for p in predictions)
     total_cost = sum(p.est_cost_usd for p in predictions)
 
     overall_f1 = sum(f1_scores) / total if total else 0.0
@@ -102,6 +104,8 @@ def _aggregate(
         "judge_correct_count": judge_correct,
         "total_input_tokens": total_in_tok,
         "total_output_tokens": total_out_tok,
+        "total_prompt_tokens": total_prompt_tok,
+        "total_context_tokens": total_context_tok,
         "total_cost_usd": round(total_cost, 6),
         **latencies,
         **per_cat,
@@ -132,6 +136,8 @@ def _qa_responses(
                 "judge_reasoning": j.reasoning,
                 "input_tokens": pred.input_tokens,
                 "output_tokens": pred.output_tokens,
+                "prompt_tokens": pred.prompt_tokens,
+                "context_tokens": pred.context_tokens,
                 "est_cost_usd": round(pred.est_cost_usd, 6),
                 "latency_ms": round(pred.latency_ms, 2),
             }

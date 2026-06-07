@@ -59,6 +59,7 @@ Required in `secrets.env`:
 PAM_API_HOST=...
 PAM_API_USER=...
 PAM_API_PASSWORD=...
+PAM_OUTPUT_TOKEN_MODEL=...   # model id whose tokenizer counts Pam output tokens
 ```
 
 Optional (only for `--pam-debug-user-id` reuse):
@@ -67,13 +68,15 @@ Optional (only for `--pam-debug-user-id` reuse):
 PAM_API_KEY=...   # Harmix API key; used to mint a per-user token for the reused user
 ```
 
+If `PAM_OUTPUT_TOKEN_MODEL` is unset, `output_tokens` is reported as `0`.
+
 ## Metrics
 
 Per-question rows in Mongo carry `injected_tokens` (from Pam's SSE `usage`)
-and `output_tokens` (estimated via tiktoken for cross-baseline comparability).
-`input_tokens` and `est_cost_usd` stay at 0 — Pam doesn't expose the
-underlying LLM's input-token count, and Pam is internal infra so per-token
-cost is not the right unit.
+and `output_tokens` (estimated with a fixed tokenizer for cross-baseline
+comparability). `input_tokens`, `prompt_tokens`, `context_tokens`, and
+`est_cost_usd` stay at 0 — Pam doesn't expose the underlying LLM's input-token
+count, and Pam is internal infra so per-token cost is not the right unit.
 
 Per-sample rows carry `memory_creation_duration_sec`, `pam_user_id`, and
 `pam_batch_size` as top-level fields (via `PamBaseline.extras()`).

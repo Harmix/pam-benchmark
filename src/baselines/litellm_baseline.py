@@ -6,7 +6,13 @@ from typing import Any
 
 import litellm
 
-from baselines.base import Baseline, BaselineBase, BaselineResponse, TokenUsage
+from baselines.base import (
+    Baseline,
+    BaselineBase,
+    BaselineResponse,
+    TokenUsage,
+    split_input_tokens,
+)
 from utils.llm import DEFAULT_RPM, acompletion
 from utils.timing import timed
 
@@ -59,11 +65,16 @@ class LiteLLMBaseline(BaselineBase, Baseline):
                 extra_kwargs=self.completion_kwargs,
             )
         cost = _estimate_cost(self.model, result.input_tokens, result.output_tokens)
+        prompt_tok, context_tok = split_input_tokens(
+            result.input_tokens, _count_prompt_tokens(self.model, prompt)
+        )
         return BaselineResponse(
             text=result.text,
             usage=TokenUsage(
                 input_tokens=result.input_tokens,
                 output_tokens=result.output_tokens,
+                prompt_tokens=prompt_tok,
+                context_tokens=context_tok,
                 est_cost_usd=cost,
             ),
             latency_ms=t.ms,
@@ -74,6 +85,14 @@ class LiteLLMBaseline(BaselineBase, Baseline):
 
     async def teardown(self) -> None:
         return None
+
+
+def _count_prompt_tokens(model: str, prompt: str) -> int:
+    """Token count of the raw prompt string, per the model's own tokenizer."""
+    try:
+        return int(litellm.token_counter(model=model, text=prompt))
+    except Exception:
+        return 0
 
 
 def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
