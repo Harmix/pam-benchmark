@@ -7,9 +7,13 @@ import pytest
 from reporting.html import (
     _accuracy_class,
     _aggregate_headline,
+    _avg_context_tokens,
+    _avg_input_tokens,
     _incorrect,
+    _incorrect_categories,
     _per_category,
     _per_sample,
+    _per_sample_tokens,
     build_context,
 )
 from reporting.markdown import render_markdown
@@ -129,6 +133,96 @@ def test_per_sample_one_row_per_doc():
     assert len(rows) == 3
     assert {r["sample_id"] for r in rows} == {"s0", "s1", "s2"}
     assert all("judge_class" in r for r in rows)
+    # Seed column dropped; Avg. Context Tokens added.
+    assert all("seed" not in r for r in rows)
+    assert all("avg_context_tokens" in r for r in rows)
+
+
+def test_avg_context_tokens_non_pam_uses_context_total():
+    doc = {"baseline": "gpt-4-turbo", "total_questions": 4, "total_context_tokens": 80}
+    assert _avg_context_tokens(doc) == pytest.approx(20.0)
+
+
+def test_avg_context_tokens_pam_uses_enriched_minus_prompt():
+    # Pam: (enriched - prompt) / questions
+    doc = {
+        "baseline": "pam",
+        "total_questions": 5,
+        "total_context_tokens": 0,
+        "total_enriched_user_prompt_tokens": 500,
+        "total_prompt_tokens": 100,
+    }
+    assert _avg_context_tokens(doc) == pytest.approx(80.0)
+
+
+def test_avg_context_tokens_zero_questions_safe():
+    assert _avg_context_tokens({"baseline": "pam", "total_questions": 0}) == 0.0
+
+
+def test_avg_input_tokens_non_pam_uses_input_total():
+    doc = {"baseline": "gpt-4-turbo", "total_questions": 4, "total_input_tokens": 400}
+    assert _avg_input_tokens(doc) == pytest.approx(100.0)
+
+
+def test_avg_input_tokens_pam_uses_enriched():
+    doc = {
+        "baseline": "pam",
+        "total_questions": 5,
+        "total_input_tokens": 0,
+        "total_enriched_user_prompt_tokens": 500,
+    }
+    assert _avg_input_tokens(doc) == pytest.approx(100.0)
+
+
+def test_per_sample_tokens_columns_and_values():
+    doc = {
+        "baseline": "pam",
+        "sample_id": "s1",
+        "total_questions": 2,
+        "total_input_tokens": 0,
+        "total_output_tokens": 40,
+        "total_context_tokens": 0,
+        "total_prompt_tokens": 60,
+        "total_enriched_user_prompt_tokens": 200,
+        "total_agent_input_tokens": 100,
+        "total_agent_output_tokens": 20,
+        "total_agent_cache_read_tokens": 8,
+        "total_agent_cache_write_tokens": 4,
+    }
+    row = _per_sample_tokens([doc])[0]
+    assert row["avg_input"] == pytest.approx(100.0)  # enriched 200 / 2
+    assert row["avg_output"] == pytest.approx(20.0)
+    assert row["avg_context"] == pytest.approx(70.0)  # (200 - 60) / 2
+    assert row["avg_prompt"] == pytest.approx(30.0)
+    assert row["avg_agent_input"] == pytest.approx(50.0)
+    assert row["avg_agent_output"] == pytest.approx(10.0)
+    assert row["avg_agent_cache_read"] == pytest.approx(4.0)
+    assert row["avg_agent_cache_write"] == pytest.approx(2.0)
+
+
+def test_per_sample_tokens_zero_questions_safe():
+    row = _per_sample_tokens([{"baseline": "gpt-4-turbo", "sample_id": "s", "total_questions": 0}])[
+        0
+    ]
+    assert row["avg_input"] == 0.0
+    assert row["avg_agent_cache_write"] == 0.0
+
+
+def test_incorrect_categories_counts_and_canonical_order():
+    incorrect = [
+        {"category_name": "adversarial"},
+        {"category_name": "single_hop"},
+        {"category_name": "single_hop"},
+        {"category_name": "temporal"},
+    ]
+    cats = _incorrect_categories(incorrect)
+    # Canonical order: single_hop, temporal, ..., adversarial last.
+    assert [c["name"] for c in cats] == ["single_hop", "temporal", "adversarial"]
+    assert {c["name"]: c["count"] for c in cats} == {
+        "single_hop": 2,
+        "temporal": 1,
+        "adversarial": 1,
+    }
 
 
 def test_incorrect_filters_to_judge_incorrect_only():

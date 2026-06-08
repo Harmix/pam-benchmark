@@ -115,7 +115,6 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         rows.append(
             {
                 "baseline": d.get("baseline", "?"),
-                "seed": d.get("seed", "?"),
                 "sample_id": d.get("sample_id", "?"),
                 "total_questions": d.get("total_questions", 0),
                 "overall_accuracy": d.get("overall_accuracy", 0.0) or 0.0,
@@ -124,6 +123,66 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "p50_latency_ms": d.get("p50_latency_ms", 0.0) or 0.0,
                 "p95_latency_ms": d.get("p95_latency_ms", 0.0) or 0.0,
                 "execution_time_seconds": d.get("execution_time_seconds", 0.0) or 0.0,
+                "avg_context_tokens": _avg_context_tokens(d),
+            }
+        )
+    return rows
+
+
+def _avg_context_tokens(doc: dict[str, Any]) -> float:
+    """Average context tokens per question for one sample doc.
+
+    Normally `total_context_tokens / questions`, but Pam doesn't report
+    `context_tokens` (it stays 0), so for Pam we approximate the injected
+    context as `total_enriched_user_prompt_tokens - total_prompt_tokens`.
+    """
+    total_q = doc.get("total_questions", 0) or 0
+    if not total_q:
+        return 0.0
+    if doc.get("baseline") == "pam":
+        ctx_total = (doc.get("total_enriched_user_prompt_tokens", 0) or 0) - (
+            doc.get("total_prompt_tokens", 0) or 0
+        )
+    else:
+        ctx_total = doc.get("total_context_tokens", 0) or 0
+    return ctx_total / total_q
+
+
+def _avg_per_question(doc: dict[str, Any], total_field: str) -> float:
+    """`doc[total_field] / total_questions`, 0 when there are no questions."""
+    total_q = doc.get("total_questions", 0) or 0
+    if not total_q:
+        return 0.0
+    return (doc.get(total_field, 0) or 0) / total_q
+
+
+def _avg_input_tokens(doc: dict[str, Any]) -> float:
+    """Average input tokens per question. Pam doesn't report `input_tokens`, so
+    its input is taken as the agent's enriched user prompt."""
+    field = (
+        "total_enriched_user_prompt_tokens"
+        if doc.get("baseline") == "pam"
+        else ("total_input_tokens")
+    )
+    return _avg_per_question(doc, field)
+
+
+def _per_sample_tokens(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Per-question token averages for each sample doc."""
+    rows: list[dict[str, Any]] = []
+    for d in docs:
+        rows.append(
+            {
+                "baseline": d.get("baseline", "?"),
+                "sample_id": d.get("sample_id", "?"),
+                "avg_input": _avg_input_tokens(d),
+                "avg_output": _avg_per_question(d, "total_output_tokens"),
+                "avg_context": _avg_context_tokens(d),
+                "avg_prompt": _avg_per_question(d, "total_prompt_tokens"),
+                "avg_agent_input": _avg_per_question(d, "total_agent_input_tokens"),
+                "avg_agent_output": _avg_per_question(d, "total_agent_output_tokens"),
+                "avg_agent_cache_read": _avg_per_question(d, "total_agent_cache_read_tokens"),
+                "avg_agent_cache_write": _avg_per_question(d, "total_agent_cache_write_tokens"),
             }
         )
     return rows
@@ -141,12 +200,29 @@ def _incorrect(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+# Canonical category order, mirroring the LoCoMo paper.
+_CATEGORY_ORDER = ["single_hop", "temporal", "open_domain", "multi_hop", "adversarial"]
+
+
+def _incorrect_categories(incorrect: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Distinct question types present in the incorrect set, with counts — used
+    to build the Incorrect-responses filter buttons."""
+    counts: dict[str, int] = {}
+    for r in incorrect:
+        name = r.get("category_name") or "unknown"
+        counts[name] = counts.get(name, 0) + 1
+    ordered = [n for n in _CATEGORY_ORDER if n in counts]
+    ordered += [n for n in counts if n not in _CATEGORY_ORDER]
+    return [{"name": n, "count": counts[n]} for n in ordered]
+
+
 def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) -> dict[str, Any]:
     baselines = sorted({d.get("baseline", "?") for d in docs})
     seeds = sorted({d.get("seed", "?") for d in docs}, key=lambda x: (x is None, x))
     judges = sorted({d.get("judge_model", "?") for d in docs})
     samples = sorted({d.get("sample_id", "?") for d in docs})
     dataset_names = sorted({d.get("dataset_name", dataset) for d in docs})
+    incorrect = _incorrect(docs)
     return {
         "dataset": dataset,
         "exp_name": exp_name,
@@ -159,7 +235,9 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
         "headline": _aggregate_headline(docs),
         "per_category": _per_category(docs),
         "per_sample": _per_sample(docs),
-        "incorrect": _incorrect(docs),
+        "per_sample_tokens": _per_sample_tokens(docs),
+        "incorrect": incorrect,
+        "incorrect_categories": _incorrect_categories(incorrect),
     }
 
 

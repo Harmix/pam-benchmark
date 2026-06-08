@@ -217,6 +217,9 @@ class PamBaseline(BaselineBase):
         self._pam_user_id: int | None = None
         self._current_sample_id: str | None = None
         self._last_memory_run_ids: list[str] = []
+        # Batch progress within the current sample (for "batch i/N" log lines).
+        self._batch_index: int = 0
+        self._total_batches: int = 0
 
     # ----- lifecycle ------------------------------------------------------
 
@@ -226,6 +229,11 @@ class PamBaseline(BaselineBase):
     async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
         self._current_sample_id = sample.sample_id
         self._memory_creation_sec = 0.0
+        # Reset batch progress for this sample. (Counts all of the sample's
+        # questions; under --max-questions the cap isn't visible here, so the
+        # total is the full count.)
+        self._batch_index = 0
+        self._total_batches = (len(sample.qa) + self.batch_size - 1) // self.batch_size
 
         if self._debug_user_id is not None:
             # Reuse an existing Pam user (e.g. one kept alive by a prior
@@ -320,6 +328,9 @@ class PamBaseline(BaselineBase):
 
         rendered = _render_batch_prompt(prompts)
         n = len(prompts)
+        self._batch_index += 1
+        batch_no = self._batch_index
+        total_batches = self._total_batches or batch_no
 
         # prompt_tokens = tokens of the prompt WE send to Pam (the rendered
         # Q1..QN batch). It's always measurable and independent of whether Pam
@@ -333,7 +344,13 @@ class PamBaseline(BaselineBase):
                 self.client.send_message, rendered
             )
         except Exception as e:
-            logger.warning("Pam send_message failed for batch of %d: %r", n, e)
+            logger.warning(
+                "Pam send_message failed for batch %d/%d (%d questions): %r",
+                batch_no,
+                total_batches,
+                n,
+                e,
+            )
             # Surface as empty answers so downstream scorers still get rows.
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
             raw = {"raw_prompt": rendered, "raw_response": f"<send_message failed: {e!r}>"}
@@ -350,10 +367,22 @@ class PamBaseline(BaselineBase):
         metrics = await self._read_agent_metrics()
 
         parsed = parse_batch_response(answer_text, n)
-        if any(not a for a in parsed):
+        answered = sum(1 for a in parsed if a)
+        logger.info(
+            "Pam answered %d/%d questions in batch %d/%d for user_id=%s (%.0f ms)",
+            answered,
+            n,
+            batch_no,
+            total_batches,
+            self._pam_user_id,
+            total_latency_ms,
+        )
+        if answered < n:
             missing = [i + 1 for i, a in enumerate(parsed) if not a]
             logger.warning(
-                "Pam batch reply missing answers for slots %s (batch size=%d)",
+                "Pam batch %d/%d reply missing answers for slots %s (batch size=%d)",
+                batch_no,
+                total_batches,
                 missing,
                 n,
             )

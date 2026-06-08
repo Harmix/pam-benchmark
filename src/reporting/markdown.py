@@ -40,16 +40,38 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             "",
             "## Per sample",
             "",
-            "| Baseline | Seed | Sample | Q | F1 | Judge | p50/p95 ms | Wall-clock |",
-            "|---|---|---|---:|---:|---:|---:|---:|",
+            "| Baseline | Sample | Q | F1 | Judge | p50/p95 ms | Wall-clock | Avg. Context Tokens |",
+            "|---|---|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for row in ctx["per_sample"]:
         lines.append(
-            f"| {row['baseline']} | {row['seed']} | {row['sample_id']} | "
+            f"| {row['baseline']} | {row['sample_id']} | "
             f"{row['total_questions']} | "
             f"{row['overall_accuracy'] * 100:.1f}% | {row['judge_accuracy'] * 100:.1f}% | "
             f"{row['p50_latency_ms']:.0f}/{row['p95_latency_ms']:.0f} | "
-            f"{row['execution_time_seconds']:.1f}s |"
+            f"{row['execution_time_seconds']:.1f}s | "
+            f"{row['avg_context_tokens']:.0f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Per-sample token metrics",
+            "",
+            "Per-question token averages. For Pam, Avg Input uses the enriched user prompt "
+            "and Avg Context is enriched minus prompt.",
+            "",
+            "| Baseline | Sample | Avg Input | Avg Output | Avg Context | Avg Prompt | "
+            "Avg Agent Input | Avg Agent Output | Avg Agent Cache Read | Avg Agent Cache Write |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in ctx["per_sample_tokens"]:
+        lines.append(
+            f"| {row['baseline']} | {row['sample_id']} | "
+            f"{row['avg_input']:.0f} | {row['avg_output']:.0f} | "
+            f"{row['avg_context']:.0f} | {row['avg_prompt']:.0f} | "
+            f"{row['avg_agent_input']:.0f} | {row['avg_agent_output']:.0f} | "
+            f"{row['avg_agent_cache_read']:.0f} | {row['avg_agent_cache_write']:.0f} |"
         )
     return "\n".join(lines)
