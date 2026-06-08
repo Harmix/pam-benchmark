@@ -59,6 +59,13 @@ Required in `secrets.env`:
 PAM_API_HOST=...
 PAM_API_USER=...
 PAM_API_PASSWORD=...
+PAM_OUTPUT_TOKEN_MODEL=...   # model id whose tokenizer counts Pam output tokens
+# Postgres holding pam.message_metrics (agent-side token usage per answer):
+DATABASE_HOST=...
+DATABASE_PORT=...
+DATABASE_NAME=...
+DATABASE_USERNAME=...
+DATABASE_PASSWORD=...
 ```
 
 Optional (only for `--pam-debug-user-id` reuse):
@@ -67,13 +74,28 @@ Optional (only for `--pam-debug-user-id` reuse):
 PAM_API_KEY=...   # Harmix API key; used to mint a per-user token for the reused user
 ```
 
+If `PAM_OUTPUT_TOKEN_MODEL` is unset, `output_tokens` is reported as `0`. If the
+`DATABASE_*` vars are unset or the DB is unreachable, the `agent_*` token counts
+are reported as `0` (the run still completes).
+
 ## Metrics
 
-Per-question rows in Mongo carry `injected_tokens` (from Pam's SSE `usage`)
-and `output_tokens` (estimated via tiktoken for cross-baseline comparability).
-`input_tokens` and `est_cost_usd` stay at 0 — Pam doesn't expose the
-underlying LLM's input-token count, and Pam is internal infra so per-token
-cost is not the right unit.
+Per-question rows in Mongo carry `injected_tokens` (from Pam's SSE `usage`),
+`output_tokens` (estimated with a fixed tokenizer for cross-baseline
+comparability), and `prompt_tokens` — the token count of the prompt the
+benchmark sends to Pam (the rendered `Q1..QN` batch, split evenly across its
+questions; always > 0). `input_tokens`, `context_tokens`, and `est_cost_usd`
+stay at 0 — Pam doesn't expose the underlying LLM's input-token count, and Pam
+is internal infra so per-token cost is not the right unit.
+
+After each answer the baseline reads the most-recent `pam.message_metrics` row
+for the acting user and records the agent's own token usage:
+`agent_input_tokens`, `agent_output_tokens`, `agent_cache_read_tokens`,
+`agent_cache_write_tokens`, and `enriched_user_prompt_tokens`. A batch shares one
+agent call, so each row's totals are split evenly across the batch's questions;
+per-sample they are summed into the `total_agent_*` /
+`total_enriched_user_prompt_tokens` fields. The row's `model_used` is recorded as
+`agent_model_used` inside the Mongo doc's `baseline_kwargs`.
 
 Per-sample rows carry `memory_creation_duration_sec`, `pam_user_id`, and
 `pam_batch_size` as top-level fields (via `PamBaseline.extras()`).

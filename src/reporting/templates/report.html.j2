@@ -54,6 +54,17 @@ tr:hover td { background: #f8fafc; }
 .error-row .ans { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
 details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: var(--muted); }
 .muted { color: var(--muted); font-size: .85rem; }
+.filters { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.filter-btn { padding: .35rem .8rem; border: 1px solid var(--border); background: var(--card);
+              color: var(--muted); border-radius: 999px; cursor: pointer; font-size: .82rem;
+              font-weight: 600; }
+.filter-btn:hover { background: #f1f5f9; }
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+.pagination button { padding: .4rem .9rem; border: 1px solid var(--border); background: var(--card);
+                     border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600;
+                     color: var(--text); }
+.pagination button:disabled { opacity: .45; cursor: default; }
 </style>
 </head>
 <body>
@@ -91,10 +102,6 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
         <div class="card-label">Total questions</div>
       </div>
       <div class="card">
-        <div class="card-value">${{ '%.4f'|format(headline.total_cost_usd) }}</div>
-        <div class="card-label">Total cost (USD est.)</div>
-      </div>
-      <div class="card">
         <div class="card-value">{{ '%.0f'|format(headline.avg_latency_ms) }} ms</div>
         <div class="card-label">Avg latency / question</div>
       </div>
@@ -126,21 +133,50 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <h2>Per-sample results</h2>
     <table>
       <thead><tr>
-        <th>Baseline</th><th>Seed</th><th>Sample</th><th>Q</th>
-        <th>F1</th><th>Judge</th><th>Cost</th><th>p50 / p95 latency</th><th>Wall-clock</th>
+        <th>Baseline</th><th>Sample</th><th>Q</th>
+        <th>F1</th><th>Judge</th><th>p50 / p95 latency</th><th>Wall-clock</th><th>Avg. Context Tokens</th>
       </tr></thead>
       <tbody>
       {% for row in per_sample %}
         <tr>
           <td>{{ row.baseline }}</td>
-          <td>{{ row.seed }}</td>
           <td>{{ row.sample_id }}</td>
           <td>{{ row.total_questions }}</td>
           <td>{{ '%.1f'|format(row.overall_accuracy*100) }}%</td>
           <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
-          <td>${{ '%.4f'|format(row.total_cost_usd) }}</td>
           <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
           <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
+          <td>{{ '%.0f'|format(row.avg_context_tokens) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Per-sample token metrics</h2>
+    <p class="muted">Per-question token averages. For Pam, Avg Input uses the enriched user prompt
+      and Avg Context is enriched − prompt.</p>
+    <table>
+      <thead><tr>
+        <th>Baseline</th><th>Sample</th>
+        <th>Avg Input</th><th>Avg Output</th><th>Avg Context</th><th>Avg Prompt</th>
+        <th>Avg Agent Input</th><th>Avg Agent Output</th>
+        <th>Avg Agent Cache Read</th><th>Avg Agent Cache Write</th>
+      </tr></thead>
+      <tbody>
+      {% for row in per_sample_tokens %}
+        <tr>
+          <td>{{ row.baseline }}</td>
+          <td>{{ row.sample_id }}</td>
+          <td>{{ '%.0f'|format(row.avg_input) }}</td>
+          <td>{{ '%.0f'|format(row.avg_output) }}</td>
+          <td>{{ '%.0f'|format(row.avg_context) }}</td>
+          <td>{{ '%.0f'|format(row.avg_prompt) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_input) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_output) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_cache_read) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_cache_write) }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -151,11 +187,17 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <h2>Incorrect responses ({{ incorrect|length }})</h2>
     <p class="muted">Filtered to records where the LLM judge marked the answer incorrect.</p>
     {% if incorrect %}
+      <div class="filters" id="incorrect-filters">
+        <button class="filter-btn active" data-filter="all">All ({{ incorrect|length }})</button>
+        {% for cat in incorrect_categories %}
+          <button class="filter-btn" data-filter="{{ cat.name }}">{{ cat.name }} ({{ cat.count }})</button>
+        {% endfor %}
+      </div>
+      <div id="incorrect-list">
       {% for r in incorrect %}
-        <div class="error-card">
+        <div class="error-card" data-category="{{ r.category_name }}">
           <h4>Sample {{ r.sample_id }} · Q{{ r.question_num }} · {{ r.category_name }}
-              {% if r.is_adversarial %}<span class="badge warn">adversarial</span>{% endif %}
-              <span class="badge bad">F1 {{ '%.2f'|format(r.f1_score) }}</span>
+              <span class="badge bad">Token-level F1 {{ '%.2f'|format(r.f1_score) }}</span>
           </h4>
           <div class="error-row"><b>Question:</b> {{ r.question }}</div>
           <div class="error-row"><b>Expected:</b> <span class="ans">{{ r.expected_answer }}</span></div>
@@ -166,11 +208,63 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
           <div class="error-row"><b>Judge reasoning:</b> {{ r.judge_reasoning }}</div>
         </div>
       {% endfor %}
+      </div>
+      <div class="pagination" id="incorrect-pagination">
+        <button id="inc-prev">&lsaquo; Prev</button>
+        <span id="inc-pageinfo" class="muted"></span>
+        <button id="inc-next">Next &rsaquo;</button>
+      </div>
     {% else %}
       <p class="muted">No incorrect responses.</p>
     {% endif %}
   </div>
 
 </div>
+
+<script>
+(function () {
+  var PAGE_SIZE = 20;
+  var list = document.getElementById('incorrect-list');
+  if (!list) return;
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.error-card'));
+  var filterBtns = Array.prototype.slice.call(
+    document.querySelectorAll('#incorrect-filters .filter-btn'));
+  var prev = document.getElementById('inc-prev');
+  var next = document.getElementById('inc-next');
+  var pageInfo = document.getElementById('inc-pageinfo');
+  var filter = 'all';
+  var page = 1;
+
+  function matches(card) {
+    return filter === 'all' || card.getAttribute('data-category') === filter;
+  }
+  function render() {
+    var items = cards.filter(matches);
+    var total = items.length;
+    var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page > pages) page = pages;
+    var start = (page - 1) * PAGE_SIZE;
+    cards.forEach(function (c) { c.style.display = 'none'; });
+    items.slice(start, start + PAGE_SIZE).forEach(function (c) { c.style.display = ''; });
+    pageInfo.textContent = total
+      ? ('Page ' + page + ' of ' + pages + ' · ' + total + ' matching')
+      : 'No matching responses';
+    prev.disabled = page <= 1;
+    next.disabled = page >= pages;
+  }
+  filterBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      filterBtns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      filter = btn.getAttribute('data-filter');
+      page = 1;
+      render();
+    });
+  });
+  prev.addEventListener('click', function () { if (page > 1) { page--; render(); } });
+  next.addEventListener('click', function () { page++; render(); });
+  render();
+})();
+</script>
 </body>
 </html>

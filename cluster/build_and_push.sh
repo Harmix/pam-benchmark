@@ -16,7 +16,8 @@
 
 set -euo pipefail
 
-REGISTRY="us-east1-docker.pkg.dev/harmix-pam-rnd/pam-rnd-cloud-run-jobs"
+#REGISTRY="us-east1-docker.pkg.dev/harmix-pam-rnd/pam-rnd-cloud-run-jobs"
+REGISTRY="europe-west1-docker.pkg.dev/harmix-pam-dev/pam-dev-cloud-run-jobs"
 IMAGE_NAME="memory-benchmark"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 

@@ -14,6 +14,37 @@ class TokenUsage:
     # External-memory baselines (e.g. Pam) report how many tokens the retriever
     # pulled from memory and fed to the answering model. LiteLLM leaves this 0.
     injected_tokens: int = 0
+    # `prompt_tokens` = tokens of the prompt we send to the model — always the
+    # measured count of that prompt, independent of whether the baseline reports
+    # input usage (so it can be > 0 even when input_tokens is 0, as for Pam).
+    # `context_tokens` = the rest of the input beyond the prompt (system/template/
+    # retrieved context); for input-reporting baselines this is
+    # input_tokens - prompt_tokens via `split_input_tokens`, and 0 when input
+    # usage isn't exposed.
+    prompt_tokens: int = 0
+    context_tokens: int = 0
+    # Agent-side token usage read from Pam's `message_metrics` row (Pam only;
+    # other baselines leave these 0). `agent_model_used` is a string and is
+    # carried separately (not on TokenUsage) into baseline_kwargs.
+    agent_input_tokens: int = 0
+    agent_output_tokens: int = 0
+    agent_cache_read_tokens: int = 0
+    agent_cache_write_tokens: int = 0
+    enriched_user_prompt_tokens: int = 0
+
+
+def split_input_tokens(input_tokens: int, prompt_tokens: int) -> tuple[int, int]:
+    """Return `(prompt_tokens, context_tokens)` for a response.
+
+    `context_tokens` is `input_tokens - prompt_tokens`. When `input_tokens` is 0
+    (the baseline doesn't expose input usage), `prompt_tokens` is forced to 0 too
+    so `context_tokens` never goes negative. `prompt_tokens` is also capped at
+    `input_tokens` for the same reason.
+    """
+    if input_tokens <= 0:
+        return 0, 0
+    prompt_tokens = max(0, min(prompt_tokens, input_tokens))
+    return prompt_tokens, input_tokens - prompt_tokens
 
 
 @dataclass

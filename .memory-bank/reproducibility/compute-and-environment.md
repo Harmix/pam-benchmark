@@ -12,7 +12,7 @@ Cloud Run Jobs container = CPU-only `python:3.12-slim`; no GPUs. Compute cost is
 
 - **Python:** 3.12 (pinned in `.python-version`, enforced by `pyproject.toml`).
 - **Package manager:** `uv` (>= 0.5).
-- **Key libraries:** `litellm`, `instructor`, `pydantic>=2`, `typer`, `rich`, `tenacity`, `aiolimiter`, `tiktoken`, `pymongo`, `jinja2`, `pandas`, `numpy`, `nltk` (Porter stemmer for F1), `regex`, `scipy`.
+- **Key libraries:** `litellm`, `instructor`, `pydantic>=2`, `typer`, `rich`, `tenacity`, `aiolimiter`, `tiktoken`, `pymongo`, `asyncpg` (reads Pam's `message_metrics`), `jinja2`, `pandas`, `numpy`, `nltk` (Porter stemmer for F1), `regex`, `scipy`.
 - **Lockfile:** `uv.lock` (committed). Hash of the lock is recorded per run in the Mongo doc's `uv_lock_hash`.
 - **Container:** `cluster/Dockerfile` (base `python:3.12-slim`). Per-run image digest in the Mongo doc's `image_digest`.
 
