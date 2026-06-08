@@ -30,6 +30,12 @@ class LoCoMoPrediction:
     injected_tokens: int = 0
     prompt_tokens: int = 0
     context_tokens: int = 0
+    # Agent-side token usage (Pam only; from its message_metrics row).
+    agent_input_tokens: int = 0
+    agent_output_tokens: int = 0
+    agent_cache_read_tokens: int = 0
+    agent_cache_write_tokens: int = 0
+    enriched_user_prompt_tokens: int = 0
     raw_response: dict[str, Any] = field(default_factory=dict)
     # Exact model in/out for the --save-responses debug log. `raw_prompt` is the
     # string actually sent to the model (the rendered batch prompt for Pam);
@@ -110,6 +116,11 @@ def _build_prediction(
         injected_tokens=response.usage.injected_tokens,
         prompt_tokens=response.usage.prompt_tokens,
         context_tokens=response.usage.context_tokens,
+        agent_input_tokens=response.usage.agent_input_tokens,
+        agent_output_tokens=response.usage.agent_output_tokens,
+        agent_cache_read_tokens=response.usage.agent_cache_read_tokens,
+        agent_cache_write_tokens=response.usage.agent_cache_write_tokens,
+        enriched_user_prompt_tokens=response.usage.enriched_user_prompt_tokens,
         raw_prompt=str(response.raw.get("raw_prompt", built.prompt)),
         raw_response_text=str(response.raw.get("raw_response", response.text)),
     )

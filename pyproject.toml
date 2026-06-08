@@ -21,6 +21,7 @@ dependencies = [
     "nltk>=3.9",
     "regex>=2024.5.15",
     "requests>=2.32",
+    "asyncpg>=0.30",
 ]
 
 [dependency-groups]

@@ -26,6 +26,7 @@ import litellm
 
 from baselines.base import BaselineBase, BaselineResponse, TokenUsage
 from baselines.pam.client import PamClient
+from baselines.pam.metrics_db import AgentMetrics, PamMetricsReader
 from baselines.pam.serialize import serialize_sample
 from datasets.locomo.schemas import LoCoMoSample
 from env import require
@@ -39,13 +40,24 @@ logger = logging.getLogger(__name__)
 _OUTPUT_TOKEN_MODEL_ENV = "PAM_OUTPUT_TOKEN_MODEL"
 
 
-def _count_output_tokens(model: str | None, text: str) -> int:
+def _count_tokens(model: str | None, text: str) -> int:
+    """Token count of `text` per the configured model's tokenizer (0 if no model
+    is set or counting fails). Used for both the prompt and the answer."""
     if not text or not model:
         return 0
     try:
         return int(litellm.token_counter(model=model, text=text))
     except Exception:
         return 0
+
+
+def _distribute(total: int, n: int) -> list[int]:
+    """Split a per-batch integer total into `n` per-question shares that sum
+    back to `total` exactly (remainder spread over the first questions)."""
+    if n <= 0:
+        return []
+    base, rem = divmod(int(total or 0), n)
+    return [base + (1 if i < rem else 0) for i in range(n)]
 
 
 _ANSWER_LINE_RE = re.compile(r"^\s*A(\d+)\s*[:\.\)]\s*(.*)$", re.IGNORECASE)
@@ -193,6 +205,14 @@ class PamBaseline(BaselineBase):
                 _OUTPUT_TOKEN_MODEL_ENV,
             )
 
+        # Reads agent-side token usage from Pam's `message_metrics` table after
+        # each answer. `_last_metrics_id` is the newest row seen so far for the
+        # current user — used to wait out write-lag so we read THIS turn's row,
+        # not a stale one. `_agent_model_used` is surfaced into baseline_kwargs.
+        self._metrics_reader = PamMetricsReader()
+        self._last_metrics_id: Any = None
+        self._agent_model_used: str | None = None
+
         self._memory_creation_sec: float = 0.0
         self._pam_user_id: int | None = None
         self._current_sample_id: str | None = None
@@ -223,6 +243,7 @@ class PamBaseline(BaselineBase):
                 self._debug_user_id,
                 sample.sample_id,
             )
+            await self._capture_metrics_baseline()
             return
 
         # 1. Create per-sample user (unique email keeps Pam state isolated).
@@ -261,6 +282,33 @@ class PamBaseline(BaselineBase):
             self._memory_creation_sec,
             run_ids,
         )
+        await self._capture_metrics_baseline()
+
+    async def _capture_metrics_baseline(self) -> None:
+        """Record the newest existing `message_metrics` id for the current user
+        so the next answer can tell its own fresh row from pre-existing ones."""
+        m = await self._metrics_reader.latest_for_user(self._pam_user_id)
+        self._last_metrics_id = m.metrics_id if m else None
+
+    async def _read_agent_metrics(self) -> AgentMetrics | None:
+        """Fetch the metrics row written for the prompt we just sent.
+
+        Filters by user_id, orders by created_at desc, takes the first row. The
+        agent writes the row while streaming, so it normally exists already; if
+        write-lag means the newest row is still the previous turn's, retry a few
+        times before giving up."""
+        uid = self._pam_user_id
+        m = await self._metrics_reader.latest_for_user(uid)
+        attempts = 0
+        while m is not None and m.metrics_id == self._last_metrics_id and attempts < 5:
+            await asyncio.sleep(0.4)
+            m = await self._metrics_reader.latest_for_user(uid)
+            attempts += 1
+        if m is not None:
+            self._last_metrics_id = m.metrics_id
+            if m.agent_model_used:
+                self._agent_model_used = m.agent_model_used
+        return m
 
     async def answer(self, prompt: str, *, max_tokens: int | None = None) -> BaselineResponse:
         responses = await self.answer_batch([prompt])
@@ -271,45 +319,74 @@ class PamBaseline(BaselineBase):
             return []
 
         rendered = _render_batch_prompt(prompts)
+        n = len(prompts)
+
+        # prompt_tokens = tokens of the prompt WE send to Pam (the rendered
+        # Q1..QN batch). It's always measurable and independent of whether Pam
+        # exposes its input usage, so it stays > 0 even though input/context are
+        # 0. The batch shares one prompt, so split it evenly across its questions.
+        prompt_share = _distribute(_count_tokens(self._output_token_model, rendered), n)
+
         t0 = time.perf_counter()
         try:
             answer_text, injected_total = await asyncio.to_thread(
                 self.client.send_message, rendered
             )
         except Exception as e:
-            logger.warning("Pam send_message failed for batch of %d: %r", len(prompts), e)
+            logger.warning("Pam send_message failed for batch of %d: %r", n, e)
             # Surface as empty answers so downstream scorers still get rows.
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
             raw = {"raw_prompt": rendered, "raw_response": f"<send_message failed: {e!r}>"}
-            return [self._empty_response(elapsed_ms / len(prompts), raw=raw) for _ in prompts]
+            return [
+                self._empty_response(elapsed_ms / n, raw=raw, prompt_tokens=prompt_share[i])
+                for i in range(n)
+            ]
 
         total_latency_ms = (time.perf_counter() - t0) * 1000.0
-        parsed = parse_batch_response(answer_text, len(prompts))
+
+        # One Pam agent call answered the whole batch → one message_metrics row.
+        # Read it and distribute its per-batch token totals across the batch's
+        # questions (same even-split treatment as injected_tokens).
+        metrics = await self._read_agent_metrics()
+
+        parsed = parse_batch_response(answer_text, n)
         if any(not a for a in parsed):
             missing = [i + 1 for i, a in enumerate(parsed) if not a]
             logger.warning(
                 "Pam batch reply missing answers for slots %s (batch size=%d)",
                 missing,
-                len(prompts),
+                n,
             )
 
-        per_question_latency = total_latency_ms / len(prompts)
-        per_question_injected = injected_total // len(prompts) if injected_total else 0
+        per_question_latency = total_latency_ms / n
+        per_question_injected = injected_total // n if injected_total else 0
+        agent_in = _distribute(metrics.agent_input_tokens if metrics else 0, n)
+        agent_out = _distribute(metrics.agent_output_tokens if metrics else 0, n)
+        agent_cr = _distribute(metrics.agent_cache_read_tokens if metrics else 0, n)
+        agent_cw = _distribute(metrics.agent_cache_write_tokens if metrics else 0, n)
+        enriched = _distribute(metrics.enriched_user_prompt_tokens if metrics else 0, n)
 
         out: list[BaselineResponse] = []
-        for answer in parsed:
+        for i, answer in enumerate(parsed):
             out.append(
                 BaselineResponse(
                     text=answer,
                     usage=TokenUsage(
                         # Pam does not expose the underlying model's input usage,
-                        # so input/prompt/context tokens stay 0.
+                        # so input/context tokens stay 0. prompt_tokens is the
+                        # count of the prompt we sent (see prompt_share above).
                         input_tokens=0,
-                        output_tokens=_count_output_tokens(self._output_token_model, answer),
-                        prompt_tokens=0,
+                        output_tokens=_count_tokens(self._output_token_model, answer),
+                        prompt_tokens=prompt_share[i],
                         context_tokens=0,
                         est_cost_usd=0.0,
                         injected_tokens=per_question_injected,
+                        # Agent-side usage from the message_metrics row.
+                        agent_input_tokens=agent_in[i],
+                        agent_output_tokens=agent_out[i],
+                        agent_cache_read_tokens=agent_cr[i],
+                        agent_cache_write_tokens=agent_cw[i],
+                        enriched_user_prompt_tokens=enriched[i],
                     ),
                     latency_ms=per_question_latency,
                     # The whole batch shares one Pam exchange: the rendered Q1..QN
@@ -349,7 +426,7 @@ class PamBaseline(BaselineBase):
             logger.warning("Pam delete_account failed for user_id=%s: %r", uid, e)
 
     async def teardown(self) -> None:
-        return None
+        await self._metrics_reader.close()
 
     def extras(self) -> dict[str, Any]:
         return {
@@ -359,12 +436,27 @@ class PamBaseline(BaselineBase):
             "pam_memory_run_ids": list(self._last_memory_run_ids),
         }
 
+    def baseline_kwargs_extra(self) -> dict[str, Any]:
+        """Extra entries merged into the Mongo doc's `baseline_kwargs`. Carries
+        the agent model id read from `message_metrics` (string, not a token
+        count, so it rides here rather than through the token aggregation)."""
+        if self._agent_model_used:
+            return {"agent_model_used": self._agent_model_used}
+        return {}
+
     def _empty_response(
-        self, latency_ms: float, raw: dict[str, Any] | None = None
+        self, latency_ms: float, raw: dict[str, Any] | None = None, prompt_tokens: int = 0
     ) -> BaselineResponse:
         return BaselineResponse(
             text="",
-            usage=TokenUsage(input_tokens=0, output_tokens=0, est_cost_usd=0.0, injected_tokens=0),
+            usage=TokenUsage(
+                input_tokens=0,
+                output_tokens=0,
+                prompt_tokens=prompt_tokens,
+                context_tokens=0,
+                est_cost_usd=0.0,
+                injected_tokens=0,
+            ),
             latency_ms=latency_ms,
             raw=raw or {},
         )

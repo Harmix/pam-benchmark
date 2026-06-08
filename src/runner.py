@@ -8,6 +8,7 @@ full per-question payload (predictions, judge verdicts, tokens, latency).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from dataclasses import dataclass
@@ -89,6 +90,11 @@ def _aggregate(
     total_out_tok = sum(p.output_tokens for p in predictions)
     total_prompt_tok = sum(p.prompt_tokens for p in predictions)
     total_context_tok = sum(p.context_tokens for p in predictions)
+    total_agent_in_tok = sum(p.agent_input_tokens for p in predictions)
+    total_agent_out_tok = sum(p.agent_output_tokens for p in predictions)
+    total_agent_cache_read_tok = sum(p.agent_cache_read_tokens for p in predictions)
+    total_agent_cache_write_tok = sum(p.agent_cache_write_tokens for p in predictions)
+    total_enriched_prompt_tok = sum(p.enriched_user_prompt_tokens for p in predictions)
     total_cost = sum(p.est_cost_usd for p in predictions)
 
     overall_f1 = sum(f1_scores) / total if total else 0.0
@@ -106,6 +112,11 @@ def _aggregate(
         "total_output_tokens": total_out_tok,
         "total_prompt_tokens": total_prompt_tok,
         "total_context_tokens": total_context_tok,
+        "total_agent_input_tokens": total_agent_in_tok,
+        "total_agent_output_tokens": total_agent_out_tok,
+        "total_agent_cache_read_tokens": total_agent_cache_read_tok,
+        "total_agent_cache_write_tokens": total_agent_cache_write_tok,
+        "total_enriched_user_prompt_tokens": total_enriched_prompt_tok,
         "total_cost_usd": round(total_cost, 6),
         **latencies,
         **per_cat,
@@ -138,6 +149,11 @@ def _qa_responses(
                 "output_tokens": pred.output_tokens,
                 "prompt_tokens": pred.prompt_tokens,
                 "context_tokens": pred.context_tokens,
+                "agent_input_tokens": pred.agent_input_tokens,
+                "agent_output_tokens": pred.agent_output_tokens,
+                "agent_cache_read_tokens": pred.agent_cache_read_tokens,
+                "agent_cache_write_tokens": pred.agent_cache_write_tokens,
+                "enriched_user_prompt_tokens": pred.enriched_user_prompt_tokens,
                 "est_cost_usd": round(pred.est_cost_usd, 6),
                 "latency_ms": round(pred.latency_ms, 2),
             }
@@ -252,13 +268,20 @@ async def _process_sample(
         except Exception:  # pragma: no cover — defensive; baselines shouldn't raise here
             baseline_extras = {}
 
+    # Baseline-supplied additions to baseline_kwargs (e.g. Pam's agent_model_used
+    # read from message_metrics).
+    baseline_kwargs = dict(cfg.baseline_kwargs)
+    if hasattr(baseline, "baseline_kwargs_extra"):
+        with contextlib.suppress(Exception):  # defensive — baselines shouldn't raise here
+            baseline_kwargs.update(baseline.baseline_kwargs_extra() or {})
+
     document: dict[str, Any] = {
         "exp_name": cfg.exp_name,
         "sample_id": sample.sample_id,
         "sample_index": sample_index,
         "seed": cfg.seed,
         "baseline": cfg.baseline,
-        "baseline_kwargs": cfg.baseline_kwargs,
+        "baseline_kwargs": baseline_kwargs,
         "judge_model": cfg.judge_model,
         "dataset_name": f"{cfg.dataset}@1.0",
         "task_name": cfg.resolved_task(),

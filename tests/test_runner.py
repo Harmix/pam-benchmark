@@ -72,6 +72,47 @@ def test_aggregate_sums_costs_and_tokens(prediction_factory, judge_factory):
     assert out["total_cost_usd"] == pytest.approx(0.20)
 
 
+def test_aggregate_sums_agent_tokens(prediction_factory, judge_factory):
+    preds = [
+        prediction_factory(
+            question_num=1,
+            agent_input_tokens=100,
+            agent_output_tokens=10,
+            agent_cache_read_tokens=5,
+            agent_cache_write_tokens=2,
+            enriched_user_prompt_tokens=40,
+        ),
+        prediction_factory(
+            question_num=2,
+            agent_input_tokens=200,
+            agent_output_tokens=20,
+            agent_cache_read_tokens=7,
+            agent_cache_write_tokens=3,
+            enriched_user_prompt_tokens=60,
+        ),
+    ]
+    judges = [judge_factory(), judge_factory()]
+    out = _aggregate(preds, [1.0, 1.0], judges)
+    assert out["total_agent_input_tokens"] == 300
+    assert out["total_agent_output_tokens"] == 30
+    assert out["total_agent_cache_read_tokens"] == 12
+    assert out["total_agent_cache_write_tokens"] == 5
+    assert out["total_enriched_user_prompt_tokens"] == 100
+
+
+def test_qa_responses_carry_agent_tokens(prediction_factory, judge_factory):
+    preds = [prediction_factory(question_num=1, agent_input_tokens=42)]
+    rows = _qa_responses(preds, [1.0], [judge_factory()])
+    assert rows[0]["agent_input_tokens"] == 42
+    for key in (
+        "agent_output_tokens",
+        "agent_cache_read_tokens",
+        "agent_cache_write_tokens",
+        "enriched_user_prompt_tokens",
+    ):
+        assert key in rows[0]
+
+
 def test_aggregate_latency_summary_present(prediction_factory, judge_factory):
     preds = [
         prediction_factory(question_num=1, latency_ms=100),

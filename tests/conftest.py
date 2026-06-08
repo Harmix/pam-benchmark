@@ -27,6 +27,7 @@ def make_prediction(
     output_tokens: int = 25,
     est_cost_usd: float = 0.01,
     latency_ms: float = 1500.0,
+    **token_fields: int,
 ) -> LoCoMoPrediction:
     return LoCoMoPrediction(
         question_num=question_num,
@@ -41,6 +42,9 @@ def make_prediction(
         output_tokens=output_tokens,
         est_cost_usd=est_cost_usd,
         latency_ms=latency_ms,
+        # prompt/context/agent_* token fields all default to 0; tests pass them
+        # through by keyword when they need to exercise the new aggregations.
+        **token_fields,
     )
 
 

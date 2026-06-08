@@ -14,11 +14,23 @@ class TokenUsage:
     # External-memory baselines (e.g. Pam) report how many tokens the retriever
     # pulled from memory and fed to the answering model. LiteLLM leaves this 0.
     injected_tokens: int = 0
-    # `prompt_tokens` = tokens of the question prompt sent to the model.
-    # `context_tokens` = input_tokens - prompt_tokens (the rest of the input,
-    # e.g. system/template/retrieved context). See `split_input_tokens`.
+    # `prompt_tokens` = tokens of the prompt we send to the model — always the
+    # measured count of that prompt, independent of whether the baseline reports
+    # input usage (so it can be > 0 even when input_tokens is 0, as for Pam).
+    # `context_tokens` = the rest of the input beyond the prompt (system/template/
+    # retrieved context); for input-reporting baselines this is
+    # input_tokens - prompt_tokens via `split_input_tokens`, and 0 when input
+    # usage isn't exposed.
     prompt_tokens: int = 0
     context_tokens: int = 0
+    # Agent-side token usage read from Pam's `message_metrics` row (Pam only;
+    # other baselines leave these 0). `agent_model_used` is a string and is
+    # carried separately (not on TokenUsage) into baseline_kwargs.
+    agent_input_tokens: int = 0
+    agent_output_tokens: int = 0
+    agent_cache_read_tokens: int = 0
+    agent_cache_write_tokens: int = 0
+    enriched_user_prompt_tokens: int = 0
 
 
 def split_input_tokens(input_tokens: int, prompt_tokens: int) -> tuple[int, int]:
