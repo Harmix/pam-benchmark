@@ -171,6 +171,10 @@ class PamBaseline(BaselineBase):
     track = "memory_product"
     external_memory = True
 
+    # Pause between consecutive question batches within a sample, to avoid
+    # hammering the Pam chat endpoint. Overridable (tests set it to 0).
+    INTER_BATCH_SLEEP_SEC: float = 5.0
+
     def __init__(
         self,
         host: str | None = None,
@@ -331,6 +335,10 @@ class PamBaseline(BaselineBase):
         self._batch_index += 1
         batch_no = self._batch_index
         total_batches = self._total_batches or batch_no
+
+        # Space out batches within a sample (no sleep before the first one).
+        if batch_no > 1 and self.INTER_BATCH_SLEEP_SEC > 0:
+            await asyncio.sleep(self.INTER_BATCH_SLEEP_SEC)
 
         # prompt_tokens = tokens of the prompt WE send to Pam (the rendered
         # Q1..QN batch). It's always measurable and independent of whether Pam
