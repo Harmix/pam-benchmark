@@ -175,6 +175,11 @@ class PamBaseline(BaselineBase):
     # hammering the Pam chat endpoint. Overridable (tests set it to 0).
     INTER_BATCH_SLEEP_SEC: float = 5.0
 
+    # When a whole batch comes back with zero parseable answers, resend it this
+    # many extra times with exponential backoff (base * 2**(retry-1) seconds).
+    MAX_BATCH_RETRIES: int = 2
+    BATCH_RETRY_BASE_SLEEP_SEC: float = 5.0
+
     def __init__(
         self,
         host: str | None = None,
@@ -346,36 +351,72 @@ class PamBaseline(BaselineBase):
         # 0. The batch shares one prompt, so split it evenly across its questions.
         prompt_share = _distribute(_count_tokens(self._output_token_model, rendered), n)
 
-        t0 = time.perf_counter()
-        try:
-            answer_text, injected_total = await asyncio.to_thread(
-                self.client.send_message, rendered
-            )
-        except Exception as e:
-            logger.warning(
-                "Pam send_message failed for batch %d/%d (%d questions): %r",
-                batch_no,
-                total_batches,
-                n,
-                e,
-            )
-            # Surface as empty answers so downstream scorers still get rows.
-            elapsed_ms = (time.perf_counter() - t0) * 1000.0
-            raw = {"raw_prompt": rendered, "raw_response": f"<send_message failed: {e!r}>"}
+        # Send the batch. When Pam returns NO parseable answers at all (the whole
+        # batch failed — the 0/N case), resend the same request up to
+        # MAX_BATCH_RETRIES times with exponential backoff. A partial reply
+        # (some answers) is accepted without retrying.
+        answer_text = ""
+        injected_total = 0
+        parsed: list[str] = [""] * n
+        answered = 0
+        total_latency_ms = 0.0
+        last_exc: Exception | None = None
+        attempts_total = self.MAX_BATCH_RETRIES + 1
+        for attempt in range(attempts_total):
+            if attempt > 0:
+                delay = self.BATCH_RETRY_BASE_SLEEP_SEC * (2 ** (attempt - 1))
+                logger.warning(
+                    "Pam batch %d/%d got 0/%d answers; retry %d/%d after %.0fs",
+                    batch_no,
+                    total_batches,
+                    n,
+                    attempt,
+                    self.MAX_BATCH_RETRIES,
+                    delay,
+                )
+                if delay > 0:
+                    await asyncio.sleep(delay)
+
+            t0 = time.perf_counter()
+            try:
+                answer_text, injected_total = await asyncio.to_thread(
+                    self.client.send_message, rendered
+                )
+                total_latency_ms = (time.perf_counter() - t0) * 1000.0
+                parsed = parse_batch_response(answer_text, n)
+                last_exc = None
+            except Exception as e:
+                total_latency_ms = (time.perf_counter() - t0) * 1000.0
+                last_exc = e
+                parsed = [""] * n
+                logger.warning(
+                    "Pam send_message failed for batch %d/%d (%d questions), attempt %d/%d: %r",
+                    batch_no,
+                    total_batches,
+                    n,
+                    attempt + 1,
+                    attempts_total,
+                    e,
+                )
+
+            answered = sum(1 for a in parsed if a)
+            if answered > 0:
+                break
+
+        # The batch errored on every attempt and never produced anything →
+        # surface empty answers so downstream scorers still get rows.
+        if last_exc is not None and answered == 0:
+            raw = {"raw_prompt": rendered, "raw_response": f"<send_message failed: {last_exc!r}>"}
             return [
-                self._empty_response(elapsed_ms / n, raw=raw, prompt_tokens=prompt_share[i])
+                self._empty_response(total_latency_ms / n, raw=raw, prompt_tokens=prompt_share[i])
                 for i in range(n)
             ]
-
-        total_latency_ms = (time.perf_counter() - t0) * 1000.0
 
         # One Pam agent call answered the whole batch → one message_metrics row.
         # Read it and distribute its per-batch token totals across the batch's
         # questions (same even-split treatment as injected_tokens).
         metrics = await self._read_agent_metrics()
 
-        parsed = parse_batch_response(answer_text, n)
-        answered = sum(1 for a in parsed if a)
         logger.info(
             "Pam answered %d/%d questions in batch %d/%d for user_id=%s (%.0f ms)",
             answered,
