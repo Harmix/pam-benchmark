@@ -123,6 +123,8 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "p50_latency_ms": d.get("p50_latency_ms", 0.0) or 0.0,
                 "p95_latency_ms": d.get("p95_latency_ms", 0.0) or 0.0,
                 "execution_time_seconds": d.get("execution_time_seconds", 0.0) or 0.0,
+                "memory_creation_duration_sec": d.get("memory_creation_duration_sec", 0.0) or 0.0,
+                "total_cost_usd": d.get("total_cost_usd", 0.0) or 0.0,
                 "avg_context_tokens": _avg_context_tokens(d),
             }
         )
@@ -236,6 +238,9 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
         "per_category": _per_category(docs),
         "per_sample": _per_sample(docs),
         "per_sample_tokens": _per_sample_tokens(docs),
+        # Cost column is shown only when some run reports a real cost (harness
+        # experiments); Pam reports it as 0 and the column stays hidden.
+        "show_cost": any((d.get("total_cost_usd") or 0) > 0 for d in docs),
         "incorrect": incorrect,
         "incorrect_categories": _incorrect_categories(incorrect),
     }

@@ -94,7 +94,12 @@ def _aggregate(
     total_agent_out_tok = sum(p.agent_output_tokens for p in predictions)
     total_agent_cache_read_tok = sum(p.agent_cache_read_tokens for p in predictions)
     total_agent_cache_write_tok = sum(p.agent_cache_write_tokens for p in predictions)
-    total_enriched_prompt_tok = sum(p.enriched_user_prompt_tokens for p in predictions)
+    # enriched_user_prompt_tokens is None for baselines where it doesn't apply
+    # (e.g. claude-code) → keep the total None rather than coercing to 0.
+    _enriched = [p.enriched_user_prompt_tokens for p in predictions]
+    total_enriched_prompt_tok = (
+        None if _enriched and all(v is None for v in _enriched) else sum(v or 0 for v in _enriched)
+    )
     total_cost = sum(p.est_cost_usd for p in predictions)
 
     overall_f1 = sum(f1_scores) / total if total else 0.0
@@ -303,7 +308,19 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     loader = get_dataset(cfg.dataset)
     task_runner = get_task_runner(cfg.resolved_task())
     baseline_extra: dict[str, Any] = {}
-    if cfg.baseline == "pam":
+    if cfg.harness:
+        # MCP-memory-on-harness experiment: memory lives under the run's output
+        # dir (outputs/<exp>/<harness>/<seed>/), reused as the harness's per-
+        # sample working area.
+        baseline_extra = {
+            "harness": cfg.harness,
+            "harness_model": cfg.harness_model,
+            "output_root": cfg.resolved_output_dir(),
+            "batch_size": cfg.mcp_batch_size,
+            "keep_memory": cfg.mcp_keep_memory,
+            "max_turns": cfg.mcp_max_turns,
+        }
+    elif cfg.baseline == "pam":
         baseline_extra = {
             "batch_size": cfg.pam_batch_size,
             "debug_user_id": cfg.pam_debug_user_id,

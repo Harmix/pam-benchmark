@@ -134,7 +134,8 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <table>
       <thead><tr>
         <th>Baseline</th><th>Sample</th><th>Q</th>
-        <th>F1</th><th>Judge</th><th>p50 / p95 latency</th><th>Wall-clock</th><th>Avg. Context Tokens</th>
+        <th>F1</th><th>Judge</th><th>Avg. Context Tokens</th><th>p50 / p95 latency</th>
+        <th>Memory Creation</th><th>Answer+Judge</th>{% if show_cost %}<th>Cost (USD)</th>{% endif %}
       </tr></thead>
       <tbody>
       {% for row in per_sample %}
@@ -144,9 +145,11 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
           <td>{{ row.total_questions }}</td>
           <td>{{ '%.1f'|format(row.overall_accuracy*100) }}%</td>
           <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
-          <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
-          <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
           <td>{{ '%.0f'|format(row.avg_context_tokens) }}</td>
+          <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
+          <td>{{ '%.1f'|format(row.memory_creation_duration_sec) }} s</td>
+          <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
+          {% if show_cost %}<td>${{ '%.4f'|format(row.total_cost_usd) }}</td>{% endif %}
         </tr>
       {% endfor %}
       </tbody>

@@ -62,9 +62,26 @@ DATABASE_USERNAME=...
 DATABASE_PASSWORD=...
 # Only needed for --pam-debug-user-id reuse (mints a per-user token)
 PAM_API_KEY=...
+# Required for the MCP-on-harness experiment (run_mcp_benchmark.py, claude-code on Vertex)
+VERTEX_PROJECT_ID=...
+VERTEX_REGION=...                            # regional endpoint, e.g. us-east5
+GOOGLE_APPLICATION_CREDENTIALS=...           # local path OR gs://bucket/pam-agent-credentials.json
 ```
 
 `secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
+
+## MCP-memory-on-harness experiment
+
+Evaluate MCP memory baselines running on an agentic harness (Claude Code first), e.g. the recognizable filesystem-Markdown memory baseline, against Pam. Requires an installed `claude` CLI and the `VERTEX_*` / `GOOGLE_APPLICATION_CREDENTIALS` secrets above.
+
+```bash
+uv run python scripts/run_mcp_benchmark.py \
+  --dataset locomo --harness claude-code --baseline memory_md_mcp \
+  --harness-model <vertex-claude-model-id> --exp-name mcp_locomo_md_v1 \
+  --mcp-batch-size 10 --max-questions 20      # --max-questions for debugging
+```
+
+Memory is written to `outputs/<exp>/<harness>/<seed>/<sample_id>/memory/` and wiped after each sample unless `--mcp-keep-memory`. Design and decisions: `docs/mcp_harness_benchmark_plan.md`.
 
 ## Repo layout
 

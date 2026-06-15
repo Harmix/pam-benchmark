@@ -13,7 +13,9 @@ class TokenUsage:
     est_cost_usd: float = 0.0
     # External-memory baselines (e.g. Pam) report how many tokens the retriever
     # pulled from memory and fed to the answering model. LiteLLM leaves this 0.
-    injected_tokens: int = 0
+    # `injected_tokens` / `enriched_user_prompt_tokens` are Pam-specific. Other
+    # baselines (e.g. claude-code) set them to None to mark "not applicable".
+    injected_tokens: int | None = 0
     # `prompt_tokens` = tokens of the prompt we send to the model — always the
     # measured count of that prompt, independent of whether the baseline reports
     # input usage (so it can be > 0 even when input_tokens is 0, as for Pam).
@@ -30,7 +32,7 @@ class TokenUsage:
     agent_output_tokens: int = 0
     agent_cache_read_tokens: int = 0
     agent_cache_write_tokens: int = 0
-    enriched_user_prompt_tokens: int = 0
+    enriched_user_prompt_tokens: int | None = 0
 
 
 def split_input_tokens(input_tokens: int, prompt_tokens: int) -> tuple[int, int]:

@@ -40,18 +40,26 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             "",
             "## Per sample",
             "",
-            "| Baseline | Sample | Q | F1 | Judge | p50/p95 ms | Wall-clock | Avg. Context Tokens |",
-            "|---|---|---:|---:|---:|---:|---:|---:|",
+            "| Baseline | Sample | Q | F1 | Judge | Avg. Context Tokens | p50/p95 ms | "
+            "Memory Creation | Answer+Judge |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
+    show_cost = ctx["show_cost"]
+    if show_cost:
+        # Append a Cost column header for harness experiments.
+        lines[-2] = lines[-2].rstrip(" |") + " | Cost (USD) |"
+        lines[-1] = lines[-1].rstrip(" |") + "|---:|"
     for row in ctx["per_sample"]:
+        cost = f" ${row['total_cost_usd']:.4f} |" if show_cost else ""
         lines.append(
             f"| {row['baseline']} | {row['sample_id']} | "
             f"{row['total_questions']} | "
             f"{row['overall_accuracy'] * 100:.1f}% | {row['judge_accuracy'] * 100:.1f}% | "
+            f"{row['avg_context_tokens']:.0f} | "
             f"{row['p50_latency_ms']:.0f}/{row['p95_latency_ms']:.0f} | "
-            f"{row['execution_time_seconds']:.1f}s | "
-            f"{row['avg_context_tokens']:.0f} |"
+            f"{row['memory_creation_duration_sec']:.1f}s | "
+            f"{row['execution_time_seconds']:.1f}s |" + cost
         )
     lines.extend(
         [

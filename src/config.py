@@ -46,6 +46,13 @@ class RunConfig(BaseModel):
     # human-readable `responses.log` in the output dir. Debug aid only.
     save_responses: bool = False
 
+    # MCP-on-harness experiment (None ⇒ classic API/LiteLLM/Pam run)
+    harness: str | None = None  # e.g. "claude-code"
+    harness_model: str | None = None  # base model id for the harness
+    mcp_batch_size: int = 10  # questions per batch (mirrors pam_batch_size)
+    mcp_keep_memory: bool = False  # keep per-sample memory (debug); default wipes
+    mcp_max_turns: int | None = None  # cap agent turns per harness invocation
+
     # Pam-specific (ignored by other baselines)
     pam_batch_size: int = 10
     pam_debug_user_id: int | None = None
@@ -58,4 +65,11 @@ class RunConfig(BaseModel):
         return self.task or self.dataset
 
     def resolved_output_dir(self) -> Path:
-        return self.output_dir or Path("outputs") / self.exp_name / str(self.seed)
+        if self.output_dir:
+            return self.output_dir
+        base = Path("outputs") / self.exp_name
+        # Harness runs insert <harness> so multiple harnesses under one
+        # experiment don't collide: outputs/<exp>/<harness>/<seed>/.
+        if self.harness:
+            base = base / self.harness
+        return base / str(self.seed)

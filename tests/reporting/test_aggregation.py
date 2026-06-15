@@ -133,9 +133,10 @@ def test_per_sample_one_row_per_doc():
     assert len(rows) == 3
     assert {r["sample_id"] for r in rows} == {"s0", "s1", "s2"}
     assert all("judge_class" in r for r in rows)
-    # Seed column dropped; Avg. Context Tokens added.
+    # Seed column dropped; Avg. Context Tokens + memory-creation added.
     assert all("seed" not in r for r in rows)
     assert all("avg_context_tokens" in r for r in rows)
+    assert all("memory_creation_duration_sec" in r for r in rows)
 
 
 def test_avg_context_tokens_non_pam_uses_context_total():

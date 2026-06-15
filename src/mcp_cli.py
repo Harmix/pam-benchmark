@@ -1,0 +1,104 @@
+"""Typer CLI for the MCP-memory-on-harness experiment.
+
+Mirrors `cli.py` but for the harness experiment: it builds the same `RunConfig`
+(with `harness` set) and delegates to `runner.run`. Kept separate so the two
+experiment types stay legible while sharing all downstream machinery.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+
+import typer
+
+from config import RunConfig
+from env import load_secrets
+from log_setup import configure as configure_logging
+from runner import run
+
+app = typer.Typer(add_completion=False, no_args_is_help=True)
+
+
+@app.command()
+def main(
+    exp_name: str = typer.Option(..., "--exp-name", help="Experiment identifier"),
+    dataset: str = typer.Option("locomo", "--dataset", help="Dataset name (e.g. locomo)"),
+    harness: str = typer.Option("claude-code", "--harness", help="Agentic harness (claude-code)"),
+    baseline: str = typer.Option(
+        "memory_md_mcp", "--baseline", help="MCP memory baseline (memory_md_mcp)"
+    ),
+    harness_model: str = typer.Option(
+        None, "--harness-model", help="Base model id for the harness (e.g. a Vertex Claude id)"
+    ),
+    task: str = typer.Option(None, "--task", help="Task name (defaults to --dataset)"),
+    seed: int = typer.Option(42, "--seed", help="Random seed"),
+    sample_index: int = typer.Option(
+        None, "--sample-index", help="Process only this sample index (default: all)"
+    ),
+    max_questions: int = typer.Option(
+        None, "--max-questions", help="Cap questions per sample (debug; default: all)"
+    ),
+    mcp_batch_size: int = typer.Option(10, "--mcp-batch-size", help="Questions per answer batch"),
+    mcp_keep_memory: bool = typer.Option(
+        False,
+        "--mcp-keep-memory",
+        help="Keep each sample's on-disk memory after the run (debug; reused if present). "
+        "Default wipes it.",
+    ),
+    mcp_max_turns: int = typer.Option(
+        None, "--mcp-max-turns", help="Cap agent turns per harness invocation"
+    ),
+    judge_model: str = typer.Option("gpt-4o", "--judge-model", help="LLM-judge model id"),
+    judge_concurrency: int = typer.Option(
+        8, "--judge-concurrency", help="Max concurrent judge calls"
+    ),
+    output_dir: str = typer.Option(
+        None, "--output-dir", help="Override outputs/<exp>/<harness>/<seed>"
+    ),
+    no_mongo: bool = typer.Option(False, "--no-mongo", help="Skip MongoDB writes"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Resolve config and exit"),
+    save_responses: bool = typer.Option(
+        False, "--save-responses", help="Write Q/A + raw prompts/responses to responses.log"
+    ),
+    baseline_kwargs: str = typer.Option(
+        "{}", "--baseline-kwargs", help="JSON dict of extra baseline kwargs"
+    ),
+    log_format: str = typer.Option("rich", "--log-format", help="rich | json"),
+) -> None:
+    """Run one (dataset, harness, baseline, seed) MCP-memory experiment end-to-end."""
+    load_secrets()
+    configure_logging(log_format=log_format, level=logging.INFO)
+
+    try:
+        baseline_kwargs_dict = json.loads(baseline_kwargs) if baseline_kwargs else {}
+    except json.JSONDecodeError as e:
+        raise typer.BadParameter(f"--baseline-kwargs must be valid JSON: {e}") from e
+
+    cfg = RunConfig(
+        exp_name=exp_name,
+        dataset=dataset,
+        baseline=baseline,
+        task=task,
+        seed=seed,
+        sample_index=sample_index,
+        max_questions=max_questions,
+        baseline_kwargs=baseline_kwargs_dict,
+        judge_model=judge_model,
+        judge_concurrency=judge_concurrency,
+        output_dir=output_dir,
+        mongo=not no_mongo,
+        dry_run=dry_run,
+        save_responses=save_responses,
+        log_format=log_format,
+        harness=harness,
+        harness_model=harness_model,
+        mcp_batch_size=mcp_batch_size,
+        mcp_keep_memory=mcp_keep_memory,
+        mcp_max_turns=mcp_max_turns,
+    )
+    run(cfg)
+
+
+if __name__ == "__main__":
+    app()

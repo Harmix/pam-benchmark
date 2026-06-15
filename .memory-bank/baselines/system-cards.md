@@ -54,4 +54,26 @@ The harness moves to the next LoCoMo conversation and repeats steps 1–5. There
 
 ---
 
-_Placeholder cards for the M4–M5 memory competitors (Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md, Claude Code + Obsidian, OpenClaw + .md) will be added when each is integrated._
+## Baseline: Claude Code + `memory_md_mcp` (filesystem Markdown memory)
+
+The first **MCP-memory-on-harness** baseline: an agentic coding harness (Claude Code) using a **markdown filesystem memory** as its long-term store. This is the well-known "is a filesystem all you need?" memory baseline, included so Pam is measured against a representation researchers recognize. Driven by `scripts/run_mcp_benchmark.py` (`--harness claude-code --baseline memory_md_mcp`); design in `docs/mcp_harness_benchmark_plan.md`.
+
+- **Identity:** official **Claude Code** CLI (Anthropic), run headlessly against Claude on **GCP Vertex AI** (service-account auth via `GOOGLE_APPLICATION_CREDENTIALS`, local path or `gs://`). Base model is set per run via `--harness-model` (a Vertex Claude id) and recorded in `baseline_kwargs.harness_model`.
+- **Type:** competitor framing — the *harness* is a third-party agent runtime we don't control; the *memory baseline* (`memory_md_mcp`) is our own transparent protocol so the comparison is reproducible and fair.
+- **Memory representation:** **Obsidian-style Markdown** notes (YAML front-matter + dated `- ` fact bullets + `[[wikilinks]]`) under `outputs/<EXP>/<HARNESS>/<SEED>/<sample_id>/memory/` (`index.md` + `notes/*.md`), managed by Claude Code's native file tools (Read/Write/Edit/Grep). "Option A" — no external MCP server — so correctness is defined entirely by our ingest/answer prompt protocol (`src/baselines/mcp/memory_md/prompts.py`).
+- **Provenance of the baseline design:** filesystem/markdown agent memory as a strong simple baseline — Letta, *"Is a Filesystem All You Need?"* (the MemGPT/Letta memory-blocks-plus-files lineage); markdown-MCP realization — **Basic Memory** (`basicmachines-co/basic-memory`); LoCoMo head-to-head comparison protocol — **Mem0** (ECAI 2025). Citations live in `docs/mcp_harness_benchmark_plan.md` §17.
+- **How the benchmark drives it (one LoCoMo conversation):**
+  1. **Build memory (ingest)** — one headless Claude Code invocation reads the conversation **transcript only** (never the questions — query-agnostic memory, the key fairness guardrail) and writes durable Markdown notes. Wall-clock recorded as `memory_creation_duration_sec`; build tokens/cost in `extras`.
+  2. **Answer (batched)** — questions are chunked (`--mcp-batch-size`, default 10) and asked as a numbered `Q1..QN` prompt (shared `src/batch_protocol.py`, same protocol as Pam). The answer phase is **read-only** (Read/Grep — cannot mutate memory, never re-reads the raw transcript). Parsed into per-question `A1..AN`.
+  3. **Retry & spacing** — a fully-empty (`0/N`) batch is resent up to 2× with exponential backoff; 5 s between batches; structured per-batch logging (`Claude Code answered X/N in batch i/M …`). Mirrors Pam exactly.
+  4. **Cleanup** — per-sample memory is wiped after the sample unless `--mcp-keep-memory` (debug).
+- **Token & cost accounting:** unlike Pam, Claude Code reports **real** usage per invocation. One answer batch = one run; its usage is split evenly across the batch's questions → `input_tokens` (non-cached), `output_tokens`, `agent_cache_read_tokens`/`agent_cache_write_tokens` (from `cache_read/creation_input_tokens`), `prompt_tokens` (the rendered batch prompt we sent), `context_tokens = input − prompt`, and `est_cost_usd` (`total_cost_usd`, real). `injected_tokens` and `enriched_user_prompt_tokens` are **`None`** (Pam-only concepts). All other per-sample columns (accuracy, judge, latency, `memory_creation_duration_sec`) match Pam, so existing dashboards/reports work; the report shows a Cost column for these experiments.
+- **Secrets required:** `VERTEX_PROJECT_ID`, `VERTEX_REGION` (regional endpoint), `GOOGLE_APPLICATION_CREDENTIALS` (local path **or** `gs://…`). Plus an installed `claude` CLI. Loaded from `secrets.env` locally.
+- **Abstractions (for extension):** `Harness` (`src/harnesses/`) — swap Claude Code for **Codex** / **OpenClaw**, and swap base models via `--harness-model`. `McpMemoryBackend` (`src/baselines/mcp/`) — swap `memory_md_mcp` for **Supermemory** / Basic Memory. Adding either is a new class, not a rewrite.
+- **License / ToS:** Claude Code / Anthropic + GCP Vertex terms; published comparisons follow [[licensing-and-data-handling]]. Verify the chosen Vertex model is enabled in the chosen region/project.
+- **Caveats:** agentic runs are slower and pricier than single API calls (inter-batch sleep + retries compound this — use `--max-questions` to debug). The baseline's legitimacy depends on the fairness guardrails above (ingest never sees questions; answer never re-reads the transcript). Exact Claude Code CLI flags and the Vertex region env var are pinned in `src/harnesses/claude_code/` and were locked during the M0 spike (see plan §3.2/§3.3).
+- **Date of last evaluation:** N/A until the first `claude-code` + `memory_md_mcp` LoCoMo run is published.
+
+---
+
+_Placeholder cards for the remaining memory competitors (Honcho, Supermemory, mem0, Zep, Claude Code + Memory.md, OpenClaw + .md) will be added when each is integrated._
