@@ -1,7 +1,8 @@
-# PAM Benchmark — single image, runs locally and on GCP Cloud Run Jobs.
+# PAM Benchmark (run_benchmark.py) — single image, runs locally and on GCP
+# Cloud Run Jobs.
 #
 # Build (from project root):
-#   docker build -f cluster/Dockerfile -t pam-benchmark:dev .
+#   docker build -f cluster/run_benchmark/Dockerfile -t memory-benchmark:dev .
 #
 # Run locally:
 #   docker run --rm --env-file secrets.env -v "$(pwd)/outputs:/app/outputs" \

@@ -21,7 +21,7 @@ IMAGE_NAME="memory-benchmark"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 IMAGE="$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
 

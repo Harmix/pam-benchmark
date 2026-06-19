@@ -153,7 +153,7 @@ Reports at `reports/<exp-name>/report.html` are rendered on demand from Mongo by
 ## Docker (local parity with Cloud Run)
 
 ```bash
-docker build -f cluster/Dockerfile -t memory-benchmark:dev .
+docker build -f cluster/run_benchmark/Dockerfile -t memory-benchmark:dev .
 
 docker run --rm \
   --env-file secrets.env \
@@ -165,13 +165,16 @@ docker run --rm \
 
 (The image's `ENTRYPOINT` is `python scripts/run_benchmark.py`, so flags go straight to the benchmark — no need to repeat the script name.)
 
+The MCP-on-harness experiment has its own image (bundles the Claude Code CLI):
+`docker build -f cluster/run_mcp_benchmark/Dockerfile -t memory-mcp-benchmark:dev .` — `ENTRYPOINT` is `python scripts/run_mcp_benchmark.py`.
+
 ## Cloud Run Jobs
 
 One-time setup: enable Artifact Registry + Cloud Run, the `pam-rnd-cloud-run-jobs` repo in `harmix-pam-rnd` / `us-east1` exists, and the secrets are in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
 
 ```bash
 # Build + push the image to the rnd registry (defaults to :latest)
-./cluster/build_and_push.sh
+./cluster/run_benchmark/build_and_push.sh          # MCP image: ./cluster/run_mcp_benchmark/build_and_push.sh
 
 # Execute the job (Cloud Run pulls :latest, runs ENTRYPOINT + --args)
 ./cluster/run_job.sh \
