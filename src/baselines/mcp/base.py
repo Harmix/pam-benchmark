@@ -85,8 +85,15 @@ class McpHarnessBaseline(BaselineBase):
     # ----- lifecycle ------------------------------------------------------
 
     async def setup(self, *, seed: int) -> None:
+        logger.info(
+            "Initializing harness=%s backend=%s (model=%s)...",
+            self.harness.name,
+            self.backend.name,
+            self._harness_model,
+        )
         await self.harness.setup()
         await self.backend.setup()
+        logger.info("Harness ready (auth resolved).")
 
     async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
         self._current_sample_id = sample.sample_id
@@ -112,6 +119,16 @@ class McpHarnessBaseline(BaselineBase):
         await self.backend.reset(memory_dir)
         transcript = conversation_to_transcript(sample)
 
+        logger.info(
+            "Claude Code: building memory for sample=%s "
+            "(model=%s, %d questions / %d batches, transcript=%d chars) — this can take a "
+            "few minutes...",
+            sample.sample_id,
+            self._harness_model,
+            len(sample.qa),
+            self._total_batches,
+            len(transcript),
+        )
         loop = asyncio.get_running_loop()
         t0 = loop.time()
         result = await self.harness.run(
@@ -161,6 +178,14 @@ class McpHarnessBaseline(BaselineBase):
         # prompt_tokens = tokens of the prompt we send (counted with the harness
         # model's tokenizer), split evenly across the batch's questions.
         prompt_share = distribute(count_tokens(self._harness_model, rendered), n)
+
+        logger.info(
+            "Claude Code: asking batch %d/%d (%d questions) for sample=%s — waiting for answer...",
+            batch_no,
+            total_batches,
+            n,
+            self._current_sample_id,
+        )
 
         # Run the harness; retry on a fully-empty (0/N) reply with exp. backoff.
         result: HarnessResult | None = None
@@ -283,17 +308,17 @@ class McpHarnessBaseline(BaselineBase):
             "memory_creation_duration_sec": self._memory_creation_sec,
             "harness": self.harness.name,
             "harness_model": self._harness_model,
-            "memory_backend": self.backend.name,
+            "batch_size": self.batch_size,
             "memory_dir": str(self._memory_dir) if self._memory_dir else None,
             "harness_session_ids": list(self._session_ids),
             **self._build_usage,
         }
 
     def baseline_kwargs_extra(self) -> dict[str, Any]:
+        # `memory_backend` is omitted — it equals `baseline` for MCP baselines.
         return {
             "harness": self.harness.name,
             "harness_model": self._harness_model,
-            "memory_backend": self.backend.name,
         }
 
     # ----- helpers --------------------------------------------------------

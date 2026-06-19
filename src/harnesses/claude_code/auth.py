@@ -48,13 +48,20 @@ def _download_gcs(gs_uri: str) -> str:
 
 
 def resolve_credentials(path: str) -> str:
-    """Return a local path to the credentials file. `gs://` URIs are downloaded;
-    local paths are returned as-is (after an existence check)."""
+    """Return an ABSOLUTE local path to the credentials file. `gs://` URIs are
+    downloaded; local (possibly relative) paths are resolved to absolute.
+
+    Absolute is required because the harness runs `claude` with its cwd set to
+    the per-sample memory dir, so a relative path would resolve against the
+    wrong directory.
+    """
     if path.startswith("gs://"):
         return _download_gcs(path)
-    local = Path(path)
+    local = Path(path).expanduser().resolve()
     if not local.exists():
-        raise FileNotFoundError(f"GOOGLE_APPLICATION_CREDENTIALS not found: {path}")
+        raise FileNotFoundError(
+            f"GOOGLE_APPLICATION_CREDENTIALS not found: {path} (resolved to {local})"
+        )
     return str(local)
 
 

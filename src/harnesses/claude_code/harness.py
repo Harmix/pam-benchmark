@@ -132,12 +132,22 @@ class ClaudeCodeHarness:
                 Path(tmp_mcp).unlink(missing_ok=True)
         wall_ms = (loop.time() - t0) * 1000.0
 
+        out_text = stdout.decode("utf-8", "replace")
+        err_text = stderr.decode("utf-8", "replace")
         if proc.returncode != 0:
+            # Claude Code usually reports the real error as JSON on stdout (with
+            # an empty stderr), so surface both. Pull out a clean message if the
+            # stdout is a JSON error result.
+            detail = err_text.strip() or out_text.strip()
+            data = _last_json_object(out_text)
+            if isinstance(data, dict):
+                detail = str(data.get("result") or data.get("error") or data) or detail
+            shown_argv = [*argv[:2], "<prompt>", *argv[3:]]  # hide the long prompt
             raise RuntimeError(
-                f"claude exited {proc.returncode}: {stderr.decode('utf-8', 'replace')[:500]}"
+                f"claude exited {proc.returncode}: {detail[:800]}\nargv: {' '.join(shown_argv)}"
             )
 
-        return self._parse_output(stdout.decode("utf-8", "replace"), wall_ms)
+        return self._parse_output(out_text, wall_ms)
 
     @staticmethod
     def _parse_output(stdout: str, wall_ms: float) -> HarnessResult:

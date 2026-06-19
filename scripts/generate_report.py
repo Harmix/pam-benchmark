@@ -32,6 +32,12 @@ def main(
     dataset: str = typer.Option("locomo", "--dataset", help="Dataset name"),
     output_dir: str = typer.Option(None, "--output-dir", help="Defaults to reports/<exp-name>"),
     fmt: str = typer.Option("html", "--format", help="html | md"),
+    mcp: bool = typer.Option(
+        False, "--mcp", help="Read the MCP-on-harness collection (<dataset>_mcp_results)"
+    ),
+    collection: str = typer.Option(
+        None, "--collection", help="Override the Mongo collection (default <dataset>_results)"
+    ),
 ) -> None:
     """Pull Mongo rows for `--exp-name` and render the report."""
     load_secrets()
@@ -39,11 +45,12 @@ def main(
     out = Path(output_dir) if output_dir else Path("reports") / exp_name
     out.mkdir(parents=True, exist_ok=True)
 
-    docs = fetch_experiment(exp_name=exp_name, dataset=dataset)
+    coll = collection or (f"{dataset}_mcp_results" if mcp else None)
+    docs = fetch_experiment(exp_name=exp_name, dataset=dataset, collection=coll)
     if not docs:
         console.print(
             f"[red]No documents found[/red] for exp_name={exp_name!r} in "
-            f"collection {dataset}_results."
+            f"collection {coll or f'{dataset}_results'}."
         )
         raise typer.Exit(code=1)
 

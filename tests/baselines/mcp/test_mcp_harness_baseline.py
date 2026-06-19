@@ -79,11 +79,12 @@ def test_build_then_batch_lifecycle_and_token_mapping(fake_harness_factory, tmp_
     extras = baseline.extras()
     assert extras["harness"] == "fake"
     assert extras["harness_model"] == "gpt-4o"
-    assert extras["memory_backend"] == "memory_md_mcp"
+    assert extras["batch_size"] == 4
+    # memory_backend is omitted (equals the baseline name).
+    assert "memory_backend" not in extras
     assert baseline.baseline_kwargs_extra() == {
         "harness": "fake",
         "harness_model": "gpt-4o",
-        "memory_backend": "memory_md_mcp",
     }
 
 

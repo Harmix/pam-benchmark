@@ -353,6 +353,9 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     if responses_log is not None:
         responses_log.unlink(missing_ok=True)  # fresh log per run
 
+    # MCP-on-harness runs land in a separate collection (<dataset>_mcp_results).
+    mongo_collection = f"{cfg.dataset}_mcp_results" if cfg.harness else None
+
     results: list[SampleResult] = []
     with progress_for(console=console) as progress:
         for sample_index in indices:
@@ -365,7 +368,9 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             )
             results.append(r)
             if cfg.mongo:
-                write_sample_result(dataset=cfg.dataset, document=r.document)
+                write_sample_result(
+                    dataset=cfg.dataset, document=r.document, collection=mongo_collection
+                )
 
     await baseline.teardown()
 
