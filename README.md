@@ -65,14 +65,14 @@ PAM_API_KEY=...
 # Required for the MCP-on-harness experiment (run_mcp_benchmark.py, claude-code on Vertex)
 VERTEX_PROJECT_ID=...
 VERTEX_REGION=...                            # regional endpoint, e.g. us-east5
-GOOGLE_APPLICATION_CREDENTIALS=...           # SA key JSON: a local path, gs://bucket/key, OR sm://projects/<P>/secrets/<S>[/versions/<V>]
+VERTEX_CREDENTIALS=...                        # SA key JSON: a local path, gs://bucket/key, OR sm://projects/<P>/secrets/<S>[/versions/<V>]
 ```
 
 `secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
 
 ## MCP-memory-on-harness experiment
 
-Evaluate MCP memory baselines running on an agentic harness (Claude Code first), e.g. the recognizable filesystem-Markdown memory baseline, against Pam. Requires an installed `claude` CLI and the `VERTEX_*` / `GOOGLE_APPLICATION_CREDENTIALS` secrets above.
+Evaluate MCP memory baselines running on an agentic harness (Claude Code first), e.g. the recognizable filesystem-Markdown memory baseline, against Pam. Requires an installed `claude` CLI and the `VERTEX_PROJECT_ID` / `VERTEX_REGION` / `VERTEX_CREDENTIALS` secrets above.
 
 ```bash
 uv run python scripts/run_mcp_benchmark.py \

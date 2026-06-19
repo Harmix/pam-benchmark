@@ -2,13 +2,16 @@
 
 Builds the environment Claude Code needs to talk to Claude on GCP Vertex AI from
 the benchmark's own secrets (`VERTEX_PROJECT_ID`, `VERTEX_REGION`,
-`GOOGLE_APPLICATION_CREDENTIALS`). The credentials value may be:
+`VERTEX_CREDENTIALS`). `VERTEX_CREDENTIALS` is the service-account key, given as:
   - a local file path;
   - a `gs://bucket/key` URI (downloaded to a local temp file); or
   - an `sm://projects/<P>/secrets/<S>[/versions/<V>]` reference to a Secret
-    Manager secret whose payload is the service-account key JSON (as text).
+    Manager secret whose payload is the key JSON (as text).
 The `gs://`/`sm://` forms are resolved once to a local temp file (cached for the
-process) since Claude Code / the GCP SDK expect a local path.
+process). We deliberately do NOT name our input var `GOOGLE_APPLICATION_CREDENTIALS`:
+that name is reserved by Google's ADC, which would try to load our `sm://`/`gs://`
+value as a credentials file when we use ADC to fetch it. The resolved local path
+is exported as `GOOGLE_APPLICATION_CREDENTIALS` only into the `claude` subprocess.
 """
 
 from __future__ import annotations
@@ -23,6 +26,8 @@ from pathlib import Path
 from env import require
 
 logger = logging.getLogger(__name__)
+
+_CREDENTIALS_ENV = "VERTEX_CREDENTIALS"
 
 # Resolved credentials (gs:// download / sm:// fetch), cached per source.
 _resolved_credentials: dict[str, str] = {}
@@ -44,8 +49,8 @@ def _fetch_secret_manager(resource: str) -> str:
 
     `resource` is the part after `sm://`, e.g.
     `projects/<P>/secrets/<S>` or `.../versions/<V>` (defaults to `latest`).
-    Uses Application Default Credentials (ambient gcloud / metadata server);
-    prefers the Secret Manager SDK, falls back to the gcloud CLI.
+    Uses Application Default Credentials (Cloud Run metadata server / ambient
+    gcloud); prefers the Secret Manager SDK, falls back to the gcloud CLI.
     """
     if resource in _resolved_credentials:
         return _resolved_credentials[resource]
@@ -126,20 +131,19 @@ def resolve_credentials(path: str) -> str:
         return _fetch_secret_manager(path[len("sm://") :])
     local = Path(path).expanduser().resolve()
     if not local.exists():
-        raise FileNotFoundError(
-            f"GOOGLE_APPLICATION_CREDENTIALS not found: {path} (resolved to {local})"
-        )
+        raise FileNotFoundError(f"{_CREDENTIALS_ENV} not found: {path} (resolved to {local})")
     return str(local)
 
 
 def vertex_env() -> dict[str, str]:
     """The env Claude Code needs for Vertex AI, derived from benchmark secrets.
 
-    Credentials come from `GOOGLE_APPLICATION_CREDENTIALS` — a local path, a
-    `gs://` URI, or an `sm://` Secret Manager reference. The base model is NOT
-    set here — it is passed per-invocation via `--model` (`--harness-model`).
+    The SA key comes from `VERTEX_CREDENTIALS` (local path / `gs://` / `sm://`)
+    and is exported as `GOOGLE_APPLICATION_CREDENTIALS` for the `claude`
+    subprocess only. The base model is NOT set here — it is passed per-invocation
+    via `--model` (`--harness-model`).
     """
-    creds = resolve_credentials(require("GOOGLE_APPLICATION_CREDENTIALS"))
+    creds = resolve_credentials(require(_CREDENTIALS_ENV))
     return {
         "CLAUDE_CODE_USE_VERTEX": "1",
         "ANTHROPIC_VERTEX_PROJECT_ID": require("VERTEX_PROJECT_ID"),
