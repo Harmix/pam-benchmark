@@ -134,9 +134,21 @@ def test_per_sample_one_row_per_doc():
     assert {r["sample_id"] for r in rows} == {"s0", "s1", "s2"}
     assert all("judge_class" in r for r in rows)
     # Seed column dropped; Avg. Context Tokens + memory-creation added.
+    # Batch size lives at the report top, not per-sample.
     assert all("seed" not in r for r in rows)
+    assert all("batch_size" not in r for r in rows)
     assert all("avg_context_tokens" in r for r in rows)
     assert all("memory_creation_duration_sec" in r for r in rows)
+
+
+def test_build_context_batch_sizes_at_top():
+    docs = [
+        {"baseline": "memory_md_mcp", "sample_id": "a", "batch_size": 10},
+        {"baseline": "pam", "sample_id": "b", "pam_batch_size": 5},
+        {"baseline": "gpt-4o", "sample_id": "c"},  # single-call → 1
+    ]
+    ctx = build_context(dataset="locomo", exp_name="x", docs=docs)
+    assert ctx["batch_sizes"] == [1, 5, 10]
 
 
 def test_avg_context_tokens_non_pam_uses_context_total():

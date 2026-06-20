@@ -15,7 +15,7 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
         "",
         f"- Generated: {ctx['generated_at']}",
         f"- Baselines: {', '.join(ctx['baselines'])}",
-        f"- Seeds: {', '.join(str(s) for s in ctx['seeds'])}",
+        f"- Batch size: {', '.join(str(b) for b in ctx['batch_sizes'])}",
         f"- Judge: {', '.join(ctx['judge_models'])}",
         f"- Samples: {ctx['sample_count']}",
         "",

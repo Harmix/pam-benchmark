@@ -224,6 +224,9 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
     judges = sorted({d.get("judge_model", "?") for d in docs})
     samples = sorted({d.get("sample_id", "?") for d in docs})
     dataset_names = sorted({d.get("dataset_name", dataset) for d in docs})
+    # Distinct batch size(s) across the runs (MCP `batch_size` / Pam
+    # `pam_batch_size`; single-call baselines = 1). Shown once at the top.
+    batch_sizes = sorted({d.get("batch_size") or d.get("pam_batch_size") or 1 for d in docs})
     incorrect = _incorrect(docs)
     return {
         "dataset": dataset,
@@ -232,6 +235,7 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
         "dataset_name": ", ".join(dataset_names) or dataset,
         "baselines": baselines,
         "seeds": seeds,
+        "batch_sizes": batch_sizes,
         "judge_models": judges,
         "sample_count": len(samples),
         "headline": _aggregate_headline(docs),

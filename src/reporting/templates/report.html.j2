@@ -76,7 +76,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       <span><b>Generated:</b> {{ generated_at }}</span>
       <span><b>Dataset:</b> {{ dataset_name }}</span>
       <span><b>Baselines:</b> {{ baselines|join(', ') }}</span>
-      <span><b>Seeds:</b> {{ seeds|join(', ') }}</span>
+      <span><b>Batch size:</b> {{ batch_sizes|join(', ') }}</span>
       <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
       <span><b>Samples:</b> {{ sample_count }}</span>
     </div>
