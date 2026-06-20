@@ -37,15 +37,16 @@ def _aggregate_headline(docs: list[dict[str, Any]]) -> dict[str, Any]:
     total_q = sum(d.get("total_questions", 0) for d in docs)
     judge_correct = sum(d.get("judge_correct_count", 0) for d in docs)
     f1_sum = sum(d.get("total_f1_sum", 0.0) for d in docs)
-    latencies = []
-    for d in docs:
-        avg = d.get("avg_latency_ms", 0) or 0
-        n = d.get("total_questions", 0)
-        if n:
-            latencies.extend([avg] * n)
+    # Latency is stored per question; present it per batch (one model call) at
+    # the report level. Total answering time = avg_latency_ms * questions
+    # (summed across docs); divide by total batches.
+    total_latency_time = sum(
+        (d.get("avg_latency_ms", 0) or 0) * (d.get("total_questions", 0) or 0) for d in docs
+    )
+    total_batches = sum(_num_batches(d) for d in docs)
     judge_pct = (judge_correct / total_q * 100) if total_q else 0.0
     f1_pct = (f1_sum / total_q * 100) if total_q else 0.0
-    avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+    avg_latency = total_latency_time / total_batches if total_batches else 0.0
     return {
         "total_questions": total_q,
         "judge_correct": judge_correct,
@@ -112,6 +113,11 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for d in docs:
         judge_acc = d.get("judge_accuracy", 0.0) or 0.0
+        # Stored p50/p95 are per question; scale to per batch (per model call) by
+        # the average batch size (questions / batches).
+        batches = _num_batches(d)
+        total_q = d.get("total_questions", 0) or 0
+        batch_factor = (total_q / batches) if batches else 1.0
         rows.append(
             {
                 "baseline": d.get("baseline", "?"),
@@ -120,24 +126,40 @@ def _per_sample(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "overall_accuracy": d.get("overall_accuracy", 0.0) or 0.0,
                 "judge_accuracy": judge_acc,
                 "judge_class": _accuracy_class(judge_acc * 100),
-                "p50_latency_ms": d.get("p50_latency_ms", 0.0) or 0.0,
-                "p95_latency_ms": d.get("p95_latency_ms", 0.0) or 0.0,
+                "p50_latency_ms": (d.get("p50_latency_ms", 0.0) or 0.0) * batch_factor,
+                "p95_latency_ms": (d.get("p95_latency_ms", 0.0) or 0.0) * batch_factor,
                 "execution_time_seconds": d.get("execution_time_seconds", 0.0) or 0.0,
+                "memory_creation_duration_sec": d.get("memory_creation_duration_sec", 0.0) or 0.0,
+                "total_cost_usd": d.get("total_cost_usd", 0.0) or 0.0,
                 "avg_context_tokens": _avg_context_tokens(d),
             }
         )
     return rows
 
 
-def _avg_context_tokens(doc: dict[str, Any]) -> float:
-    """Average context tokens per question for one sample doc.
+def _num_batches(doc: dict[str, Any]) -> int:
+    """Number of batched model calls for a sample = ceil(questions / batch_size).
 
-    Normally `total_context_tokens / questions`, but Pam doesn't report
+    The comparison unit is one model call (one batch). MCP baselines store
+    `batch_size`, Pam stores `pam_batch_size`; single-call baselines (LiteLLM)
+    have neither, so batch_size = 1 and per-batch == per-question.
+    """
+    total_q = doc.get("total_questions", 0) or 0
+    if total_q <= 0:
+        return 0
+    bs = doc.get("batch_size") or doc.get("pam_batch_size") or 1
+    return (total_q + bs - 1) // bs
+
+
+def _avg_context_tokens(doc: dict[str, Any]) -> float:
+    """Average context tokens per batch for one sample doc.
+
+    Normally `total_context_tokens / batches`, but Pam doesn't report
     `context_tokens` (it stays 0), so for Pam we approximate the injected
     context as `total_enriched_user_prompt_tokens - total_prompt_tokens`.
     """
-    total_q = doc.get("total_questions", 0) or 0
-    if not total_q:
+    batches = _num_batches(doc)
+    if not batches:
         return 0.0
     if doc.get("baseline") == "pam":
         ctx_total = (doc.get("total_enriched_user_prompt_tokens", 0) or 0) - (
@@ -145,30 +167,30 @@ def _avg_context_tokens(doc: dict[str, Any]) -> float:
         )
     else:
         ctx_total = doc.get("total_context_tokens", 0) or 0
-    return ctx_total / total_q
+    return ctx_total / batches
 
 
-def _avg_per_question(doc: dict[str, Any], total_field: str) -> float:
-    """`doc[total_field] / total_questions`, 0 when there are no questions."""
-    total_q = doc.get("total_questions", 0) or 0
-    if not total_q:
+def _avg_per_batch(doc: dict[str, Any], total_field: str) -> float:
+    """`doc[total_field] / num_batches`, 0 when there are no batches."""
+    batches = _num_batches(doc)
+    if not batches:
         return 0.0
-    return (doc.get(total_field, 0) or 0) / total_q
+    return (doc.get(total_field, 0) or 0) / batches
 
 
 def _avg_input_tokens(doc: dict[str, Any]) -> float:
-    """Average input tokens per question. Pam doesn't report `input_tokens`, so
-    its input is taken as the agent's enriched user prompt."""
+    """Average input tokens per batch. Pam doesn't report `input_tokens`, so its
+    input is taken as the agent's enriched user prompt."""
     field = (
         "total_enriched_user_prompt_tokens"
         if doc.get("baseline") == "pam"
         else ("total_input_tokens")
     )
-    return _avg_per_question(doc, field)
+    return _avg_per_batch(doc, field)
 
 
 def _per_sample_tokens(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Per-question token averages for each sample doc."""
+    """Per-batch token averages (one batched model call) for each sample doc."""
     rows: list[dict[str, Any]] = []
     for d in docs:
         rows.append(
@@ -176,13 +198,13 @@ def _per_sample_tokens(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "baseline": d.get("baseline", "?"),
                 "sample_id": d.get("sample_id", "?"),
                 "avg_input": _avg_input_tokens(d),
-                "avg_output": _avg_per_question(d, "total_output_tokens"),
+                "avg_output": _avg_per_batch(d, "total_output_tokens"),
                 "avg_context": _avg_context_tokens(d),
-                "avg_prompt": _avg_per_question(d, "total_prompt_tokens"),
-                "avg_agent_input": _avg_per_question(d, "total_agent_input_tokens"),
-                "avg_agent_output": _avg_per_question(d, "total_agent_output_tokens"),
-                "avg_agent_cache_read": _avg_per_question(d, "total_agent_cache_read_tokens"),
-                "avg_agent_cache_write": _avg_per_question(d, "total_agent_cache_write_tokens"),
+                "avg_prompt": _avg_per_batch(d, "total_prompt_tokens"),
+                "avg_agent_input": _avg_per_batch(d, "total_agent_input_tokens"),
+                "avg_agent_output": _avg_per_batch(d, "total_agent_output_tokens"),
+                "avg_agent_cache_read": _avg_per_batch(d, "total_agent_cache_read_tokens"),
+                "avg_agent_cache_write": _avg_per_batch(d, "total_agent_cache_write_tokens"),
             }
         )
     return rows
@@ -222,6 +244,9 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
     judges = sorted({d.get("judge_model", "?") for d in docs})
     samples = sorted({d.get("sample_id", "?") for d in docs})
     dataset_names = sorted({d.get("dataset_name", dataset) for d in docs})
+    # Distinct batch size(s) across the runs (MCP `batch_size` / Pam
+    # `pam_batch_size`; single-call baselines = 1). Shown once at the top.
+    batch_sizes = sorted({d.get("batch_size") or d.get("pam_batch_size") or 1 for d in docs})
     incorrect = _incorrect(docs)
     return {
         "dataset": dataset,
@@ -230,12 +255,16 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
         "dataset_name": ", ".join(dataset_names) or dataset,
         "baselines": baselines,
         "seeds": seeds,
+        "batch_sizes": batch_sizes,
         "judge_models": judges,
         "sample_count": len(samples),
         "headline": _aggregate_headline(docs),
         "per_category": _per_category(docs),
         "per_sample": _per_sample(docs),
         "per_sample_tokens": _per_sample_tokens(docs),
+        # Cost column is shown only when some run reports a real cost (harness
+        # experiments); Pam reports it as 0 and the column stays hidden.
+        "show_cost": any((d.get("total_cost_usd") or 0) > 0 for d in docs),
         "incorrect": incorrect,
         "incorrect_categories": _incorrect_categories(incorrect),
     }

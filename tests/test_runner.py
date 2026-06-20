@@ -100,6 +100,25 @@ def test_aggregate_sums_agent_tokens(prediction_factory, judge_factory):
     assert out["total_enriched_user_prompt_tokens"] == 100
 
 
+def test_aggregate_enriched_none_when_all_none(prediction_factory, judge_factory):
+    # claude-code-style baselines set enriched/injected to None → total stays None.
+    preds = [
+        prediction_factory(question_num=1, enriched_user_prompt_tokens=None),
+        prediction_factory(question_num=2, enriched_user_prompt_tokens=None),
+    ]
+    out = _aggregate(preds, [1.0, 1.0], [judge_factory(), judge_factory()])
+    assert out["total_enriched_user_prompt_tokens"] is None
+
+
+def test_aggregate_enriched_sums_when_present(prediction_factory, judge_factory):
+    preds = [
+        prediction_factory(question_num=1, enriched_user_prompt_tokens=40),
+        prediction_factory(question_num=2, enriched_user_prompt_tokens=60),
+    ]
+    out = _aggregate(preds, [1.0, 1.0], [judge_factory(), judge_factory()])
+    assert out["total_enriched_user_prompt_tokens"] == 100
+
+
 def test_qa_responses_carry_agent_tokens(prediction_factory, judge_factory):
     preds = [prediction_factory(question_num=1, agent_input_tokens=42)]
     rows = _qa_responses(preds, [1.0], [judge_factory()])

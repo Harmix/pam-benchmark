@@ -76,7 +76,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       <span><b>Generated:</b> {{ generated_at }}</span>
       <span><b>Dataset:</b> {{ dataset_name }}</span>
       <span><b>Baselines:</b> {{ baselines|join(', ') }}</span>
-      <span><b>Seeds:</b> {{ seeds|join(', ') }}</span>
+      <span><b>Batch size:</b> {{ batch_sizes|join(', ') }}</span>
       <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
       <span><b>Samples:</b> {{ sample_count }}</span>
     </div>
@@ -103,7 +103,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       </div>
       <div class="card">
         <div class="card-value">{{ '%.0f'|format(headline.avg_latency_ms) }} ms</div>
-        <div class="card-label">Avg latency / question</div>
+        <div class="card-label">Avg latency / batch</div>
       </div>
     </div>
   </div>
@@ -134,7 +134,8 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <table>
       <thead><tr>
         <th>Baseline</th><th>Sample</th><th>Q</th>
-        <th>F1</th><th>Judge</th><th>p50 / p95 latency</th><th>Wall-clock</th><th>Avg. Context Tokens</th>
+        <th>F1</th><th>Judge</th><th>Avg. Context Tokens</th><th>p50 / p95 latency</th>
+        <th>Memory Creation</th><th>Answer+Judge</th>{% if show_cost %}<th>Cost (USD)</th>{% endif %}
       </tr></thead>
       <tbody>
       {% for row in per_sample %}
@@ -144,9 +145,11 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
           <td>{{ row.total_questions }}</td>
           <td>{{ '%.1f'|format(row.overall_accuracy*100) }}%</td>
           <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
-          <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
-          <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
           <td>{{ '%.0f'|format(row.avg_context_tokens) }}</td>
+          <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
+          <td>{{ '%.1f'|format(row.memory_creation_duration_sec) }} s</td>
+          <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
+          {% if show_cost %}<td>${{ '%.4f'|format(row.total_cost_usd) }}</td>{% endif %}
         </tr>
       {% endfor %}
       </tbody>
@@ -155,8 +158,10 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
 
   <div class="section">
     <h2>Per-sample token metrics</h2>
-    <p class="muted">Per-question token averages. For Pam, Avg Input uses the enriched user prompt
-      and Avg Context is enriched − prompt.</p>
+    <p class="muted">Per-batch token averages (one batched model call — the fair unit to compare
+      across baselines, since a batch packs several questions). Avg Input is total input
+      (fresh + cache read + cache write). For Pam, Avg Input uses the enriched user prompt and
+      Avg Context is enriched − prompt.</p>
     <table>
       <thead><tr>
         <th>Baseline</th><th>Sample</th>

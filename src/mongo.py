@@ -32,8 +32,13 @@ def write_sample_result(
     document: dict[str, Any],
     connection_string: str | None = None,
     db_name: str | None = None,
+    collection: str | None = None,
 ) -> str | None:
-    """Insert one sample document. Returns the inserted_id or None on failure."""
+    """Insert one sample document. Returns the inserted_id or None on failure.
+
+    `collection` overrides the default `<dataset>_results` (e.g. MCP-on-harness
+    runs write to `<dataset>_mcp_results`).
+    """
     cs = connection_string or os.environ.get("CONNECTION_STRING")
     db = db_name or os.environ.get("DB_NAME")
     if not cs or not db:
@@ -42,7 +47,7 @@ def write_sample_result(
         )
         return None
 
-    coll_name = collection_for(dataset)
+    coll_name = collection or collection_for(dataset)
 
     ts = datetime.now(UTC)
     document = {

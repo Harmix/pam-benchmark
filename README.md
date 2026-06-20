@@ -62,9 +62,26 @@ DATABASE_USERNAME=...
 DATABASE_PASSWORD=...
 # Only needed for --pam-debug-user-id reuse (mints a per-user token)
 PAM_API_KEY=...
+# Required for the MCP-on-harness experiment (run_mcp_benchmark.py, claude-code on Vertex)
+VERTEX_PROJECT_ID=...
+VERTEX_REGION=...                            # regional endpoint, e.g. us-east5
+VERTEX_CREDENTIALS=...                        # SA key JSON: a local path, gs://bucket/key, OR sm://projects/<P>/secrets/<S>[/versions/<V>]
 ```
 
 `secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
+
+## MCP-memory-on-harness experiment
+
+Evaluate MCP memory baselines running on an agentic harness (Claude Code first), e.g. the recognizable filesystem-Markdown memory baseline, against Pam. Requires an installed `claude` CLI and the `VERTEX_PROJECT_ID` / `VERTEX_REGION` / `VERTEX_CREDENTIALS` secrets above.
+
+```bash
+uv run python scripts/run_mcp_benchmark.py \
+  --dataset locomo --harness claude-code --baseline memory_md_mcp \
+  --harness-model <vertex-claude-model-id> --exp-name mcp_locomo_md_v1 \
+  --mcp-batch-size 10 --max-questions 20      # --max-questions for debugging
+```
+
+Memory is written to `outputs/<exp>/<harness>/<seed>/<sample_id>/memory/` and wiped after each sample unless `--mcp-keep-memory`. Design and decisions: `docs/mcp_harness_benchmark_plan.md`.
 
 ## Repo layout
 
@@ -136,7 +153,7 @@ Reports at `reports/<exp-name>/report.html` are rendered on demand from Mongo by
 ## Docker (local parity with Cloud Run)
 
 ```bash
-docker build -f cluster/Dockerfile -t memory-benchmark:dev .
+docker build -f cluster/run_benchmark/Dockerfile -t memory-benchmark:dev .
 
 docker run --rm \
   --env-file secrets.env \
@@ -148,13 +165,16 @@ docker run --rm \
 
 (The image's `ENTRYPOINT` is `python scripts/run_benchmark.py`, so flags go straight to the benchmark — no need to repeat the script name.)
 
+The MCP-on-harness experiment has its own image (bundles the Claude Code CLI):
+`docker build -f cluster/run_mcp_benchmark/Dockerfile -t memory-mcp-benchmark:dev .` — `ENTRYPOINT` is `python scripts/run_mcp_benchmark.py`.
+
 ## Cloud Run Jobs
 
 One-time setup: enable Artifact Registry + Cloud Run, the `pam-rnd-cloud-run-jobs` repo in `harmix-pam-rnd` / `us-east1` exists, and the secrets are in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
 
 ```bash
 # Build + push the image to the rnd registry (defaults to :latest)
-./cluster/build_and_push.sh
+./cluster/run_benchmark/build_and_push.sh          # MCP image: ./cluster/run_mcp_benchmark/build_and_push.sh
 
 # Execute the job (Cloud Run pulls :latest, runs ENTRYPOINT + --args)
 ./cluster/run_job.sh \

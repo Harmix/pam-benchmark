@@ -108,6 +108,50 @@ def test_headline_combines_across_docs():
     assert "total_cost_usd" not in h
 
 
+def test_headline_latency_is_per_batch():
+    # 20 questions, batch 10 → 2 batches. Per-question avg 50ms → total 1000ms,
+    # / 2 batches = 500ms per batch. (Computed at report level; experiment data
+    # stays per-question.)
+    docs = [
+        {
+            "total_questions": 20,
+            "batch_size": 10,
+            "avg_latency_ms": 50.0,
+            "judge_correct_count": 0,
+            "total_f1_sum": 0.0,
+        }
+    ]
+    assert _aggregate_headline(docs)["avg_latency_ms"] == pytest.approx(500.0)
+
+
+def test_headline_latency_per_batch_equals_per_question_when_batch_one():
+    docs = [
+        {
+            "total_questions": 4,
+            "avg_latency_ms": 120.0,  # no batch_size → batch 1 → per-batch == per-question
+            "judge_correct_count": 0,
+            "total_f1_sum": 0.0,
+        }
+    ]
+    assert _aggregate_headline(docs)["avg_latency_ms"] == pytest.approx(120.0)
+
+
+def test_per_sample_latency_scaled_to_per_batch():
+    docs = [
+        {
+            "baseline": "memory_md_mcp",
+            "sample_id": "s",
+            "total_questions": 20,
+            "batch_size": 10,  # factor = 20 / 2 batches = 10
+            "p50_latency_ms": 30.0,
+            "p95_latency_ms": 45.0,
+        }
+    ]
+    row = _per_sample(docs)[0]
+    assert row["p50_latency_ms"] == pytest.approx(300.0)
+    assert row["p95_latency_ms"] == pytest.approx(450.0)
+
+
 def test_per_category_groups_canonical_order():
     docs = [
         _doc(
@@ -133,9 +177,22 @@ def test_per_sample_one_row_per_doc():
     assert len(rows) == 3
     assert {r["sample_id"] for r in rows} == {"s0", "s1", "s2"}
     assert all("judge_class" in r for r in rows)
-    # Seed column dropped; Avg. Context Tokens added.
+    # Seed column dropped; Avg. Context Tokens + memory-creation added.
+    # Batch size lives at the report top, not per-sample.
     assert all("seed" not in r for r in rows)
+    assert all("batch_size" not in r for r in rows)
     assert all("avg_context_tokens" in r for r in rows)
+    assert all("memory_creation_duration_sec" in r for r in rows)
+
+
+def test_build_context_batch_sizes_at_top():
+    docs = [
+        {"baseline": "memory_md_mcp", "sample_id": "a", "batch_size": 10},
+        {"baseline": "pam", "sample_id": "b", "pam_batch_size": 5},
+        {"baseline": "gpt-4o", "sample_id": "c"},  # single-call → 1
+    ]
+    ctx = build_context(dataset="locomo", exp_name="x", docs=docs)
+    assert ctx["batch_sizes"] == [1, 5, 10]
 
 
 def test_avg_context_tokens_non_pam_uses_context_total():
@@ -189,6 +246,7 @@ def test_per_sample_tokens_columns_and_values():
         "total_agent_cache_read_tokens": 8,
         "total_agent_cache_write_tokens": 4,
     }
+    # batch_size defaults to 1 → num_batches == questions, so per-batch == per-question here.
     row = _per_sample_tokens([doc])[0]
     assert row["avg_input"] == pytest.approx(100.0)  # enriched 200 / 2
     assert row["avg_output"] == pytest.approx(20.0)
@@ -198,6 +256,37 @@ def test_per_sample_tokens_columns_and_values():
     assert row["avg_agent_output"] == pytest.approx(10.0)
     assert row["avg_agent_cache_read"] == pytest.approx(4.0)
     assert row["avg_agent_cache_write"] == pytest.approx(2.0)
+
+
+def test_avg_metrics_are_per_batch_not_per_question():
+    # 20 questions, batch_size 10 → 2 batches. Totals divide by 2, not 20.
+    doc = {
+        "baseline": "memory_md_mcp",
+        "sample_id": "s",
+        "total_questions": 20,
+        "batch_size": 10,
+        "total_input_tokens": 1000,
+        "total_output_tokens": 400,
+        "total_context_tokens": 600,
+        "total_prompt_tokens": 80,
+    }
+    assert _avg_input_tokens(doc) == pytest.approx(500.0)  # 1000 / 2 batches
+    assert _avg_context_tokens(doc) == pytest.approx(300.0)  # 600 / 2 batches
+    row = _per_sample_tokens([doc])[0]
+    assert row["avg_output"] == pytest.approx(200.0)  # 400 / 2
+    assert row["avg_prompt"] == pytest.approx(40.0)  # 80 / 2
+
+
+def test_avg_metrics_per_batch_uneven_last_batch():
+    # 25 questions, batch_size 10 → ceil = 3 batches.
+    doc = {
+        "baseline": "memory_md_mcp",
+        "sample_id": "s",
+        "total_questions": 25,
+        "batch_size": 10,
+        "total_input_tokens": 900,
+    }
+    assert _avg_input_tokens(doc) == pytest.approx(300.0)  # 900 / 3
 
 
 def test_per_sample_tokens_zero_questions_safe():

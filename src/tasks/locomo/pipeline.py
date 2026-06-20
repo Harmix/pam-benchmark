@@ -27,7 +27,7 @@ class LoCoMoPrediction:
     output_tokens: int
     est_cost_usd: float
     latency_ms: float
-    injected_tokens: int = 0
+    injected_tokens: int | None = 0
     prompt_tokens: int = 0
     context_tokens: int = 0
     # Agent-side token usage (Pam only; from its message_metrics row).
@@ -35,7 +35,7 @@ class LoCoMoPrediction:
     agent_output_tokens: int = 0
     agent_cache_read_tokens: int = 0
     agent_cache_write_tokens: int = 0
-    enriched_user_prompt_tokens: int = 0
+    enriched_user_prompt_tokens: int | None = 0
     raw_response: dict[str, Any] = field(default_factory=dict)
     # Exact model in/out for the --save-responses debug log. `raw_prompt` is the
     # string actually sent to the model (the rendered batch prompt for Pam);
