@@ -260,7 +260,16 @@ class McpHarnessBaseline(BaselineBase):
             )
 
         # Distribute the single batch run's usage across the questions.
-        in_share = distribute(result.input_tokens, n)
+        # `input_tokens` = the TOTAL input the model processed = fresh +
+        # cache-read + cache-write. Claude Code reports `input_tokens` as the
+        # non-cached delta only; with prompt caching the bulk of the batch prompt
+        # and the memory files re-read across agentic turns land in cache-read,
+        # so non-cached alone would be tiny and misleading. The non-cached part
+        # is still kept as `agent_input_tokens` (so agent_input + cache_read +
+        # cache_write == input_tokens).
+        total_input = result.input_tokens + result.cache_read_tokens + result.cache_write_tokens
+        in_share = distribute(total_input, n)
+        agent_in_share = distribute(result.input_tokens, n)
         out_share = distribute(result.output_tokens, n)
         cr_share = distribute(result.cache_read_tokens, n)
         cw_share = distribute(result.cache_write_tokens, n)
@@ -282,7 +291,7 @@ class McpHarnessBaseline(BaselineBase):
                         # injected/enriched are Pam-only concepts.
                         injected_tokens=None,
                         enriched_user_prompt_tokens=None,
-                        agent_input_tokens=in_share[i],
+                        agent_input_tokens=agent_in_share[i],
                         agent_output_tokens=out_share[i],
                         agent_cache_read_tokens=cr_share[i],
                         agent_cache_write_tokens=cw_share[i],

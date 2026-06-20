@@ -61,17 +61,27 @@ def test_build_then_batch_lifecycle_and_token_mapping(fake_harness_factory, tmp_
     assert "Write" not in answer_tools and "Edit" not in answer_tools
 
     assert [p.model_answer for p in preds] == ["ans-1", "ans-2", "ans-3", "ans-4"]
-    # 400/4=100 input, 200/4=50 output, 40/4=10 cache-read, 20/4=5 cache-write per q.
-    assert [p.input_tokens for p in preds] == [100, 100, 100, 100]
+    # input_tokens is TOTAL input = fresh(400) + cache_read(40) + cache_write(20) = 460
+    # → 460/4 = 115 per question. agent_input is the fresh (non-cached) part: 400/4 = 100.
+    assert [p.input_tokens for p in preds] == [115, 115, 115, 115]
+    assert [p.agent_input_tokens for p in preds] == [100, 100, 100, 100]
     assert [p.output_tokens for p in preds] == [50, 50, 50, 50]
     assert [p.agent_cache_read_tokens for p in preds] == [10, 10, 10, 10]
     assert [p.agent_cache_write_tokens for p in preds] == [5, 5, 5, 5]
+    # agent_input + cache_read + cache_write == input_tokens (clean decomposition).
+    assert all(
+        p.agent_input_tokens + p.agent_cache_read_tokens + p.agent_cache_write_tokens
+        == p.input_tokens
+        for p in preds
+    )
     # cost 0.8 / 4 = 0.2 per question; latency 1000 / 4 = 250.
     assert all(abs(p.est_cost_usd - 0.2) < 1e-9 for p in preds)
     assert all(abs(p.latency_ms - 250.0) < 1e-9 for p in preds)
-    # prompt_tokens > 0 (counted with gpt-4o); context = input - prompt >= 0.
+    # prompt_tokens > 0 (counted with gpt-4o) and no longer clamped to input;
+    # context = input - prompt > 0.
     assert all(p.prompt_tokens > 0 for p in preds)
     assert all(p.context_tokens == p.input_tokens - p.prompt_tokens for p in preds)
+    assert all(p.context_tokens > 0 for p in preds)
     # injected/enriched are None for claude-code-style baselines.
     assert all(p.injected_tokens is None for p in preds)
     assert all(p.enriched_user_prompt_tokens is None for p in preds)

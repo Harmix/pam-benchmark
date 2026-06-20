@@ -23,7 +23,7 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
         "",
         f"- LLM-judge accuracy: **{h['judge_accuracy_pct']}%** ({h['judge_correct']}/{h['judge_total']})",
         f"- F1 (weighted): **{h['f1_pct']}%**",
-        f"- Avg latency / question: {h['avg_latency_ms']:.0f} ms",
+        f"- Avg latency / batch: {h['avg_latency_ms']:.0f} ms",
         "",
         "## Per category",
         "",
@@ -66,8 +66,9 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             "",
             "## Per-sample token metrics",
             "",
-            "Per-question token averages. For Pam, Avg Input uses the enriched user prompt "
-            "and Avg Context is enriched minus prompt.",
+            "Per-batch token averages (one batched model call). Avg Input is total input "
+            "(fresh + cache read + cache write). For Pam, Avg Input uses the enriched user "
+            "prompt and Avg Context is enriched minus prompt.",
             "",
             "| Baseline | Sample | Avg Input | Avg Output | Avg Context | Avg Prompt | "
             "Avg Agent Input | Avg Agent Output | Avg Agent Cache Read | Avg Agent Cache Write |",
