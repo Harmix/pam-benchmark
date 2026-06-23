@@ -4,9 +4,11 @@ Endpoints exercised by the benchmark:
   - `POST /v1/auth/login`                                          (admin login)
   - `POST /v1/admin/create-account`                                (per-sample user)
   - `POST /v1/admin/users/{user_id}/tokens`                        (mint per-user token — debug reuse)
+  - `POST /v1/admin/users/{user_id}/feature-flags/{flag}/enable`   (enable MEMORY_MCP — pam_mcp)
   - `DELETE /v1/admin/delete-account/{user_id}`                    (per-sample user)
   - `POST /v1/memory/process-generic-files/{user_id}`              (upload + kick off memory pipeline)
   - `GET  /v1/memory/get-memory-pipeline-status/{user_id}/{run_id}` (poll status)
+  - `POST /v1/dev/rotate-key`                                      (mint a Memory MCP key — pam_mcp)
   - `POST /v1/messages/stream`                                     (SSE chat — questions)
 
 Auth model:
@@ -241,6 +243,61 @@ class PamClient:
         self.access_token = access_token
         self.user_id = user_id
         return access_token
+
+    def enable_feature_flag(self, user_id: int, flag_name: str) -> None:
+        """Enable a per-user feature flag via the admin endpoint.
+
+        Calls `POST /v1/admin/users/{user_id}/feature-flags/{flag_name}/enable`
+        with the admin bearer + Harmix `api-key` (same header pair as
+        `issue_user_tokens`). Used by `pam_mcp` so a freshly created benchmark
+        account has `MEMORY_MCP` enabled before it mints a Memory MCP key via
+        `rotate-key` (the `/v1/dev/*` routes are gated by that flag). Idempotent.
+        """
+        if not self.api_key:
+            raise RuntimeError(
+                "enable_feature_flag requires an api_key (set PAM_API_KEY) — needed to "
+                "enable MEMORY_MCP on the per-conversation benchmark account"
+            )
+        url = f"{self.base_url}/admin/users/{user_id}/feature-flags/{flag_name}/enable"
+        resp = self.session.post(url, headers=self._issue_user_tokens_headers(), timeout=120)
+        if resp.status_code == 401:
+            # Admin bearer may have expired — refresh once and retry.
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._issue_user_tokens_headers(), timeout=120)
+        self._raise_for_auth(resp, url)
+        if not resp.ok:
+            logger.warning(
+                "Pam enable_feature_flag failed: %s %s", resp.status_code, resp.text[:500]
+            )
+        resp.raise_for_status()
+
+    def rotate_developer_key(self) -> str:
+        """Mint/rotate the Memory MCP key for the CURRENT user.
+
+        Calls `POST /v1/dev/rotate-key`, authenticated by the current per-user
+        bearer (set by `create_account` or `issue_user_tokens` — NOT the admin
+        token). Returns the full key `pam_mkey_<prefix>.<secret>`, used verbatim
+        as the `Authorization` header value for the Memory MCP server.
+
+        Requires the user to have the `MEMORY_MCP` feature flag enabled (see
+        `enable_feature_flag`); otherwise the gated `/v1/dev/*` route returns 403.
+        """
+        url = f"{self.base_url}/dev/rotate-key"
+        resp = self.session.post(url, headers=self._headers(), timeout=120)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._headers(), timeout=120)
+        self._raise_for_auth(resp, url)
+        if not resp.ok:
+            logger.warning(
+                "Pam rotate_developer_key failed: %s %s", resp.status_code, resp.text[:500]
+            )
+        resp.raise_for_status()
+        data = resp.json()
+        api_key = data.get("api_key")
+        if not api_key:
+            raise RuntimeError(f"rotate-key: no api_key in response: {data!r}")
+        return api_key
 
     def delete_account(self, user_id: int | None = None) -> None:
         """Delete the user and all of their records (the full wipe).

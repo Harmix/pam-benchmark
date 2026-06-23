@@ -320,6 +320,11 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             "keep_memory": cfg.mcp_keep_memory,
             "max_turns": cfg.mcp_max_turns,
         }
+        if cfg.baseline == "pam_mcp":
+            # pam_mcp builds memory server-side via Pam, so it honours the same
+            # account-lifecycle knobs as the `pam` baseline.
+            baseline_extra["debug_user_id"] = cfg.pam_debug_user_id
+            baseline_extra["backup_memory"] = cfg.backup_memory
     elif cfg.baseline == "pam":
         baseline_extra = {
             "batch_size": cfg.pam_batch_size,
