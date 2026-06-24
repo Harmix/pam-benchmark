@@ -1,26 +1,108 @@
+<div align="center">
+
+<a href="https://manager.harmix.ai">
+  <img src="https://manager.harmix.ai/images/pam-logo.png" alt="Pam by Harmix" height="84">
+</a>
+
 # Pam Benchmark
 
-The internal benchmark [Harmix](https://manager.harmix.ai) uses to validate **Pam**'s memory layer against competing memory products.
+**An open benchmark for AI memory — how well do memory systems recall long-horizon conversational and organizational context?**
 
-Pam (Proactive AI Manager) is Harmix's enterprise AI business assistant — it learns continuously from organizational data (documents, ERP/CRM systems, Linear, Slack, …) to anticipate problems, automate workflows, and resolve conflicts across disparate tools. The entire product hinges on accurate long-horizon recall of that data, so this benchmark answers one question repeatedly: **is Pam's memory at least as good as the best dedicated memory products on the tasks our customers care about?**
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](.python-version)
+[![Package manager: uv](https://img.shields.io/badge/deps-uv-purple.svg)](https://github.com/astral-sh/uv)
 
-The methodology follows the standards in `docs/init_memory_bank.md` (datasheets, system cards, multi-seed statistics, reproducibility), so numbers stay defensible whether they're used internally for a release decision or externally in customer conversations.
+[Harmix](https://www.harmix.ai) · [Pam (product)](https://manager.harmix.ai) · [Blog](https://manager.harmix.ai/blog) · [Research](https://manager.harmix.ai/research)
 
-## Status
+</div>
 
-**Milestone 1 — complete.** Harness validated end-to-end with `gpt-4-turbo` on the **LoCoMo** dataset; results in MongoDB, repo tagged `m1`.
+---
 
-**Milestone 2 — Pam baseline shipped.** `--baseline pam` runs Pam end-to-end on LoCoMo via the Pam API (one memory per conversation, batched SSE chat). Configuration via `--pam-batch-size` and `--pam-debug-user-id`. Competitors (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) follow in M4–M5. See `docs/m2_pam_baseline_plan.md` and `docs/benchmark_rewrite_plan.md` for the roadmap.
+This is the benchmark [Harmix](https://www.harmix.ai) uses to validate **Pam**'s memory layer against other AI-memory systems. Pam (*Proactive AI Manager*) is an enterprise AI assistant that learns continuously from organizational data — documents, ERP/CRM, Linear, Slack — to anticipate problems and automate work. The whole product hinges on accurate long-horizon recall, so this harness answers one question repeatedly, with reproducible numbers: **is Pam's memory at least as good as the best dedicated memory systems on the tasks our customers care about?**
 
-## Quick start (local)
+We're publishing it for transparency behind the results we cite in our blog posts.
 
-Prerequisites: `uv >= 0.5`, Python 3.12, a populated `secrets.env` (see below), and the LoCoMo data file at `src/datasets/locomo/data/locomo10.json`.
+## 📊 Headline Result
+
+<div align="center">
+  <img src="docs/blog_overall_accuracy.png" alt="Pam memory beats plain Memory.md files on LoCoMo" width="720">
+</div>
+
+On the full **LoCoMo** benchmark (1,986 questions, LLM-as-a-Judge scored by GPT-4o), Pam's memory answers **1,644/1,986 (82.8%)** correctly versus **1,000/1,986 (50.4%)** for plain Memory.md files on a coding-agent harness — a **+32.4 pt** improvement. See [`docs/blog_post_notes_locomo.md`](docs/blog_post_notes_locomo.md) for our broader LoCoMo results write-up.
+
+## 🧠 What This Repo Is
+
+A single, uniform harness that runs different systems-under-test over the same datasets, with the same scoring, so the numbers are directly comparable. Each run:
+
+1. Loads a dataset of long multi-session conversations with QA pairs.
+2. Feeds each conversation to a **baseline** (a plain LLM, Pam's memory API, or a memory system running on an agentic harness).
+3. Asks the baseline every question and scores answers with **token-F1** and an **LLM-as-a-Judge** rubric.
+4. Records per-question tokens, latency, and cost, and renders an HTML/Markdown report.
+
+Why a custom benchmark? Public memory benchmarks are saturating for top models, don't cover Harmix-shaped workloads (multi-tool coordination, long retrospectives), and don't run competitors uniformly on the same data with the same scoring. This harness does.
+
+## 📚 Datasets
+
+| Dataset | Status | Samples | Task | Source |
+|---|---|---|---|---|
+| **LoCoMo** | ✅ Shipped | 10 conversations · ~1,986 QA total | Multi-session dialogue QA across single-hop, temporal, open-domain, multi-hop, and adversarial recall | [snap-research/locomo](https://github.com/snap-research/locomo) ([ACL 2024](https://aclanthology.org/2024.acl-long.747.pdf)) |
+| **MEMTRACK** | 🚧 Planned | — | Multi-tool coordination (Linear + Slack event histories) with cross-system references — closest to Pam's production workload | Harmix internal (synthetic) |
+| **LongMemEval** | 🚧 Planned | — | Long-conversation memory eval | [LongMemEval](https://github.com/xiaowu0162/LongMemEval) |
+
+Dataset details and licensing live in each dataset's README, e.g. [`src/datasets/locomo/README.md`](src/datasets/locomo/README.md).
+
+## 🏆 Baselines
+
+A *baseline* is one system-under-test, implemented against the `Baseline` protocol in [`src/baselines/base.py`](src/baselines/base.py).
+
+| Baseline | What it is | Memory | Status |
+|---|---|---|---|
+| **LiteLLM models** (`gpt-4-turbo`, `gpt-4o`, …) | Any LiteLLM-supported model; the full conversation is packed into each prompt (no external memory) | None | ✅ Shipped |
+| **Pam** (`pam`) | Harmix's in-house memory layer via the Pam HTTP API — uploads the conversation, builds a memory, answers in batches | External (Pam) | ✅ Shipped |
+| **Claude Code + Memory.md** (`memory_md_mcp`) | A filesystem-Markdown memory backend running on the Claude Code agentic harness | External (Markdown files) | ✅ Shipped |
+| Dedicated memory products (mem0, Zep, Supermemory, Honcho) | Other memory APIs run through the same harness | External | 🚧 Planned |
+
+See [`src/baselines/README.md`](src/baselines/README.md), [`src/baselines/pam/README.md`](src/baselines/pam/README.md), and [`docs/mcp_harness_benchmark_plan.md`](docs/mcp_harness_benchmark_plan.md).
+
+## 🛠️ Dependencies
+
+- **Python 3.12** and **[uv](https://github.com/astral-sh/uv) ≥ 0.5** (the only thing you install by hand; `uv sync` does the rest).
+- Core libraries: `litellm` + `instructor` (model calls), `pydantic` + `typer` + `rich` (CLI), `pymongo` (result store), `tiktoken` / `nltk` / `scipy` (scoring & stats), `jinja2` (reports), `asyncpg` (Pam metrics). Full pin set in [`pyproject.toml`](pyproject.toml) / [`uv.lock`](uv.lock).
+- **Optional services:** MongoDB (result store — skip with `--no-mongo`); a Claude Code CLI + Vertex AI access for the agentic-harness experiment; Pam API credentials for the `pam` baseline.
+
+Secrets are read from a gitignored `secrets.env` (see [How to Use](#-how-to-use)).
+
+## 📁 Repository Structure
+
+```
+.
+├── src/                         # PYTHONPATH=src
+│   ├── cli.py / mcp_cli.py      # CLI definitions for the two run modes
+│   ├── runner.py registry.py    # run loop + name→object lookups
+│   ├── config.py seeds.py mongo.py
+│   ├── datasets/<name>/         # one loader per dataset (locomo shipped)
+│   ├── baselines/<name>/        # one system-under-test per baseline
+│   ├── harnesses/<name>/        # agentic harnesses (claude_code)
+│   ├── tasks/<name>/            # per-dataset pipeline + prompts
+│   ├── evals/                   # metrics: qa_f1, llm_judge, efficiency, runtime, stats
+│   └── reporting/               # Mongo → HTML/MD renderer
+├── scripts/                     # entrypoints (run_benchmark, run_mcp_benchmark, generate_report, download_data)
+├── cluster/                     # Dockerfiles + image build/push scripts (Cloud Run Jobs)
+├── tests/                       # ~200 unit tests; no live LLM calls
+├── docs/                        # design docs, plans, blog notes
+├── pyproject.toml uv.lock       # uv-managed dependencies
+└── LICENSE                      # Apache-2.0
+```
+
+## 🚀 How to Use
+
+**Prerequisites:** `uv ≥ 0.5`, Python 3.12, a `secrets.env`, and the LoCoMo data at `src/datasets/locomo/data/locomo10.json`.
 
 ```bash
-# 1. Sync deps
+# 1. Install dependencies
 uv sync
 
-# 2. (One-time) Install git pre-commit hooks
+# 2. (optional) install git pre-commit hooks
 uv run pre-commit install
 
 # 3. Verify the dataset is in place
@@ -28,193 +110,88 @@ uv run python scripts/download_data.py --dataset locomo
 
 # 4. Smoke run — 1 sample, 5 questions, gpt-4-turbo
 uv run python scripts/run_benchmark.py \
-  --dataset locomo \
-  --baseline gpt-4-turbo \
-  --exp-name local_smoke \
-  --sample-index 0 \
-  --max-questions 5
+  --dataset locomo --baseline gpt-4-turbo \
+  --exp-name local_smoke --sample-index 0 --max-questions 5
 
-# 5. Render the HTML report (pulls from Mongo)
+# 5. Render the HTML report
 uv run python scripts/generate_report.py --exp-name local_smoke
 open reports/local_smoke/report.html
 ```
 
-The same scripts work without Mongo via `--no-mongo` (the report just won't have anything to pull).
+`--exp-name` is the key that groups results, artifacts, and reports. For multi-seed runs, call `run_benchmark.py` N times with the same `--exp-name` and different `--seed`. Everything works without Mongo via `--no-mongo`.
 
-## `secrets.env`
+**Run Pam** (needs `PAM_API_*` secrets): swap in `--baseline pam` and tune `--pam-batch-size`.
 
-Required keys (loaded by `python-dotenv`):
-
-```bash
-OPENAI_API_KEY=sk-...
-CONNECTION_STRING=mongodb+srv://...
-DB_NAME=your-db
-# Required when --baseline pam
-PAM_API_HOST=...
-PAM_API_USER=...
-PAM_API_PASSWORD=...
-PAM_OUTPUT_TOKEN_MODEL=...   # model id whose tokenizer counts Pam output tokens
-# Postgres with pam.message_metrics (agent-side token usage per answer)
-DATABASE_HOST=...
-DATABASE_PORT=...
-DATABASE_NAME=...
-DATABASE_USERNAME=...
-DATABASE_PASSWORD=...
-# Only needed for --pam-debug-user-id reuse (mints a per-user token)
-PAM_API_KEY=...
-# Required for the MCP-on-harness experiment (run_mcp_benchmark.py, claude-code on Vertex)
-VERTEX_PROJECT_ID=...
-VERTEX_REGION=...                            # regional endpoint, e.g. us-east5
-VERTEX_CREDENTIALS=...                        # SA key JSON: a local path, gs://bucket/key, OR sm://projects/<P>/secrets/<S>[/versions/<V>]
-```
-
-`secrets.env` is gitignored. On Cloud Run Jobs these are injected via Secret Manager (see `cluster/deploy.sh`).
-
-## MCP-memory-on-harness experiment
-
-Evaluate MCP memory baselines running on an agentic harness (Claude Code first), e.g. the recognizable filesystem-Markdown memory baseline, against Pam. Requires an installed `claude` CLI and the `VERTEX_PROJECT_ID` / `VERTEX_REGION` / `VERTEX_CREDENTIALS` secrets above.
+**Run a memory system on an agentic harness** (needs a `claude` CLI + Vertex secrets):
 
 ```bash
 uv run python scripts/run_mcp_benchmark.py \
   --dataset locomo --harness claude-code --baseline memory_md_mcp \
   --harness-model <vertex-claude-model-id> --exp-name mcp_locomo_md_v1 \
-  --mcp-batch-size 10 --max-questions 20      # --max-questions for debugging
+  --mcp-batch-size 10
 ```
 
-Memory is written to `outputs/<exp>/<harness>/<seed>/<sample_id>/memory/` and wiped after each sample unless `--mcp-keep-memory`. Design and decisions: `docs/mcp_harness_benchmark_plan.md`.
+### `secrets.env`
 
-## Repo layout
-
-```
-.
-├── cluster/                         # everything needed to run on a remote cluster
-│   ├── Dockerfile                   # single image; runs locally + Cloud Run Jobs
-│   ├── deploy.sh                    # build + push + gcloud run jobs deploy/update
-│   └── run_job.sh                   # gcloud run jobs execute with --args forwarding
-├── docs/
-│   ├── init_memory_bank.md          # methodology standards (datasheet, model card, …)
-│   ├── benchmark_rewrite_plan.md    # M1 scope + decisions + roadmap
-│   └── m1_handoff.md                # how to run the M1 acceptance + tag
-├── .memory-bank/                    # populated per init_memory_bank.md
-├── scripts/                         # Python entrypoints; all accept --exp-name (except download)
-│   ├── run_benchmark.py             # the only benchmark-run entrypoint
-│   ├── generate_report.py           # pulls Mongo rows, renders HTML/MD
-│   └── download_data.py             # idempotent dataset verifier/downloader
-├── src/                             # PYTHONPATH=src; no wrapper package
-│   ├── cli.py runner.py registry.py config.py seeds.py env.py mongo.py …
-│   ├── datasets/<name>/             # one loader per dataset
-│   ├── baselines/<name>/            # one system-under-test per baseline (Pam lands here in M2)
-│   ├── tasks/<name>/                # one pipeline + prompts per dataset task
-│   ├── evals/                       # shared metrics (F1, llm_judge, efficiency, runtime, stats)
-│   ├── reporting/                   # Mongo → HTML/MD renderer
-│   └── utils/                       # llm wrapper, io, timing
-├── tests/                           # 100 unit tests across evals, runner, reporting, etc.
-├── pyproject.toml uv.lock           # uv-managed dependencies
-├── .python-version                  # 3.12
-├── .pre-commit-config.yaml          # ruff + ruff-format + basic hygiene
-├── .github/workflows/ci.yml         # lint + format + tests on PRs to main
-├── .dockerignore .gitignore
-└── secrets.env                      # gitignored
-```
-
-## Why this benchmark exists (the short version)
-
-Pam has its own in-house memory layer; the other memory products in this benchmark (Honcho, Supermemory, mem0, Zep, Claude Code variants, OpenClaw) are competitors, not candidate backbones. The benchmark supports four recurring decisions:
-
-1. **Competitive positioning.** Where does Pam's memory layer rank against each competitor, and on which workloads do we have an edge or a gap?
-2. **Regression detection.** Does this Pam release recall organizational facts as accurately as the previous one?
-3. **Configuration tuning.** Which model + retrieval config inside Pam performs best on enterprise data shapes (ERP records, Linear tickets, Slack threads, retrospectives)?
-4. **Defensible external claims.** When we tell a Harmix prospect "Pam is N% better than competitor Y on workload Z," can we ship the experiment log to back it up?
-
-Public memory benchmarks alone aren't enough because (a) several are saturating for top models, (b) they don't cover Harmix-shaped workloads (multi-tool coordination, long retrospectives), and (c) running competitors uniformly on the same data with the same scoring requires harness work that public datasets don't provide.
-
-See `.memory-bank/benchmark-overview/README.md` for the longer version.
-
-## CLI surface
-
-| Script | Required | Useful optional |
-|---|---|---|
-| `scripts/run_benchmark.py` | `--dataset`, `--baseline`, `--exp-name` | `--seed` (default 42), `--sample-index`, `--max-questions`, `--baseline-model`, `--baseline-kwargs` (JSON), `--judge-model` (default `gpt-4o`), `--judge-concurrency`, `--output-dir`, `--no-mongo`, `--dry-run`, `--log-format {rich,json}`, `--pam-batch-size` (default 10), `--pam-debug-user-id`, `--backup-memory` |
-| `scripts/generate_report.py` | `--exp-name` | `--dataset` (default `locomo`), `--format {html,md}`, `--output-dir` |
-| `scripts/download_data.py` | `--dataset` | `--force` |
-
-The `--exp-name` value is the primary key for grouping Mongo records, output artifacts, and reports. For multi-seed runs invoke `run_benchmark.py` N times with the same `--exp-name` and different `--seed`.
-
-## Outputs
-
-Per-run local artifacts at `outputs/<exp-name>/<seed>/`:
-- `config.yaml` — resolved `RunConfig`
-- `metrics.json` — aggregate per-sample metrics (mirror of Mongo)
-
-Per-sample Mongo document in `<dataset>_results` (e.g. `locomo_results`) — one document per `(exp_name, sample_id, seed)`, with the full per-question payload (question, expected, model answer, F1, judge verdict, tokens, latency) inside the `qa_responses` nested array. See `src/mongo.py` and `docs/benchmark_rewrite_plan.md` §9.1.
-
-Reports at `reports/<exp-name>/report.html` are rendered on demand from Mongo by `scripts/generate_report.py`.
-
-## Docker (local parity with Cloud Run)
+A gitignored file with the keys for whatever you run. Minimal set for an LLM baseline:
 
 ```bash
-docker build -f cluster/run_benchmark/Dockerfile -t memory-benchmark:dev .
-
-docker run --rm \
-  --env-file secrets.env \
-  -v "$(pwd)/outputs:/app/outputs" \
-  memory-benchmark:dev \
-    --dataset locomo --baseline gpt-4-turbo \
-    --exp-name docker_smoke --sample-index 0 --max-questions 5
+OPENAI_API_KEY=sk-...
+CONNECTION_STRING=mongodb+srv://...   # omit and pass --no-mongo to skip Mongo
+DB_NAME=your-db
 ```
 
-(The image's `ENTRYPOINT` is `python scripts/run_benchmark.py`, so flags go straight to the benchmark — no need to repeat the script name.)
+The `pam` baseline additionally needs `PAM_API_*` (and `DATABASE_*` for agent-side token metrics); the agentic-harness experiment needs `VERTEX_PROJECT_ID` / `VERTEX_REGION` / `VERTEX_CREDENTIALS`. The full per-baseline list is in [`src/baselines/pam/README.md`](src/baselines/pam/README.md) and [`docs/mcp_harness_benchmark_plan.md`](docs/mcp_harness_benchmark_plan.md).
 
-The MCP-on-harness experiment has its own image (bundles the Claude Code CLI):
-`docker build -f cluster/run_mcp_benchmark/Dockerfile -t memory-mcp-benchmark:dev .` — `ENTRYPOINT` is `python scripts/run_mcp_benchmark.py`.
+### Outputs
 
-## Cloud Run Jobs
+- **Local:** `outputs/<exp-name>/<seed>/` with `config.yaml` (resolved run config) and `metrics.json` (aggregate metrics).
+- **Mongo:** one document per `(exp_name, sample_id, seed)` in `<dataset>_results`, with the full per-question payload (question, expected, answer, F1, judge verdict, tokens, latency).
+- **Reports:** `reports/<exp-name>/report.html`, rendered on demand from Mongo.
 
-One-time setup: enable Artifact Registry + Cloud Run, the `pam-rnd-cloud-run-jobs` repo in `harmix-pam-rnd` / `us-east1` exists, and the secrets are in Secret Manager (`openai-key`, `mongo-uri`, `mongo-db`).
+### Running on the cloud
+
+Dockerfiles and image build/push scripts live in [`cluster/`](cluster/) — one set for the standard runner (`cluster/run_benchmark/`) and one for the agentic-harness experiment (`cluster/run_mcp_benchmark/`, which bundles the Claude Code CLI). Build & push with the relevant `build_and_push.sh`, then run the image as a Cloud Run Job. Point the scripts at your own GCP project, Artifact Registry repo, and Secret Manager entries.
+
+## 🧪 Tests & Quality
 
 ```bash
-# Build + push the image to the rnd registry (defaults to :latest)
-./cluster/run_benchmark/build_and_push.sh          # MCP image: ./cluster/run_mcp_benchmark/build_and_push.sh
-
-# Execute the job (Cloud Run pulls :latest, runs ENTRYPOINT + --args)
-./cluster/run_job.sh \
-  --exp-name locomo_gpt4_full \
-  --dataset locomo --baseline gpt-4-turbo
-
-# Render the report from your laptop
-uv run python scripts/generate_report.py --exp-name locomo_gpt4_full
+env PYTHONPATH=src uv run pytest -q     # ~200 unit tests (no live LLM calls)
+uv run ruff check src scripts tests     # lint
+uv run ruff format src scripts tests    # format
+uv run pre-commit run --all-files       # everything CI runs
 ```
 
-The Cloud Run Job itself is created/managed via the GCP Console (or a separate deploy script) — `build_and_push.sh` only refreshes the image. Logs stream to Cloud Logging (use `--log-format json` for structured entries — `run_job.sh` adds this automatically).
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint, format, and tests on every PR to `main`.
 
-## Tests & quality gates
+## ➕ Adding a Dataset or Baseline
 
-```bash
-env PYTHONPATH=src uv run pytest -q             # 100 unit tests
-uv run ruff check src scripts tests             # lint
-uv run ruff format src scripts tests            # format
-uv run pre-commit run --all-files               # everything pre-commit will run
-```
+- **Dataset:** add `src/datasets/<name>/{loader.py,schemas.py}` implementing `DatasetLoader`, then register it in `src/registry.py`.
+- **Baseline:** subclass `Baseline` from `src/baselines/base.py` (reuse `LiteLLMBaseline` for plain LLMs), then register it in `src/registry.py`.
 
-`.github/workflows/ci.yml` runs the same checks on every PR to `main`. Tests do not call any LLM — they cover shared logic (F1 scoring, judge rubric schema, runner aggregation, reporting, registry, prompt builder, dataset loader, RunConfig validation, baseline protocol).
+Patterns and conventions: [`src/baselines/README.md`](src/baselines/README.md).
 
-## Adding a new dataset / baseline
+## 📖 Documentation
 
-- **Dataset:** create `src/datasets/<name>/{loader.py,schemas.py}` implementing `DatasetLoader`; register it in `src/registry.py`. Existing dataset code is untouched.
-- **Baseline:** subclass `Baseline` from `src/baselines/base.py`; for plain LLMs reuse `LiteLLMBaseline`. Register in `src/registry.py`. Pam lands here in M2; competitors (Honcho, Supermemory, mem0, Zep, …) in M4.
-- Add a system card to `.memory-bank/baselines/system-cards.md`.
+| Doc | What's in it |
+|---|---|
+| [`docs/blog_post_notes_locomo.md`](docs/blog_post_notes_locomo.md) | LoCoMo results write-up and blog notes (Pam vs. other memory systems) |
+| [`docs/mcp_harness_benchmark_plan.md`](docs/mcp_harness_benchmark_plan.md) | Design of the memory-on-agentic-harness experiment |
+| [`docs/benchmark_rewrite_plan.md`](docs/benchmark_rewrite_plan.md) | Architecture, decisions, and roadmap of the harness |
+| [`docs/init_memory_bank.md`](docs/init_memory_bank.md) | Methodology standards (datasheets, model cards, reproducibility) |
+| [`src/baselines/pam/README.md`](src/baselines/pam/README.md) | How the Pam baseline talks to the Pam API |
 
-See `src/baselines/README.md` and `src/tasks/locomo/instruction.md` for the patterns.
+## 📄 License
 
-## License & data handling
+Code in this repository is licensed under the **[Apache License 2.0](LICENSE)**.
 
-- LoCoMo data is gitignored and bound by its upstream license — see `src/datasets/locomo/README.md`.
-- Per-baseline vendor terms (e.g. published-comparison rules) are tracked in `.memory-bank/ethics-and-licensing/licensing-and-data-handling.md`.
-- Customer-derived datasets (MEMTRACK once active) require PII redaction + access-control review before being added to this benchmark; Pam is SOC2/GDPR-aligned and the benchmark inherits those constraints.
+Datasets keep their own upstream licenses and are **not** redistributed here — the LoCoMo data file is gitignored and bound by its [upstream terms](https://github.com/snap-research/locomo). Review a dataset's license before redistributing it.
 
-## Links
+## 🔗 Links
 
-- Harmix product: <https://manager.harmix.ai>
-- Methodology standards: `docs/init_memory_bank.md`
-- M1 plan & decisions: `docs/benchmark_rewrite_plan.md`
-- M1 hand-off: `docs/m1_handoff.md`
+- **Harmix** — <https://www.harmix.ai>
+- **Pam product** — <https://manager.harmix.ai>
+- **Blog** — <https://manager.harmix.ai/blog>
+- **Research** — <https://manager.harmix.ai/research>
+
+<div align="center"><sub>Built by <a href="https://www.harmix.ai">Harmix</a> — proactive AI memory for the enterprise.</sub></div>

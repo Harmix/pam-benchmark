@@ -1,6 +1,6 @@
 # MCP-Memory-on-Harness Benchmark — Design & Integration Plan
 
-Status: **Approved — key decisions locked (§3, §14); implementing M1.**
+Status: **Shipped.** The first milestone (`claude-code` harness + `memory_md_mcp` backend on LoCoMo) is implemented — see `src/harnesses/claude_code/`, `src/baselines/mcp/`, and `scripts/run_mcp_benchmark.py`. Kept as the design record; later sections remain forward-looking.
 Owner: Denys
 Last updated: 2026-06-15
 

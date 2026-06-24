@@ -1,6 +1,6 @@
 # M2 — Pam baseline for LoCoMo (planning)
 
-**Status:** awaiting approval — no code lands until this is signed off.
+**Status:** Shipped. The Pam baseline described here lives in `src/baselines/pam/` and runs via `--baseline pam`; see [`src/baselines/pam/README.md`](../src/baselines/pam/README.md) for the as-built behavior. This document is the original design plan, kept for context.
 
 **Owner:** Denys
 
