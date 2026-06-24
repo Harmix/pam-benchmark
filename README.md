@@ -6,7 +6,7 @@
 
 # Pam Benchmark
 
-**An open benchmark for AI memory — how well do memory systems recall long-horizon conversational and organizational context?**
+**An open industrial benchmark for AI memory — how well do memory systems recall long-horizon conversational and organizational context?**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](.python-version)
@@ -194,4 +194,4 @@ Datasets keep their own upstream licenses and are **not** redistributed here —
 - **Blog** — <https://manager.harmix.ai/blog>
 - **Research** — <https://manager.harmix.ai/research>
 
-<div align="center"><sub>Built by <a href="https://www.harmix.ai">Harmix</a> — proactive AI memory for the enterprise.</sub></div>
+<div align="center"><sub>Built by <a href="https://manager.harmix.ai">Harmix</a> — proactive AI memory for the enterprise.</sub></div>
