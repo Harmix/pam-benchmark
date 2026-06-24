@@ -18,7 +18,7 @@
 
 ---
 
-This is the benchmark [Harmix](https://www.harmix.ai) uses to validate **Pam**'s memory layer against other AI-memory systems. Pam (*Proactive AI Manager*) is an enterprise AI assistant that learns continuously from organizational data — documents, ERP/CRM, Linear, Slack — to anticipate problems and automate work. The whole product hinges on accurate long-horizon recall, so this harness answers one question repeatedly, with reproducible numbers: **is Pam's memory at least as good as the best dedicated memory systems on the tasks our customers care about?**
+This is the benchmark [Harmix](https://www.harmix.ai) uses to validate **Pam**'s memory layer against other AI-memory systems. Pam (*Proactive AI Manager*) is an enterprise AI assistant that learns continuously from organizational data — documents, ERP/CRM, Linear, Slack — to anticipate problems and automate work. The whole product hinges on accurate long-horizon recall, so this harness answers one question repeatedly, with reproducible numbers: **is Pam's memory better than other best memory systems on the tasks our customers care about?**
 
 We're publishing it for transparency behind the results we cite in our blog posts.
 
