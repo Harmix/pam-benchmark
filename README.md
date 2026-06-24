@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://manager.harmix.ai">
-  <img src="https://manager.harmix.ai/images/pam-logo.png" alt="Pam by Harmix" height="84">
+  <img src="docs/harmix-logo.png" alt="Pam by Harmix" height="96">
 </a>
 
 # Pam Benchmark
@@ -25,7 +25,7 @@ We're publishing it for transparency behind the results we cite in our blog post
 ## 📊 Headline Result
 
 <div align="center">
-  <img src="docs/blog_overall_accuracy.png" alt="Pam memory beats plain Memory.md files on LoCoMo" width="720">
+  <img src="docs/benchmark_results.png" alt="Pam memory beats plain Memory.md files on LoCoMo" width="720">
 </div>
 
 On the full **LoCoMo** benchmark (1,986 questions, LLM-as-a-Judge scored by GPT-4o), Pam's memory answers **1,644/1,986 (82.8%)** correctly versus **1,000/1,986 (50.4%)** for plain Memory.md files on a coding-agent harness — a **+32.4 pt** improvement. See [`docs/blog_post_notes_locomo.md`](docs/blog_post_notes_locomo.md) for our broader LoCoMo results write-up.
