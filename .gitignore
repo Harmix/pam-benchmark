@@ -10,6 +10,10 @@ __pycache__/
 
 jobs/**
 secrets.env
+.env
+.env.dev
+.env.staging
+.env.prod
 pam-agent-credentials.json
 tasks/memtrack/reports/*.html
 benchmark/solution/benchmark_configs.txt

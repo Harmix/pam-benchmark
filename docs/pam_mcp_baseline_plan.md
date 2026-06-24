@@ -212,19 +212,18 @@ answering runs on Claude Code, not Pam's agent:
 ## Prerequisites & risks (verify during implementation)
 
 1. **`MEMORY_MCP` feature flag must be enabled for benchmark accounts.**
-   `/v1/dev/*` (incl. rotate-key) returns **403** unless the flag's
-   `default_value` is on, or a per-user override exists. New accounts from
-   `POST /v1/admin/create-account` get no special flags, and pam-agent-api had
-   **no endpoint** to set a per-user flag (`FeatureFlagService.set_user_flag`
-   existed but was unexposed).
-   **Resolved:** added a secured admin endpoint to pam-agent-api —
-   `POST /v1/admin/users/{user_id}/feature-flags/{flag_name}/enable` (gated by
-   the Harmix `api-key` header, like the other `/users/{user_id}/...` admin
-   endpoints; idempotent upsert). The baseline calls it (via
-   `PamClient.enable_feature_flag`) right after `create_account` (and on debug
-   reuse) to turn on `MEMORY_MCP` before minting the key. **Consequence:**
-   `PAM_API_KEY` is now **required** for `pam_mcp` (unlike plain `pam`), since
-   both this endpoint and the per-user-token mint are `api-key`-gated.
+   `/v1/dev/*` (incl. rotate-key) returns **403** unless the user's resolved
+   `MEMORY_MCP` flag is on. New `POST /v1/admin/create-account` accounts default
+   to the TRIAL plan, which grants no flags.
+   **Resolved (plan-based):** `create-account` now takes a `plan` query param.
+   `pam_mcp` creates each account on the **`dev` plan**, which seeds the `dev`
+   plan's feature flags — including `MEMORY_MCP` — via
+   `credits_service.set_user_plan` + `feature_flag_repository.seed_flags_for_user_by_plan`
+   (the same two calls Stripe makes on `subscription_create`).
+   `provisioner_service.create_client` still runs for every plan (so the memory
+   pipeline has its provisioned client). No separate enable-flag call is needed,
+   so a normal `pam_mcp` run does **not** require `PAM_API_KEY` (only the
+   `--pam-debug-user-id` reuse path does, exactly like `pam`).
 2. **Memory readiness.** `retrieve_memory` needs the user's memory in a `Ready`
    state. We already block on `wait_for_memory` (pipeline `completed`); if MCP
    retrieval still returns empty, add an optional `GET /v1/dev/readiness` poll
@@ -267,9 +266,13 @@ uv run python scripts/run_mcp_benchmark.py \
 ## Implementation status (done)
 
 - **pam-agent-api** (branch `feature/PAM-1155/add-memory-mcp-flag-endpoint`):
-  added `POST /v1/admin/users/{user_id}/feature-flags/{flag_name}/enable`.
+  `POST /v1/admin/create-account` gained a `plan` query param that seeds the
+  plan's credits + feature flags (`create_client` runs for every plan). Ported
+  from pam-backend-api: `PLAN_FEATURE_FLAGS` (`app/core/user_plans.py`),
+  `CreditsService.set_user_plan`, and
+  `FeatureFlagRepository.seed_flags_for_user_by_plan`.
 - **pam-benchmark**:
-  - `PamClient.enable_feature_flag` + `PamClient.rotate_developer_key`.
+  - `PamClient.create_account(plan=…)` + `PamClient.rotate_developer_key`.
   - `src/baselines/pam_mcp/` (`baseline.py`, `prompts.py`).
   - `registry.py` (`pam_mcp` alias + `_build_pam_mcp_baseline`),
     `runner.py` (forwards `debug_user_id` / `backup_memory` for `pam_mcp`),

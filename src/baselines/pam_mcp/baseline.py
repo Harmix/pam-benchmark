@@ -9,10 +9,11 @@ A hybrid of the two existing baselines:
 
 Lifecycle (per LoCoMo sample), mirroring `PamBaseline`:
   1. `setup`              — admin login + harness setup (Vertex auth).
-  2. `prepare_for_sample` — create account (or reuse `--pam-debug-user-id`),
-                            upload + build memory (same polling as `pam`),
-                            enable MEMORY_MCP, then mint a Memory MCP key via
-                            `/v1/dev/rotate-key`.
+  2. `prepare_for_sample` — create account on the MCP-only `dev` plan (which
+                            grants MEMORY_MCP and skips agent-client provisioning),
+                            or reuse `--pam-debug-user-id`; upload + build memory
+                            (same polling as `pam`); then mint a Memory MCP key
+                            via `/v1/dev/rotate-key`.
   3. `answer_batch`       — one Claude Code invocation per chunk of questions,
                             wired to the PAM Memory MCP server; numbered Qi/Ai
                             protocol with the same retry + inter-batch spacing.
@@ -42,9 +43,10 @@ from harnesses.base import Harness, HarnessResult
 
 logger = logging.getLogger(__name__)
 
-# Feature flag the per-conversation account needs before it can mint a Memory
-# MCP key (the `/v1/dev/*` routes are gated by it).
-_MEMORY_MCP_FLAG = "MEMORY_MCP"
+# Credits plan the per-conversation account is created on. The MCP-only `dev`
+# plan grants the MEMORY_MCP feature flag (needed to mint a Memory MCP key via
+# the gated `/v1/dev/*` routes) and skips agent-client provisioning server-side.
+_MCP_PLAN = "dev"
 
 # Override the Memory MCP server URL; defaults to `<PAM_API_HOST>/v1/mcp/memory`.
 _MCP_URL_ENV = "PAM_MCP_MEMORY_URL"
@@ -90,9 +92,9 @@ class PamMcpBaseline(BaselineBase):
         self.batch_size = max(1, int(batch_size or 1))
         self._max_turns = max_turns
 
-        # PAM_API_KEY is REQUIRED here (unlike plain `pam`): both enabling the
-        # MEMORY_MCP flag and reusing a user (debug mode) hit admin endpoints
-        # gated by the Harmix api-key.
+        # PAM_API_KEY is only needed for --pam-debug-user-id reuse (minting a
+        # per-user token via the api-key-gated admin endpoint), exactly as for
+        # the `pam` baseline. A normal run doesn't touch it.
         self._api_key = api_key or os.environ.get("PAM_API_KEY")
         self.client = PamClient(host or require("PAM_API_HOST"), api_key=self._api_key)
         self._admin_email = admin_email or require("PAM_API_USER")
@@ -147,7 +149,9 @@ class PamMcpBaseline(BaselineBase):
             await self._mint_mcp_key()
             return
 
-        # 1. Create per-sample user (unique email keeps Pam state isolated).
+        # 1. Create per-sample user on the MCP-only `dev` plan (unique email
+        # keeps Pam state isolated). The plan grants MEMORY_MCP so the account
+        # can mint a Memory MCP key below.
         suffix = uuid.uuid4().hex[:8]
         email = f"locomo-{sample.sample_id}-{int(time.time())}-{suffix}@benchmark.local"
         await asyncio.to_thread(
@@ -155,6 +159,7 @@ class PamMcpBaseline(BaselineBase):
             email=email,
             password="benchmark-run",
             name=f"LoCoMo {sample.sample_id}",
+            plan=_MCP_PLAN,
         )
         self._pam_user_id = self.client.user_id
         logger.info("pam_mcp created user_id=%s for sample=%s", self._pam_user_id, sample.sample_id)
@@ -181,15 +186,12 @@ class PamMcpBaseline(BaselineBase):
             run_ids,
         )
 
-        # 4. Enable MEMORY_MCP on the new account, then mint a Memory MCP key.
+        # 4. Mint a Memory MCP key (the `dev` plan already granted MEMORY_MCP).
         await self._mint_mcp_key()
 
     async def _mint_mcp_key(self) -> None:
-        """Enable MEMORY_MCP for the current user and rotate a fresh MCP key."""
+        """Rotate a fresh Memory MCP key for the current user."""
         assert self._pam_user_id is not None
-        await asyncio.to_thread(
-            self.client.enable_feature_flag, self._pam_user_id, _MEMORY_MCP_FLAG
-        )
         key = await asyncio.to_thread(self.client.rotate_developer_key)
         self._mcp_key = key
         # Log only the non-secret prefix (`pam_mkey_<prefix>`), never the secret.

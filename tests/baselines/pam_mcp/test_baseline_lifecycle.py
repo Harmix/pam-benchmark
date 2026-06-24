@@ -64,9 +64,6 @@ class StubPamClient:
         uid = user_id if user_id is not None else self.user_id
         self._log("wait_for_memory", run_ids=list(run_ids), user_id=uid)
 
-    def enable_feature_flag(self, user_id: int, flag_name: str) -> None:
-        self._log("enable_feature_flag", user_id=user_id, flag_name=flag_name)
-
     def rotate_developer_key(self) -> str:
         key = f"pam_mkey_uid{self.user_id}.secret-xyz"
         self._log("rotate_developer_key", for_user_id=self.user_id, key=key)
@@ -133,13 +130,12 @@ def test_lifecycle_call_order_and_mcp_wiring(monkeypatch, tmp_path, fake_harness
         "create_account",
         "process_generic_files",
         "wait_for_memory",
-        "enable_feature_flag",
         "rotate_developer_key",
         "delete_account",
     ]
-    # MEMORY_MCP enabled for the freshly-created user before minting the key.
-    flag_call = next(c for c in baseline.client.calls if c[0] == "enable_feature_flag")
-    assert flag_call[1] == {"user_id": 12345, "flag_name": "MEMORY_MCP"}
+    # The account is created on the MCP-only `dev` plan (which grants MEMORY_MCP).
+    create_call = next(c for c in baseline.client.calls if c[0] == "create_account")
+    assert create_call[1]["plan"] == "dev"
 
     # 12 questions / batch 10 → 2 harness answer calls.
     assert baseline.harness.answer_calls == 2
@@ -237,12 +233,11 @@ def test_debug_user_id_reuses_account(monkeypatch, tmp_path, fake_harness_factor
 
     asyncio.run(_go())
     methods = [c[0] for c in baseline.client.calls]
-    # Reuse: mint per-user token → enable flag → rotate key → answer. No
-    # create/upload/build and no delete.
+    # Reuse: mint per-user token → rotate key → answer. No create/upload/build
+    # and no delete (the reused account already has the dev-plan MEMORY_MCP flag).
     assert methods == [
         "login",
         "issue_user_tokens",
-        "enable_feature_flag",
         "rotate_developer_key",
     ]
     assert baseline.client.user_id == 999
