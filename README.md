@@ -46,7 +46,7 @@ Why a custom benchmark? Public memory benchmarks are saturating for top models, 
 | Dataset | Status | Samples | Task | Source |
 |---|---|---|---|---|
 | **LoCoMo** | ✅ Shipped | 10 conversations · ~1,986 QA total | Multi-session dialogue QA across single-hop, temporal, open-domain, multi-hop, and adversarial recall | [snap-research/locomo](https://github.com/snap-research/locomo) ([ACL 2024](https://aclanthology.org/2024.acl-long.747.pdf)) |
-| **MEMTRACK** | 🚧 Planned | — | Multi-tool coordination (Linear + Slack event histories) with cross-system references — closest to Pam's production workload | Harmix internal (synthetic) |
+| **MemTrack** | 🚧 Planned | — | Long-term memory & state tracking for agents across multi-platform workflows (Slack + Linear + Git) with async events and conflicting information — close to Pam's production workload | [Deshpande et al., NeurIPS 2025 SEA Workshop](https://arxiv.org/abs/2510.01353) |
 | **LongMemEval** | 🚧 Planned | — | Long-conversation memory eval | [LongMemEval](https://github.com/xiaowu0162/LongMemEval) |
 
 Dataset details and licensing live in each dataset's README, e.g. [`src/datasets/locomo/README.md`](src/datasets/locomo/README.md).
