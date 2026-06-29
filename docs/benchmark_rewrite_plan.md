@@ -1,6 +1,6 @@
 # Pam Benchmark — Rewrite & Architecture Plan
 
-Status: **Draft for review** — no code has been written yet.
+Status: **Implemented.** The Milestone 1 LoCoMo vertical slice described here is shipped on `main`, and the Pam baseline plus the memory-on-agentic-harness experiment have since landed too. Kept as the architecture record and roadmap — later sections (e.g. §14 future milestones) remain forward-looking.
 Owner: Denys
 Last updated: 2026-05-23
 
