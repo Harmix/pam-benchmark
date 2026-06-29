@@ -48,6 +48,7 @@ def get_task_runner(name: str) -> Callable[..., Any]:
 
 _BASELINE_ALIASES = {
     "pam",
+    "pam_mcp",
     "memory_md_mcp",
     "gpt-4-turbo",
     "gpt-4-turbo-2024-04-09",
@@ -73,6 +74,9 @@ def get_baseline(name: str, *, model: str | None = None, **kwargs: Any) -> Basel
 
         return PamBaseline(**kwargs)
 
+    if name == "pam_mcp":
+        return _build_pam_mcp_baseline(**kwargs)
+
     if name in _MCP_BACKENDS:
         return _build_mcp_baseline(name, **kwargs)
 
@@ -95,6 +99,22 @@ def _build_mcp_baseline(name: str, **kwargs: Any) -> Baseline:
     return McpHarnessBaseline(
         harness=harness, backend=backend, harness_model=harness_model, **kwargs
     )
+
+
+def _build_pam_mcp_baseline(**kwargs: Any) -> Baseline:
+    """Compose `PamMcpBaseline(harness, ...)` from runner-supplied kwargs.
+
+    `pam_mcp` builds memory server-side via the Pam API but answers through a
+    harness + the PAM Memory MCP tool, so it takes both the harness knobs
+    (`harness`, `harness_model`, `output_root`, batch/turn) AND the pam knobs
+    (`debug_user_id`, `backup_memory`) the runner forwards for it.
+    """
+    from baselines.pam_mcp.baseline import PamMcpBaseline
+
+    harness_name = kwargs.pop("harness", None) or "claude-code"
+    harness_model = kwargs.pop("harness_model", None)
+    harness = get_harness(harness_name, model=harness_model, max_turns=kwargs.get("max_turns"))
+    return PamMcpBaseline(harness=harness, harness_model=harness_model, **kwargs)
 
 
 def get_harness(name: str, *, model: str | None = None, **kwargs: Any) -> Any:

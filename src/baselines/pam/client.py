@@ -2,11 +2,12 @@
 
 Endpoints exercised by the benchmark:
   - `POST /v1/auth/login`                                          (admin login)
-  - `POST /v1/admin/create-account`                                (per-sample user)
+  - `POST /v1/admin/create-account`                                (per-sample user; `plan` selects flags)
   - `POST /v1/admin/users/{user_id}/tokens`                        (mint per-user token — debug reuse)
   - `DELETE /v1/admin/delete-account/{user_id}`                    (per-sample user)
   - `POST /v1/memory/process-generic-files/{user_id}`              (upload + kick off memory pipeline)
   - `GET  /v1/memory/get-memory-pipeline-status/{user_id}/{run_id}` (poll status)
+  - `POST /v1/dev/rotate-key`                                      (mint a Memory MCP key — pam_mcp)
   - `POST /v1/messages/stream`                                     (SSE chat — questions)
 
 Auth model:
@@ -169,7 +170,17 @@ class PamClient:
         name: str,
         company_name: str = "Acme Inc",
         position: str = "Engineer",
+        plan: str | None = None,
     ) -> dict[str, Any]:
+        """Create a confirmed account.
+
+        ``plan`` (e.g. ``"dev"``) is passed as the create-account ``plan`` query
+        param: it selects the credits plan and the feature flags seeded for the
+        user. ``pam_mcp`` uses the MCP-only ``dev`` plan so the account gets
+        ``MEMORY_MCP`` (and the agent-client provisioning is skipped). ``None``
+        leaves the server default (TRIAL), preserving the `pam` baseline's
+        behaviour.
+        """
         url = f"{self.base_url}/admin/create-account"
         body = {
             "email": email,
@@ -178,10 +189,13 @@ class PamClient:
             "company_name": company_name,
             "position": position,
         }
+        params = {"plan": plan} if plan else None
         headers = {**self._headers(), "Content-Type": "application/json"}
         for attempt in self._retrying():
             with attempt:
-                resp = self.session.post(url, json=body, headers=headers, timeout=180)
+                resp = self.session.post(
+                    url, json=body, params=params, headers=headers, timeout=180
+                )
         if not resp.ok:
             logger.warning("Pam create_account failed: %s %s", resp.status_code, resp.text[:500])
         resp.raise_for_status()
@@ -241,6 +255,35 @@ class PamClient:
         self.access_token = access_token
         self.user_id = user_id
         return access_token
+
+    def rotate_developer_key(self) -> str:
+        """Mint/rotate the Memory MCP key for the CURRENT user.
+
+        Calls `POST /v1/dev/rotate-key`, authenticated by the current per-user
+        bearer (set by `create_account` or `issue_user_tokens` — NOT the admin
+        token). Returns the full key `pam_mkey_<prefix>.<secret>`, used verbatim
+        as the `Authorization` header value for the Memory MCP server.
+
+        Requires the user to have the `MEMORY_MCP` feature flag enabled — for
+        `pam_mcp` that comes from creating the account on the `dev` plan; the
+        gated `/v1/dev/*` route otherwise returns 403.
+        """
+        url = f"{self.base_url}/dev/rotate-key"
+        resp = self.session.post(url, headers=self._headers(), timeout=120)
+        if resp.status_code == 401:
+            self.refresh_token()
+            resp = self.session.post(url, headers=self._headers(), timeout=120)
+        self._raise_for_auth(resp, url)
+        if not resp.ok:
+            logger.warning(
+                "Pam rotate_developer_key failed: %s %s", resp.status_code, resp.text[:500]
+            )
+        resp.raise_for_status()
+        data = resp.json()
+        api_key = data.get("api_key")
+        if not api_key:
+            raise RuntimeError(f"rotate-key: no api_key in response: {data!r}")
+        return api_key
 
     def delete_account(self, user_id: int | None = None) -> None:
         """Delete the user and all of their records (the full wipe).

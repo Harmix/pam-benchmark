@@ -54,3 +54,31 @@ def test_known_baselines_includes_m1_targets():
     known = set(known_baselines())
     assert "gpt-4-turbo" in known
     assert "gpt-4o" in known
+
+
+def test_known_baselines_includes_pam_mcp():
+    assert "pam_mcp" in set(known_baselines())
+
+
+def test_get_baseline_pam_mcp_builds_harness_composite(tmp_path, monkeypatch):
+    monkeypatch.setenv("PAM_API_HOST", "https://staging.api.pam.harmix.ai")
+    monkeypatch.setenv("PAM_API_USER", "admin@stub")
+    monkeypatch.setenv("PAM_API_PASSWORD", "pw")
+    monkeypatch.setenv("PAM_API_KEY", "harmix-key")
+    from baselines.pam_mcp.baseline import PamMcpBaseline
+
+    b = get_baseline(
+        "pam_mcp",
+        harness="claude-code",
+        harness_model="vertex-id",
+        output_root=tmp_path,
+        batch_size=10,
+        keep_memory=False,
+        max_turns=None,
+        debug_user_id=None,
+        backup_memory=True,
+    )
+    assert isinstance(b, PamMcpBaseline)
+    assert b.name == "pam_mcp"
+    assert b.track == "agentic_memory"
+    assert b._mcp_url == "https://staging.api.pam.harmix.ai/v1/mcp/memory"

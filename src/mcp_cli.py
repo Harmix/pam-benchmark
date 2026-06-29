@@ -26,7 +26,7 @@ def main(
     dataset: str = typer.Option("locomo", "--dataset", help="Dataset name (e.g. locomo)"),
     harness: str = typer.Option("claude-code", "--harness", help="Agentic harness (claude-code)"),
     baseline: str = typer.Option(
-        "memory_md_mcp", "--baseline", help="MCP memory baseline (memory_md_mcp)"
+        "memory_md_mcp", "--baseline", help="MCP memory baseline (memory_md_mcp | pam_mcp)"
     ),
     harness_model: str = typer.Option(
         None, "--harness-model", help="Base model id for the harness (e.g. a Vertex Claude id)"
@@ -65,6 +65,19 @@ def main(
         "{}", "--baseline-kwargs", help="JSON dict of extra baseline kwargs"
     ),
     log_format: str = typer.Option("rich", "--log-format", help="rich | json"),
+    pam_debug_user_id: int = typer.Option(
+        None,
+        "--pam-debug-user-id",
+        help="pam_mcp: reuse this Pam user id instead of creating + building a fresh memory",
+    ),
+    backup_memory: bool = typer.Option(
+        False,
+        "--backup-memory",
+        help=(
+            "pam_mcp: keep each conversation's Pam account after the run (no "
+            "delete-account) so its memory can be reused later via --pam-debug-user-id."
+        ),
+    ),
 ) -> None:
     """Run one (dataset, harness, baseline, seed) MCP-memory experiment end-to-end."""
     load_secrets()
@@ -96,6 +109,8 @@ def main(
         mcp_batch_size=mcp_batch_size,
         mcp_keep_memory=mcp_keep_memory,
         mcp_max_turns=mcp_max_turns,
+        pam_debug_user_id=pam_debug_user_id,
+        backup_memory=backup_memory,
     )
     run(cfg)
 
