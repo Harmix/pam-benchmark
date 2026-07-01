@@ -66,8 +66,17 @@ class ClaudeCodeHarness:
         mcp_config_path: str | None,
         system: str | None,
         max_turns: int | None,
+        capture_logs: bool = False,
     ) -> list[str]:
-        argv = [self._cli, "-p", prompt, "--output-format", "json"]
+        # `stream-json` (+ required `--verbose`) emits the full turn-by-turn
+        # transcript — system init, assistant messages with thinking and
+        # tool_use blocks, tool results, and the final result event — which we
+        # persist for the --save-responses debug log. Plain `json` emits only the
+        # final result object.
+        if capture_logs:
+            argv = [self._cli, "-p", prompt, "--output-format", "stream-json", "--verbose"]
+        else:
+            argv = [self._cli, "-p", prompt, "--output-format", "json"]
         argv += ["--permission-mode", self._permission_mode]
         if self.model:
             argv += ["--model", self.model]
@@ -92,6 +101,8 @@ class ClaudeCodeHarness:
         system: str | None = None,
         max_turns: int | None = None,
         timeout_sec: float | None = None,
+        log_path: Path | None = None,
+        log_label: str | None = None,
     ) -> HarnessResult:
         if self._env is None:
             await self.setup()
@@ -111,6 +122,7 @@ class ClaudeCodeHarness:
             mcp_config_path=mcp_config_path,
             system=system,
             max_turns=max_turns,
+            capture_logs=log_path is not None,
         )
         env = {**os.environ, **(self._env or {})}
 
@@ -134,6 +146,15 @@ class ClaudeCodeHarness:
 
         out_text = stdout.decode("utf-8", "replace")
         err_text = stderr.decode("utf-8", "replace")
+        if log_path is not None:
+            _append_run_log(
+                log_path,
+                label=log_label,
+                argv=argv,
+                returncode=proc.returncode,
+                out_text=out_text,
+                err_text=err_text,
+            )
         if proc.returncode != 0:
             # Claude Code usually reports the real error as JSON on stdout (with
             # an empty stderr), so surface both. Pull out a clean message if the
@@ -178,6 +199,52 @@ class ClaudeCodeHarness:
             num_turns=int(data.get("num_turns", 0) or 0),
             raw=data,
         )
+
+
+def _append_run_log(
+    log_path: Path,
+    *,
+    label: str | None,
+    argv: list[str],
+    returncode: int | None,
+    out_text: str,
+    err_text: str,
+) -> None:
+    """Append the full claude-code transcript for one run to `log_path`.
+
+    Writes the raw stream-json events (system init, assistant messages with
+    thinking + tool_use, tool results, final result) pretty-printed one per
+    block, plus any stderr. Best-effort: logging never breaks a run.
+    """
+    header = label or "claude-code run"
+    shown_argv = [*argv[:2], "<prompt>", *argv[3:]]  # hide the long prompt
+    lines = [
+        "=" * 78,
+        f">>> {header} (returncode={returncode})",
+        f"argv: {' '.join(shown_argv)}",
+        "=" * 78,
+    ]
+    for raw_line in out_text.splitlines():
+        raw_line = raw_line.strip()
+        if not raw_line:
+            continue
+        try:
+            obj = json.loads(raw_line)
+        except json.JSONDecodeError:
+            lines.append(raw_line)
+            continue
+        kind = obj.get("type", "event") if isinstance(obj, dict) else "event"
+        lines.append(f"--- {kind} ---")
+        lines.append(json.dumps(obj, indent=2, ensure_ascii=False))
+    if err_text.strip():
+        lines.append("--- stderr ---")
+        lines.append(err_text.rstrip())
+    lines.append("")
+    try:
+        with log_path.open("a", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+    except OSError as e:
+        logger.warning("failed to write harness log to %s: %r", log_path, e)
 
 
 def _last_json_object(stdout: str) -> dict[str, Any] | None:

@@ -62,6 +62,7 @@ class McpHarnessBaseline(BaselineBase):
         harness_model: str | None = None,
         keep_memory: bool = False,
         max_turns: int | None = None,
+        save_responses: bool = False,
         **_ignored: Any,
     ) -> None:
         self.harness = harness
@@ -72,6 +73,11 @@ class McpHarnessBaseline(BaselineBase):
         self._harness_model = harness_model or getattr(harness, "model", None)
         self._keep_memory = bool(keep_memory)
         self._max_turns = max_turns
+        # When set, the full harness transcript (thinking, tool calls, json
+        # events) for every run is appended to harness.log in the output dir.
+        self._harness_log: Path | None = (
+            self._output_root / "harness.log" if save_responses else None
+        )
 
         self._memory_dir: Path | None = None
         self._memory_creation_sec: float = 0.0
@@ -93,6 +99,9 @@ class McpHarnessBaseline(BaselineBase):
         )
         await self.harness.setup()
         await self.backend.setup()
+        if self._harness_log is not None:
+            self._output_root.mkdir(parents=True, exist_ok=True)
+            self._harness_log.unlink(missing_ok=True)  # fresh log per run
         logger.info("Harness ready (auth resolved).")
 
     async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
@@ -137,6 +146,8 @@ class McpHarnessBaseline(BaselineBase):
             allowed_tools=self.backend.allowed_tools("ingest"),
             mcp_servers=self.backend.mcp_servers(memory_dir),
             max_turns=self._max_turns,
+            log_path=self._harness_log,
+            log_label=f"[{sample.sample_id}] ingest (memory build)",
         )
         self._memory_creation_sec = round(loop.time() - t0, 2)
         self._record_session(result)
@@ -214,6 +225,11 @@ class McpHarnessBaseline(BaselineBase):
                     allowed_tools=self.backend.allowed_tools("answer"),
                     mcp_servers=self.backend.mcp_servers(self._memory_dir),
                     max_turns=self._max_turns,
+                    log_path=self._harness_log,
+                    log_label=(
+                        f"[{self._current_sample_id}] answer batch "
+                        f"{batch_no}/{total_batches} (attempt {attempt + 1})"
+                    ),
                 )
                 parsed = parse_batch_response(result.text, n)
                 last_exc = None

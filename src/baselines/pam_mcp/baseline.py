@@ -84,6 +84,7 @@ class PamMcpBaseline(BaselineBase):
         admin_email: str | None = None,
         admin_password: str | None = None,
         api_key: str | None = None,
+        save_responses: bool = False,
         **_ignored: Any,
     ) -> None:
         self.harness = harness
@@ -91,6 +92,12 @@ class PamMcpBaseline(BaselineBase):
         self._output_root = Path(output_root)
         self.batch_size = max(1, int(batch_size or 1))
         self._max_turns = max_turns
+        # When set, the full harness transcript (thinking, tool calls, json
+        # events) for every answer run is appended to harness.log in the output
+        # dir, alongside responses.log.
+        self._harness_log: Path | None = (
+            self._output_root / "harness.log" if save_responses else None
+        )
 
         # PAM_API_KEY is only needed for --pam-debug-user-id reuse (minting a
         # per-user token via the api-key-gated admin endpoint), exactly as for
@@ -122,6 +129,9 @@ class PamMcpBaseline(BaselineBase):
     async def setup(self, *, seed: int) -> None:
         await asyncio.to_thread(self.client.login, self._admin_email, self._admin_password)
         await self.harness.setup()
+        if self._harness_log is not None:
+            self._output_root.mkdir(parents=True, exist_ok=True)
+            self._harness_log.unlink(missing_ok=True)  # fresh log per run
         logger.info("pam_mcp ready (admin login + harness auth resolved).")
 
     async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
@@ -270,6 +280,11 @@ class PamMcpBaseline(BaselineBase):
                     mcp_servers=self._mcp_servers(),
                     system=prompts.SYSTEM_PROMPT,
                     max_turns=self._max_turns,
+                    log_path=self._harness_log,
+                    log_label=(
+                        f"[{self._current_sample_id}] answer batch "
+                        f"{batch_no}/{total_batches} (attempt {attempt + 1})"
+                    ),
                 )
                 parsed = parse_batch_response(result.text, n)
                 last_exc = None
