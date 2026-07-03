@@ -36,6 +36,9 @@ class FakeHarness:
             cache_write_tokens=20,
             cost_usd=0.8,
             duration_ms=1000.0,
+            # >=2 turns == the agent made a tool round-trip (retrieved memory),
+            # which the baseline now requires before accepting an answer.
+            num_turns=2,
         )
 
     async def setup(self) -> None:

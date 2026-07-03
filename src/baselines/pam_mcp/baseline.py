@@ -262,10 +262,10 @@ class PamMcpBaseline(BaselineBase):
             if attempt > 0:
                 delay = self.BATCH_RETRY_BASE_SLEEP_SEC * (2 ** (attempt - 1))
                 logger.warning(
-                    "pam_mcp batch %d/%d got 0/%d answers; retry %d/%d after %.0fs",
+                    "pam_mcp batch %d/%d retry %d/%d after %.0fs "
+                    "(previous attempt: empty or no retrieval)",
                     batch_no,
                     total_batches,
-                    n,
                     attempt,
                     self.MAX_BATCH_RETRIES,
                     delay,
@@ -274,7 +274,7 @@ class PamMcpBaseline(BaselineBase):
                     await asyncio.sleep(delay)
             try:
                 result = await self.harness.run(
-                    prompt=prompts.answer_prompt(rendered),
+                    prompt=prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL),
                     working_dir=self._scratch_dir,
                     allowed_tools=[self.MCP_TOOL],
                     mcp_servers=self._mcp_servers(),
@@ -302,8 +302,23 @@ class PamMcpBaseline(BaselineBase):
                     e,
                 )
             answered = sum(1 for a in parsed if a)
-            if answered > 0:
+            # `num_turns >= 2` means at least one tool round-trip happened (turn 1
+            # = assistant tool_use, turn 2 = answer after the tool result); a
+            # single-turn reply answered from nothing without retrieving. Require a
+            # retrieval unless this was the last attempt, so we never score an
+            # answer the agent produced without touching PAM Memory.
+            retrieved = result is not None and result.num_turns >= 2
+            if answered > 0 and (retrieved or attempt == attempts_total - 1):
                 break
+            if answered > 0 and not retrieved:
+                logger.warning(
+                    "pam_mcp batch %d/%d answered without calling %s "
+                    "(num_turns=%s); retrying to force retrieval",
+                    batch_no,
+                    total_batches,
+                    self.MCP_TOOL,
+                    result.num_turns if result is not None else None,
+                )
 
         if result is None and last_exc is not None:
             raw = {"raw_prompt": rendered, "raw_response": f"<harness run failed: {last_exc!r}>"}

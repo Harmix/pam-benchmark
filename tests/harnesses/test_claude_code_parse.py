@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from harnesses.claude_code.harness import ClaudeCodeHarness
+from harnesses.claude_code.harness import ClaudeCodeHarness, _dead_mcp_tool
 
 
 def _json(**over):
@@ -71,3 +71,65 @@ def test_parse_error_result_raises():
 def test_parse_unparseable_raises():
     with pytest.raises(RuntimeError):
         ClaudeCodeHarness._parse_output("not json at all", wall_ms=1.0)
+
+
+# --- MCP connection health detection (_dead_mcp_tool) -------------------------
+
+_TOOL = "mcp__pam_memory__retrieve_memory"
+
+
+def _assistant_tool_use(tool_use_id: str, name: str = _TOOL) -> str:
+    return json.dumps(
+        {
+            "type": "assistant",
+            "message": {"content": [{"type": "tool_use", "id": tool_use_id, "name": name}]},
+        }
+    )
+
+
+def _tool_result(tool_use_id: str, *, error: bool) -> str:
+    content = (
+        f"<tool_use_error>Error: No such tool available: {_TOOL}</tool_use_error>"
+        if error
+        else "Retrieved: Caroline attended the LGBTQ support group on 2023-05-06."
+    )
+    return json.dumps(
+        {
+            "type": "user",
+            "message": {
+                "content": [{"type": "tool_result", "tool_use_id": tool_use_id, "content": content}]
+            },
+        }
+    )
+
+
+def test_dead_mcp_tool_all_calls_unavailable():
+    """Every call to the required tool errored → the tool is dead (retry)."""
+    stream = "\n".join(
+        line
+        for i in range(3)
+        for line in (_assistant_tool_use(f"t{i}"), _tool_result(f"t{i}", error=True))
+    )
+    assert _dead_mcp_tool(stream, [_TOOL]) == _TOOL
+
+
+def test_dead_mcp_tool_recovered_midrun_is_healthy():
+    """Early calls errored but a later one succeeded (server connected) → healthy."""
+    stream = "\n".join(
+        [
+            _assistant_tool_use("t0"),
+            _tool_result("t0", error=True),
+            _assistant_tool_use("t1"),
+            _tool_result("t1", error=False),
+        ]
+    )
+    assert _dead_mcp_tool(stream, [_TOOL]) is None
+
+
+def test_dead_mcp_tool_never_called_is_healthy():
+    stream = _assistant_tool_use("t0", name="SomethingElse")
+    assert _dead_mcp_tool(stream, [_TOOL]) is None
+
+
+def test_dead_mcp_tool_no_mcp_tools():
+    assert _dead_mcp_tool("anything", []) is None

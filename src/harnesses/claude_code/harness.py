@@ -37,6 +37,17 @@ class ClaudeCodeHarness:
     DEFAULT_PERMISSION_MODE = "acceptEdits"
     DEFAULT_TIMEOUT_SEC = 600.0
 
+    # HTTP MCP servers connect asynchronously at startup. With a short startup
+    # timeout a slow handshake (e.g. the dev PAM Memory server) times out and the
+    # server never registers, so every `mcp__…` tool call in that process fails
+    # with "No such tool available". A generous default lets the connection
+    # complete; overridable via the MCP_TIMEOUT env var. (ms)
+    MCP_STARTUP_TIMEOUT_MS = 60000
+    # If a required MCP tool is dead for a whole invocation (every call returned
+    # "No such tool available"), retry the invocation — a fresh process reconnects.
+    MCP_CONNECT_RETRIES = 2
+    MCP_CONNECT_RETRY_SLEEP_SEC = 3.0
+
     def __init__(
         self,
         model: str | None = None,
@@ -116,46 +127,68 @@ class ClaudeCodeHarness:
                 json.dump({"mcpServers": mcp_servers}, fh)
             mcp_config_path = tmp_mcp
 
+        # Requiring an MCP tool → capture the event stream (stream-json) even
+        # when not logging, so we can tell whether the server ever connected.
+        mcp_tools = [t for t in (allowed_tools or []) if t.startswith("mcp__")]
         argv = self._build_argv(
             prompt=prompt,
             allowed_tools=allowed_tools,
             mcp_config_path=mcp_config_path,
             system=system,
             max_turns=max_turns,
-            capture_logs=log_path is not None,
+            capture_logs=log_path is not None or bool(mcp_tools),
         )
         env = {**os.environ, **(self._env or {})}
+        env.setdefault("MCP_TIMEOUT", str(self.MCP_STARTUP_TIMEOUT_MS))
 
         loop = asyncio.get_running_loop()
         t0 = loop.time()
+        attempts = self.MCP_CONNECT_RETRIES + 1 if mcp_tools else 1
+        out_text = ""
+        err_text = ""
+        returncode: int | None = None
         try:
-            proc = await asyncio.create_subprocess_exec(
-                *argv,
-                cwd=str(working_dir),
-                env=env,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=timeout_sec or self.DEFAULT_TIMEOUT_SEC
-            )
+            for attempt in range(attempts):
+                proc = await asyncio.create_subprocess_exec(
+                    *argv,
+                    cwd=str(working_dir),
+                    env=env,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=timeout_sec or self.DEFAULT_TIMEOUT_SEC
+                )
+                returncode = proc.returncode
+                out_text = stdout.decode("utf-8", "replace")
+                err_text = stderr.decode("utf-8", "replace")
+                if log_path is not None:
+                    _append_run_log(
+                        log_path,
+                        label=f"{log_label} [try {attempt + 1}/{attempts}]" if log_label else None,
+                        argv=argv,
+                        returncode=returncode,
+                        out_text=out_text,
+                        err_text=err_text,
+                    )
+                dead_tool = _dead_mcp_tool(out_text, mcp_tools) if returncode == 0 else None
+                if dead_tool is not None and attempt < attempts - 1:
+                    logger.warning(
+                        "claude: MCP tool %r never connected (every call returned "
+                        "'No such tool available'); retrying invocation %d/%d",
+                        dead_tool,
+                        attempt + 1,
+                        self.MCP_CONNECT_RETRIES,
+                    )
+                    await asyncio.sleep(self.MCP_CONNECT_RETRY_SLEEP_SEC)
+                    continue
+                break
         finally:
             if tmp_mcp:
                 Path(tmp_mcp).unlink(missing_ok=True)
         wall_ms = (loop.time() - t0) * 1000.0
 
-        out_text = stdout.decode("utf-8", "replace")
-        err_text = stderr.decode("utf-8", "replace")
-        if log_path is not None:
-            _append_run_log(
-                log_path,
-                label=log_label,
-                argv=argv,
-                returncode=proc.returncode,
-                out_text=out_text,
-                err_text=err_text,
-            )
-        if proc.returncode != 0:
+        if returncode != 0:
             # Claude Code usually reports the real error as JSON on stdout (with
             # an empty stderr), so surface both. Pull out a clean message if the
             # stdout is a JSON error result.
@@ -165,7 +198,7 @@ class ClaudeCodeHarness:
                 detail = str(data.get("result") or data.get("error") or data) or detail
             shown_argv = [*argv[:2], "<prompt>", *argv[3:]]  # hide the long prompt
             raise RuntimeError(
-                f"claude exited {proc.returncode}: {detail[:800]}\nargv: {' '.join(shown_argv)}"
+                f"claude exited {returncode}: {detail[:800]}\nargv: {' '.join(shown_argv)}"
             )
 
         return self._parse_output(out_text, wall_ms)
@@ -199,6 +232,58 @@ class ClaudeCodeHarness:
             num_turns=int(data.get("num_turns", 0) or 0),
             raw=data,
         )
+
+
+def _dead_mcp_tool(out_text: str, mcp_tools: list[str]) -> str | None:
+    """Return a required MCP tool that was called but NEVER connected.
+
+    Scans the stream-json transcript: a tool is "dead" when it was invoked at
+    least once and EVERY invocation came back "No such tool available" (the
+    server never registered). If any call succeeded (server connected mid-run),
+    the tool is considered healthy and None is returned for it. Returns the first
+    dead tool, or None when all required tools connected (or none were used).
+    """
+    if not mcp_tools:
+        return None
+    calls = {t: 0 for t in mcp_tools}
+    unavailable = {t: 0 for t in mcp_tools}
+    id_to_name: dict[str, str] = {}
+    for line in out_text.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        msg = obj.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            continue
+        for blk in content:
+            if not isinstance(blk, dict):
+                continue
+            if blk.get("type") == "tool_use" and blk.get("name") in calls:
+                calls[blk["name"]] += 1
+                if blk.get("id"):
+                    id_to_name[blk["id"]] = blk["name"]
+            elif blk.get("type") == "tool_result":
+                body = blk.get("content")
+                text = body if isinstance(body, str) else json.dumps(body)
+                if "No such tool available" not in text:
+                    continue
+                name = id_to_name.get(blk.get("tool_use_id", ""))
+                if name in unavailable:
+                    unavailable[name] += 1
+                else:  # unmapped id — attribute by the tool named in the error
+                    for t in mcp_tools:
+                        if t in text:
+                            unavailable[t] += 1
+                            break
+    for t in mcp_tools:
+        if calls[t] > 0 and unavailable[t] >= calls[t]:
+            return t
+    return None
 
 
 def _append_run_log(

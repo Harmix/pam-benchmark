@@ -204,6 +204,22 @@ def test_zero_answers_recovers_on_retry(monkeypatch, tmp_path, fake_harness_fact
     assert [p.model_answer for p in preds] == ["got-1", "got-2", "got-3"]
 
 
+def test_answer_without_retrieval_retries_then_accepts(monkeypatch, tmp_path, fake_harness_factory):
+    """A reply that never called the tool (num_turns<2) is retried up to the cap
+    to force a retrieval; the final attempt's answers are still accepted."""
+    baseline = _baseline(monkeypatch, tmp_path, fake_harness_factory, batch_size=3)
+    # Non-empty answers but no tool round-trip on every attempt.
+    baseline.harness.usage["num_turns"] = 1
+
+    async def _go():
+        await baseline.setup(seed=1)
+        return await run_sample(_sample(3), baseline=baseline, seed=1, model_name="pam_mcp")
+
+    preds = asyncio.run(_go())
+    assert baseline.harness.answer_calls == 3  # 1 original + 2 retries to force retrieval
+    assert all(p.model_answer for p in preds)  # last attempt's answers still accepted
+
+
 def test_backup_memory_skips_delete(monkeypatch, tmp_path, fake_harness_factory):
     baseline = _baseline(
         monkeypatch, tmp_path, fake_harness_factory, batch_size=1, backup_memory=True
