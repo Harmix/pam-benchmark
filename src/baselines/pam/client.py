@@ -337,7 +337,7 @@ class PamClient:
             # A fresh multipart payload per attempt — `requests` reads each file
             # stream to EOF while encoding the body, so reusing one BytesIO on
             # the retry would transmit an empty file (which the server then zips
-            # as a zero-byte `*_conversation.json`).
+            # as a zero-byte `*_conversation.txt`).
             resp = self.session.post(
                 url, headers=self._headers(), files=self._build_files_payload(batch), timeout=300
             )

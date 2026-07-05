@@ -3,7 +3,7 @@
 Lifecycle (per LoCoMo sample):
   1. `setup`             — admin login.
   2. `prepare_for_sample` — create user (or reuse `--pam-debug-user-id`),
-                            upload the sample's `*_conversation.json`,
+                            upload the sample's `*_conversation.txt`,
                             trigger and poll the memory pipeline.
   3. `answer_batch`       — one SSE chat call per chunk of questions; numbered
                             Qi/Ai protocol so multiple questions share one

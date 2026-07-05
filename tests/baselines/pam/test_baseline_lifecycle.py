@@ -8,7 +8,6 @@ Asserts the per-sample lifecycle is wired correctly: login (once) → prepare
 from __future__ import annotations
 
 import asyncio
-import json
 from itertools import count
 from typing import Any
 
@@ -295,7 +294,7 @@ def test_serialize_upload_payload_matches_sample(monkeypatch: pytest.MonkeyPatch
 
     upload_call = next(c for c in baseline.client.calls if c[0] == "process_generic_files")
     assert upload_call[1]["n_files"] == 1
-    assert upload_call[1]["names"] == [f"{sample.sample_id}_conversation.json"]
+    assert upload_call[1]["names"] == [f"{sample.sample_id}_conversation.txt"]
 
 
 def test_extras_carries_memory_duration_and_user_id(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -364,9 +363,9 @@ def test_per_question_injected_tokens_distributed(monkeypatch: pytest.MonkeyPatc
     assert all(p.injected_tokens == 100 for p in preds)
 
 
-def test_unused_payload_shape_holds_json(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Smoke: the serialized payload uploaded to the stub is valid JSON with
-    the sample_id baked in (covers the integration between serializer + baseline).
+def test_unused_payload_shape_holds_transcript(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Smoke: the serialized payload uploaded to the stub is a readable transcript
+    (covers the integration between serializer + baseline).
     """
     _set_env(monkeypatch)
 
@@ -385,6 +384,7 @@ def test_unused_payload_shape_holds_json(monkeypatch: pytest.MonkeyPatch) -> Non
 
     asyncio.run(_go())
     name, body = baseline.client.last_payloads[0]
-    assert name.endswith("_conversation.json")
-    payload = json.loads(body)
-    assert payload["sample_id"] == sample.sample_id
+    assert name.endswith("_conversation.txt")
+    text = body.decode("utf-8")
+    assert "Conversation between Alice and Bob." in text
+    assert "Alice: hi" in text
