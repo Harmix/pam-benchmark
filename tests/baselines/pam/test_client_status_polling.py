@@ -338,7 +338,7 @@ def test_process_generic_files_retry_resends_full_body_not_empty(
 
     `requests` reads each upload stream to EOF while encoding the multipart
     body, so reusing one BytesIO across the retry would send an empty file —
-    which the server stages as a zero-byte `*_conversation.txt` in the zip.
+    which the server stages as a zero-byte `*_conversation.json` in the zip.
     Each attempt must build a fresh stream. We simulate `requests` by draining
     every file stream on each POST and recording what was read.
     """
@@ -359,7 +359,7 @@ def test_process_generic_files_retry_resends_full_body_not_empty(
 
     monkeypatch.setattr(c.session, "post", fake_post)
 
-    run_ids = c.process_generic_files([("conv-26_conversation.txt", content)])
+    run_ids = c.process_generic_files([("conv-26_conversation.json", content)])
 
     assert run_ids == ["run-ok-0"]
     # Two attempts were made, and BOTH carried the full content — the retry
