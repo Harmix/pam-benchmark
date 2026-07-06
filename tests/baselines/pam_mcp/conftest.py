@@ -18,15 +18,34 @@ from harnesses.base import HarnessResult
 _Q_LINE = re.compile(r"^Q\d+:", re.MULTILINE)
 
 
+class FakeSession:
+    """One persistent session: each `send` returns the next scripted answer."""
+
+    def __init__(self, harness: FakeHarness):
+        self._h = harness
+        self.closed = False
+
+    async def send(self, prompt, *, log_label=None, timeout_sec=None) -> HarnessResult:
+        return self._h._answer(prompt)
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
 class FakeHarness:
-    """Captures answer calls (MCP config, system, allowed tools); returns canned
-    numbered answers. `script` drives successive batches; `""` = a 0/N reply."""
+    """Captures the session-open wiring (MCP config, system, allowed tools) and
+    returns canned numbered answers per `send`. `script` drives successive
+    batches; `""` = a 0/N reply. `pam_mcp` opens ONE session per conversation and
+    sends one message per batch, so `calls` holds the open args and
+    `answer_calls` counts sends."""
 
     name = "fake"
 
     def __init__(self, model: str | None = None, *, script: list[str] | None = None):
         self.model = model
-        self.calls: list[dict] = []
+        self.calls: list[dict] = []  # one entry per open_session (the wiring)
+        self.sessions: list[FakeSession] = []
+        self.send_count = 0
         self._script = script or []
         self._idx = 0
         self.usage = dict(
@@ -36,6 +55,9 @@ class FakeHarness:
             cache_write_tokens=20,
             cost_usd=0.8,
             duration_ms=1000.0,
+            # >=2 turns == the agent made a tool round-trip (retrieved memory),
+            # which the baseline now requires before accepting an answer.
+            num_turns=2,
         )
 
     async def setup(self) -> None:
@@ -44,16 +66,17 @@ class FakeHarness:
     async def teardown(self) -> None:
         return None
 
-    async def run(
+    def open_session(
         self,
         *,
-        prompt,
         working_dir,
         allowed_tools=None,
         mcp_servers=None,
         system=None,
+        max_turns=None,
+        log_path=None,
         **_kw,
-    ) -> HarnessResult:
+    ) -> FakeSession:
         Path(working_dir).mkdir(parents=True, exist_ok=True)
         self.calls.append(
             {
@@ -62,6 +85,12 @@ class FakeHarness:
                 "system": system,
             }
         )
+        session = FakeSession(self)
+        self.sessions.append(session)
+        return session
+
+    def _answer(self, prompt) -> HarnessResult:
+        self.send_count += 1
         n = len(_Q_LINE.findall(prompt))
         if self._idx < len(self._script):
             text = self._script[self._idx]
@@ -74,7 +103,7 @@ class FakeHarness:
 
     @property
     def answer_calls(self) -> int:
-        return len(self.calls)
+        return self.send_count
 
 
 @pytest.fixture(autouse=True)

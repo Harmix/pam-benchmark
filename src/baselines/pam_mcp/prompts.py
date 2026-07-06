@@ -23,13 +23,33 @@ SYSTEM_PROMPT = (
 )
 
 
-def answer_prompt(batch_prompt: str) -> str:
-    """Answer a numbered Q1..QN batch using ONLY the PAM Memory MCP tool."""
+def answer_prompt(batch_prompt: str, tool_name: str = "mcp__pam_memory__retrieve_memory") -> str:
+    """Answer a numbered Q1..QN batch using ONLY the PAM Memory MCP tool.
+
+    The tool is referenced by its EXACT Claude Code id (``mcp__<server>__<tool>``)
+    and calling it is mandatory. Earlier runs showed the model inventing tool
+    names (``$MCP_TOOL::...``) or reaching for ``Bash`` when the tool was named
+    only as ``retrieve_memory``; both just error out, waste turns, and degrade
+    answers. Pinning the exact name and forbidding other tools fixes that.
+    """
     return (
-        "Answer the questions below about a long conversation. The facts live in "
-        "PAM Memory — call the `retrieve_memory` tool (one or more times) to fetch "
-        "the relevant context before answering. Use ONLY what the retrieved memory "
-        "supports; do not guess beyond it, but always give your single best answer "
-        "for every question.\n\n"
+        "Answer the numbered questions below about a long conversation you did "
+        "not see. Every fact you need lives in PAM Memory.\n\n"
+        f"The ONLY tool available to you is `{tool_name}`. You MUST call it — by "
+        "that exact name, one or more times, with a natural-language query — to "
+        "retrieve the relevant facts BEFORE writing any answer.\n\n"
+        "Tool rules:\n"
+        f"- Call the tool by its exact name `{tool_name}`. Never invent, "
+        "abbreviate, rename, or re-namespace it, and never emit a placeholder "
+        "like `$MCP_TOOL`.\n"
+        f"- `{tool_name}` is the only tool you have. Do NOT use Bash, file tools, "
+        "or any other tool — they are unavailable and will error.\n"
+        "- Issue as many queries as needed to cover every question before you "
+        "answer.\n\n"
+        "Answering rules:\n"
+        "- Base each answer ONLY on what the retrieved memory supports; do not "
+        "guess beyond it.\n"
+        "- Still give your single best answer for EVERY question — never leave a "
+        "line blank, even when memory is thin.\n\n"
         f"{batch_prompt}"
     )

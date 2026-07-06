@@ -55,6 +55,8 @@ class Harness(Protocol):
         system: str | None = None,
         max_turns: int | None = None,
         timeout_sec: float | None = None,
+        log_path: Path | None = None,
+        log_label: str | None = None,
     ) -> HarnessResult: ...
 
     async def teardown(self) -> None: ...

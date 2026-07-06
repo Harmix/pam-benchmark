@@ -84,6 +84,7 @@ class PamMcpBaseline(BaselineBase):
         admin_email: str | None = None,
         admin_password: str | None = None,
         api_key: str | None = None,
+        save_responses: bool = False,
         **_ignored: Any,
     ) -> None:
         self.harness = harness
@@ -91,6 +92,12 @@ class PamMcpBaseline(BaselineBase):
         self._output_root = Path(output_root)
         self.batch_size = max(1, int(batch_size or 1))
         self._max_turns = max_turns
+        # When set, the full harness transcript (thinking, tool calls, json
+        # events) for every answer run is appended to harness.log in the output
+        # dir, alongside responses.log.
+        self._harness_log: Path | None = (
+            self._output_root / "harness.log" if save_responses else None
+        )
 
         # PAM_API_KEY is only needed for --pam-debug-user-id reuse (minting a
         # per-user token via the api-key-gated admin endpoint), exactly as for
@@ -116,12 +123,19 @@ class PamMcpBaseline(BaselineBase):
         self._session_ids: list[str] = []
         self._batch_index: int = 0
         self._total_batches: int = 0
+        # One persistent Claude Code session per conversation: the MCP server
+        # connects once here (in prepare_for_sample) and every batch reuses it,
+        # instead of re-handshaking (and racing) on every batch.
+        self._session: Any = None
 
     # ----- lifecycle ------------------------------------------------------
 
     async def setup(self, *, seed: int) -> None:
         await asyncio.to_thread(self.client.login, self._admin_email, self._admin_password)
         await self.harness.setup()
+        if self._harness_log is not None:
+            self._output_root.mkdir(parents=True, exist_ok=True)
+            self._harness_log.unlink(missing_ok=True)  # fresh log per run
         logger.info("pam_mcp ready (admin login + harness auth resolved).")
 
     async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
@@ -201,6 +215,27 @@ class PamMcpBaseline(BaselineBase):
             self._mcp_key_prefix,
             self._pam_user_id,
         )
+        await self._open_session()
+
+    async def _open_session(self) -> None:
+        """Open the per-conversation Claude Code session (MCP connects once)."""
+        await self._close_session()
+        assert self._scratch_dir is not None
+        self._session = self.harness.open_session(
+            working_dir=self._scratch_dir,
+            allowed_tools=[self.MCP_TOOL],
+            mcp_servers=self._mcp_servers(),
+            system=prompts.SYSTEM_PROMPT,
+            max_turns=self._max_turns,
+            log_path=self._harness_log,
+        )
+
+    async def _close_session(self) -> None:
+        if self._session is not None:
+            try:
+                await self._session.aclose()
+            finally:
+                self._session = None
 
     def _mcp_servers(self) -> dict[str, Any]:
         return {
@@ -252,10 +287,10 @@ class PamMcpBaseline(BaselineBase):
             if attempt > 0:
                 delay = self.BATCH_RETRY_BASE_SLEEP_SEC * (2 ** (attempt - 1))
                 logger.warning(
-                    "pam_mcp batch %d/%d got 0/%d answers; retry %d/%d after %.0fs",
+                    "pam_mcp batch %d/%d retry %d/%d after %.0fs "
+                    "(previous attempt: empty or no retrieval)",
                     batch_no,
                     total_batches,
-                    n,
                     attempt,
                     self.MAX_BATCH_RETRIES,
                     delay,
@@ -263,13 +298,16 @@ class PamMcpBaseline(BaselineBase):
                 if delay > 0:
                     await asyncio.sleep(delay)
             try:
-                result = await self.harness.run(
-                    prompt=prompts.answer_prompt(rendered),
-                    working_dir=self._scratch_dir,
-                    allowed_tools=[self.MCP_TOOL],
-                    mcp_servers=self._mcp_servers(),
-                    system=prompts.SYSTEM_PROMPT,
-                    max_turns=self._max_turns,
+                assert self._session is not None
+                # One turn on the per-conversation session — the MCP server is
+                # already connected (from prepare_for_sample), so no per-batch
+                # handshake. The session relaunches internally if MCP is dead.
+                result = await self._session.send(
+                    prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL),
+                    log_label=(
+                        f"[{self._current_sample_id}] answer batch "
+                        f"{batch_no}/{total_batches} (attempt {attempt + 1})"
+                    ),
                 )
                 parsed = parse_batch_response(result.text, n)
                 last_exc = None
@@ -287,8 +325,23 @@ class PamMcpBaseline(BaselineBase):
                     e,
                 )
             answered = sum(1 for a in parsed if a)
-            if answered > 0:
+            # `num_turns >= 2` means at least one tool round-trip happened (turn 1
+            # = assistant tool_use, turn 2 = answer after the tool result); a
+            # single-turn reply answered from nothing without retrieving. Require a
+            # retrieval unless this was the last attempt, so we never score an
+            # answer the agent produced without touching PAM Memory.
+            retrieved = result is not None and result.num_turns >= 2
+            if answered > 0 and (retrieved or attempt == attempts_total - 1):
                 break
+            if answered > 0 and not retrieved:
+                logger.warning(
+                    "pam_mcp batch %d/%d answered without calling %s "
+                    "(num_turns=%s); retrying to force retrieval",
+                    batch_no,
+                    total_batches,
+                    self.MCP_TOOL,
+                    result.num_turns if result is not None else None,
+                )
 
         if result is None and last_exc is not None:
             raw = {"raw_prompt": rendered, "raw_response": f"<harness run failed: {last_exc!r}>"}
@@ -356,6 +409,9 @@ class PamMcpBaseline(BaselineBase):
         return out
 
     async def cleanup_sample(self) -> None:
+        # Close the per-conversation session first (it holds the live claude
+        # process + the temp MCP config that lives under the scratch dir).
+        await self._close_session()
         # Wipe the per-sample scratch dir (just held the temp MCP config).
         if self._scratch_dir is not None:
             await asyncio.to_thread(shutil.rmtree, self._scratch_dir.parent, True)
@@ -381,6 +437,7 @@ class PamMcpBaseline(BaselineBase):
             logger.warning("pam_mcp delete_account failed for user_id=%s: %r", uid, e)
 
     async def teardown(self) -> None:
+        await self._close_session()  # defensive: normally closed in cleanup_sample
         await self.harness.teardown()
 
     def extras(self) -> dict[str, Any]:

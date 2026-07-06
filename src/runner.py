@@ -319,6 +319,10 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             "batch_size": cfg.mcp_batch_size,
             "keep_memory": cfg.mcp_keep_memory,
             "max_turns": cfg.mcp_max_turns,
+            # When --save-responses is set, MCP baselines also dump the full
+            # harness transcript (thinking, tool calls, json events) to
+            # harness.log alongside responses.log.
+            "save_responses": cfg.save_responses,
         }
         if cfg.baseline == "pam_mcp":
             # pam_mcp builds memory server-side via Pam, so it honours the same
