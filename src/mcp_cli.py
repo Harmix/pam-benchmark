@@ -36,10 +36,20 @@ def main(
     sample_index: int = typer.Option(
         None, "--sample-index", help="Process only this sample index (default: all)"
     ),
+    sample_id: str = typer.Option(
+        None,
+        "--sample-id",
+        help="Process only this sample by string id (e.g. Harmix env 'oleksandr'). "
+        "Wins over --sample-index.",
+    ),
     max_questions: int = typer.Option(
         None, "--max-questions", help="Cap questions per sample (debug; default: all)"
     ),
-    mcp_batch_size: int = typer.Option(10, "--mcp-batch-size", help="Questions per answer batch"),
+    mcp_batch_size: int = typer.Option(
+        None,
+        "--mcp-batch-size",
+        help="Questions per answer batch (default: 1 for harmix, 10 otherwise)",
+    ),
     mcp_keep_memory: bool = typer.Option(
         False,
         "--mcp-keep-memory",
@@ -49,7 +59,11 @@ def main(
     mcp_max_turns: int = typer.Option(
         None, "--mcp-max-turns", help="Cap agent turns per harness invocation"
     ),
-    judge_model: str = typer.Option("gpt-4o", "--judge-model", help="LLM-judge model id"),
+    judge_model: str = typer.Option(
+        None,
+        "--judge-model",
+        help="LLM-judge model id (default: claude-sonnet-4-5 for harmix, gpt-4o otherwise)",
+    ),
     judge_concurrency: int = typer.Option(
         8, "--judge-concurrency", help="Max concurrent judge calls"
     ),
@@ -88,6 +102,14 @@ def main(
     except json.JSONDecodeError as e:
         raise typer.BadParameter(f"--baseline-kwargs must be valid JSON: {e}") from e
 
+    # Dataset-aware defaults (only applied when the flag was left unset):
+    #   - harmix answers one persona-scoped question at a time (batch size 1)
+    #     and is graded by claude-sonnet-4-5 with grading notes.
+    if mcp_batch_size is None:
+        mcp_batch_size = 1 if dataset == "harmix" else 10
+    if judge_model is None:
+        judge_model = "claude-sonnet-4-5" if dataset == "harmix" else "gpt-4o"
+
     cfg = RunConfig(
         exp_name=exp_name,
         dataset=dataset,
@@ -95,6 +117,7 @@ def main(
         task=task,
         seed=seed,
         sample_index=sample_index,
+        sample_id=sample_id,
         max_questions=max_questions,
         baseline_kwargs=baseline_kwargs_dict,
         judge_model=judge_model,

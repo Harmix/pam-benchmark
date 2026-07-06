@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ dataset|title }} report — {{ exp_name }}</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --error:   #dc2626;
+  --bg:      #f8fafc;
+  --card:    #ffffff;
+  --text:    #1e293b;
+  --muted:   #64748b;
+  --border:  #e2e8f0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.5; }
+.container { max-width: 1280px; margin: 0 auto; }
+.header { background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white;
+          padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+.header h1 { font-size: 1.875rem; margin-bottom: .5rem; }
+.header-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: .75rem;
+               font-size: .9rem; opacity: .92; }
+.section { background: var(--card); padding: 1.5rem; border-radius: 12px;
+           box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
+.section h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--text); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+         gap: 1rem; margin-bottom: 1rem; }
+.card { background: var(--card); padding: 1.25rem; border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.06); text-align: center; }
+.card-value { font-size: 1.875rem; font-weight: 700; color: var(--primary); }
+.card-value.good { color: var(--success); }
+.card-value.warn { color: var(--warning); }
+.card-value.bad  { color: var(--error); }
+.card-label { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: #f1f5f9; padding: .65rem .75rem; text-align: left;
+     font-weight: 600; color: var(--text); border-bottom: 2px solid var(--border); }
+td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); }
+tr:hover td { background: #f8fafc; }
+.badge { display: inline-block; padding: .15rem .55rem; border-radius: 999px;
+         font-size: .8rem; font-weight: 600; }
+.badge.good { background: #dcfce7; color: var(--success); }
+.badge.warn { background: #fef9c3; color: var(--warning); }
+.badge.bad  { background: #fee2e2; color: var(--error); }
+.error-card { background: #f8fafc; border-left: 3px solid var(--muted); padding: 1rem;
+              margin-bottom: 1rem; border-radius: 8px; }
+.error-card.correct   { background: #f0fdf4; border-left-color: var(--success); }
+.error-card.incorrect { background: #fef2f2; border-left-color: var(--error); }
+.error-card.unjudged  { background: #f8fafc; border-left-color: var(--muted); }
+.error-card h4 { font-size: .95rem; margin-bottom: .5rem; }
+.error-row { margin: .35rem 0; font-size: .88rem; }
+.error-row b { color: var(--muted); }
+.error-row .ans { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+.error-row .notes { background:#fffbeb; border-left:3px solid var(--warning); padding:.35rem .6rem;
+                    display:block; border-radius:4px; }
+details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: var(--muted); }
+.muted { color: var(--muted); font-size: .85rem; }
+.filters { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.filter-btn { padding: .35rem .8rem; border: 1px solid var(--border); background: var(--card);
+              color: var(--muted); border-radius: 999px; cursor: pointer; font-size: .82rem;
+              font-weight: 600; }
+.filter-btn:hover { background: #f1f5f9; }
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+.pagination button { padding: .4rem .9rem; border: 1px solid var(--border); background: var(--card);
+                     border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600;
+                     color: var(--text); }
+.pagination button:disabled { opacity: .45; cursor: default; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>{{ dataset|title }} report — {{ exp_name }}</h1>
+    <div class="header-meta">
+      <span><b>Generated:</b> {{ generated_at }}</span>
+      <span><b>Dataset:</b> {{ dataset_name }}</span>
+      <span><b>Baselines:</b> {{ baselines|join(', ') }}</span>
+      <span><b>Batch size:</b> {{ batch_sizes|join(', ') }}</span>
+      <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
+      <span><b>Personas:</b> {{ sample_count }}</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Headline</h2>
+    <p class="muted">Graded by an LLM judge (grading-notes aware). Open/draft cases with no gold
+      answer are answered but not scored — accuracy is over the judged count.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="card-value {{ headline.judge_class }}">{{ headline.judge_accuracy_pct }}%</div>
+        <div class="card-label">LLM-judge accuracy</div>
+      </div>
+      <div class="card">
+        <div class="card-value">{{ headline.judge_correct }}/{{ headline.judged }}</div>
+        <div class="card-label">Judge correct / judged</div>
+      </div>
+      <div class="card">
+        <div class="card-value">{{ headline.total_questions }}</div>
+        <div class="card-label">Total questions</div>
+      </div>
+      <div class="card">
+        <div class="card-value">{{ headline.unjudged }}</div>
+        <div class="card-label">Open / unjudged</div>
+      </div>
+      <div class="card">
+        <div class="card-value">{{ '%.0f'|format(headline.avg_latency_ms) }} ms</div>
+        <div class="card-label">Avg latency / batch</div>
+      </div>
+      {% if show_cost %}
+      <div class="card">
+        <div class="card-value">${{ '%.4f'|format(headline.total_cost_usd) }}</div>
+        <div class="card-label">Total cost</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Per-persona results</h2>
+    <table>
+      <thead><tr>
+        <th>Baseline</th><th>Persona</th><th>Q</th><th>Judged</th><th>Judge</th>
+        <th>Avg. Context Tokens</th><th>p50 / p95 latency</th>
+        <th>Memory Creation</th><th>Answer+Judge</th>{% if show_cost %}<th>Cost (USD)</th>{% endif %}
+      </tr></thead>
+      <tbody>
+      {% for row in per_sample %}
+        <tr>
+          <td>{{ row.baseline }}</td>
+          <td>{{ row.sample_id }}</td>
+          <td>{{ row.total_questions }}</td>
+          <td>{{ row.judged }}{% if row.unjudged %} <span class="muted">(+{{ row.unjudged }} open)</span>{% endif %}</td>
+          <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
+          <td>{{ '%.0f'|format(row.avg_context_tokens) }}</td>
+          <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
+          <td>{{ '%.1f'|format(row.memory_creation_duration_sec) }} s</td>
+          <td>{{ '%.1f'|format(row.execution_time_seconds) }} s</td>
+          {% if show_cost %}<td>${{ '%.4f'|format(row.total_cost_usd) }}</td>{% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Per-persona token metrics</h2>
+    <p class="muted">Per-batch token averages (one batched model call). Avg Input is total input
+      (fresh + cache read + cache write).</p>
+    <table>
+      <thead><tr>
+        <th>Baseline</th><th>Persona</th>
+        <th>Avg Input</th><th>Avg Output</th><th>Avg Context</th><th>Avg Prompt</th>
+        <th>Avg Agent Input</th><th>Avg Agent Output</th>
+        <th>Avg Agent Cache Read</th><th>Avg Agent Cache Write</th>
+      </tr></thead>
+      <tbody>
+      {% for row in per_sample_tokens %}
+        <tr>
+          <td>{{ row.baseline }}</td>
+          <td>{{ row.sample_id }}</td>
+          <td>{{ '%.0f'|format(row.avg_input) }}</td>
+          <td>{{ '%.0f'|format(row.avg_output) }}</td>
+          <td>{{ '%.0f'|format(row.avg_context) }}</td>
+          <td>{{ '%.0f'|format(row.avg_prompt) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_input) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_output) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_cache_read) }}</td>
+          <td>{{ '%.0f'|format(row.avg_agent_cache_write) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Responses ({{ responses|length }})</h2>
+    <p class="muted">Every question with its answer and judge verdict. Filter by verdict and/or
+      persona; unjudged = open/draft cases with no gold answer.</p>
+    {% if responses %}
+      <div class="filters" id="verdict-filters">
+        <span class="muted" style="align-self:center;">Verdict:</span>
+        <button class="filter-btn active" data-verdict="all">All ({{ responses|length }})</button>
+        {% for v in verdict_filters %}
+          <button class="filter-btn" data-verdict="{{ v.name }}">{{ v.name|title }} ({{ v.count }})</button>
+        {% endfor %}
+      </div>
+      {% if persona_filters|length > 1 %}
+      <div class="filters" id="persona-filters">
+        <span class="muted" style="align-self:center;">Persona:</span>
+        <button class="filter-btn active" data-persona="all">All ({{ responses|length }})</button>
+        {% for p in persona_filters %}
+          <button class="filter-btn" data-persona="{{ p.name }}">{{ p.name }} ({{ p.count }})</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div id="response-list">
+      {% for r in responses %}
+        <div class="error-card {{ r.verdict }}" data-verdict="{{ r.verdict }}" data-persona="{{ r.sample_id }}">
+          <h4>Persona {{ r.sample_id }} · Q{{ r.question_num }}{% if r.case_id %} · {{ r.case_id }}{% endif %}
+              {% if r.verdict == 'correct' %}
+                <span class="badge good">Correct · Judge {{ '%.2f'|format(r.judge_score or 0.0) }}</span>
+              {% elif r.verdict == 'incorrect' %}
+                <span class="badge bad">Incorrect · Judge {{ '%.2f'|format(r.judge_score or 0.0) }}</span>
+              {% else %}
+                <span class="badge">Unjudged (open task)</span>
+              {% endif %}
+          </h4>
+          <div class="error-row"><b>Question:</b> {{ r.question }}</div>
+          {% if r.expected_answer is not none %}
+            <div class="error-row"><b>Expected:</b> <span class="ans">{{ r.expected_answer }}</span></div>
+          {% endif %}
+          <div class="error-row"><b>Model:</b> <span class="ans">{{ r.model_answer }}</span></div>
+          {% if r.grading_notes %}
+            <div class="error-row"><b>Grading notes:</b> <span class="notes">{{ r.grading_notes }}</span></div>
+          {% endif %}
+          {% if r.judge_reasoning %}
+            <div class="error-row"><b>Judge reasoning:</b> {{ r.judge_reasoning }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      </div>
+      <div class="pagination" id="response-pagination">
+        <button id="resp-prev">&lsaquo; Prev</button>
+        <span id="resp-pageinfo" class="muted"></span>
+        <button id="resp-next">Next &rsaquo;</button>
+      </div>
+    {% else %}
+      <p class="muted">No responses.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var PAGE_SIZE = 20;
+  var list = document.getElementById('response-list');
+  if (!list) return;
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.error-card'));
+  var verdictBtns = Array.prototype.slice.call(
+    document.querySelectorAll('#verdict-filters .filter-btn'));
+  var personaBtns = Array.prototype.slice.call(
+    document.querySelectorAll('#persona-filters .filter-btn'));
+  var prev = document.getElementById('resp-prev');
+  var next = document.getElementById('resp-next');
+  var pageInfo = document.getElementById('resp-pageinfo');
+  var verdict = 'all';   // default: show all responses
+  var persona = 'all';
+  var page = 1;
+
+  function matches(card) {
+    return (verdict === 'all' || card.getAttribute('data-verdict') === verdict)
+        && (persona === 'all' || card.getAttribute('data-persona') === persona);
+  }
+  function render() {
+    var items = cards.filter(matches);
+    var total = items.length;
+    var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page > pages) page = pages;
+    var start = (page - 1) * PAGE_SIZE;
+    cards.forEach(function (c) { c.style.display = 'none'; });
+    items.slice(start, start + PAGE_SIZE).forEach(function (c) { c.style.display = ''; });
+    pageInfo.textContent = total
+      ? ('Page ' + page + ' of ' + pages + ' · ' + total + ' matching')
+      : 'No matching responses';
+    prev.disabled = page <= 1;
+    next.disabled = page >= pages;
+  }
+  function wire(btns, attr, set) {
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        set(btn.getAttribute(attr));
+        page = 1;
+        render();
+      });
+    });
+  }
+  wire(verdictBtns, 'data-verdict', function (v) { verdict = v; });
+  wire(personaBtns, 'data-persona', function (v) { persona = v; });
+  prev.addEventListener('click', function () { if (page > 1) { page--; render(); } });
+  next.addEventListener('click', function () { page++; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

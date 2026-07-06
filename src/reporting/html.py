@@ -270,15 +270,151 @@ def build_context(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) ->
     }
 
 
+# ---------------------------------------------------------------------------
+# Harmix: judge-only report (no token-F1, no LoCoMo categories). Each persona
+# (environment) is a sample; open/draft cases (null expected_answer) are
+# recorded but not judged, so accuracy is over the JUDGED count.
+# ---------------------------------------------------------------------------
+
+
+def _aggregate_headline_harmix(docs: list[dict[str, Any]]) -> dict[str, Any]:
+    total_q = sum(d.get("total_questions", 0) for d in docs)
+    judged = sum(d.get("judged_count", 0) for d in docs)
+    unjudged = sum(d.get("unjudged_count", 0) for d in docs)
+    judge_correct = sum(d.get("judge_correct_count", 0) for d in docs)
+    total_latency_time = sum(
+        (d.get("avg_latency_ms", 0) or 0) * (d.get("total_questions", 0) or 0) for d in docs
+    )
+    total_batches = sum(_num_batches(d) for d in docs)
+    judge_pct = (judge_correct / judged * 100) if judged else 0.0
+    avg_latency = total_latency_time / total_batches if total_batches else 0.0
+    return {
+        "total_questions": total_q,
+        "judged": judged,
+        "unjudged": unjudged,
+        "judge_correct": judge_correct,
+        "judge_accuracy_pct": round(judge_pct, 1),
+        "judge_class": _accuracy_class(judge_pct),
+        "avg_latency_ms": avg_latency,
+        "total_cost_usd": sum(d.get("total_cost_usd", 0.0) or 0.0 for d in docs),
+    }
+
+
+def _per_sample_harmix(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for d in docs:
+        judge_acc = d.get("judge_accuracy", 0.0) or 0.0
+        batches = _num_batches(d)
+        total_q = d.get("total_questions", 0) or 0
+        batch_factor = (total_q / batches) if batches else 1.0
+        rows.append(
+            {
+                "baseline": d.get("baseline", "?"),
+                "sample_id": d.get("sample_id", "?"),
+                "total_questions": total_q,
+                "judged": d.get("judged_count", 0),
+                "unjudged": d.get("unjudged_count", 0),
+                "judge_accuracy": judge_acc,
+                "judge_class": _accuracy_class(judge_acc * 100),
+                "p50_latency_ms": (d.get("p50_latency_ms", 0.0) or 0.0) * batch_factor,
+                "p95_latency_ms": (d.get("p95_latency_ms", 0.0) or 0.0) * batch_factor,
+                "execution_time_seconds": d.get("execution_time_seconds", 0.0) or 0.0,
+                "memory_creation_duration_sec": d.get("memory_creation_duration_sec", 0.0) or 0.0,
+                "total_cost_usd": d.get("total_cost_usd", 0.0) or 0.0,
+                "avg_context_tokens": _avg_context_tokens(d),
+            }
+        )
+    return rows
+
+
+def _verdict(qa: dict[str, Any]) -> str:
+    """Judge verdict bucket for a qa row: correct | incorrect | unjudged.
+
+    `unjudged` = an open/draft case with no gold answer (never scored).
+    """
+    if not qa.get("judged"):
+        return "unjudged"
+    return "correct" if qa.get("judge_correct") else "incorrect"
+
+
+def _responses_harmix(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """All qa rows across docs, each tagged with `sample_id` and `verdict`."""
+    out: list[dict[str, Any]] = []
+    for d in docs:
+        sample_id = d.get("sample_id", "?")
+        for qa in d.get("qa_responses", []):
+            out.append({**qa, "sample_id": sample_id, "verdict": _verdict(qa)})
+    return out
+
+
+# Verdict filter buttons are shown in this fixed order (only when non-empty).
+_VERDICT_ORDER = ["correct", "incorrect", "unjudged"]
+
+
+def _verdict_filters(responses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    for r in responses:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    return [{"name": v, "count": counts[v]} for v in _VERDICT_ORDER if v in counts]
+
+
+def _persona_filters(responses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    for r in responses:
+        counts[r["sample_id"]] = counts.get(r["sample_id"], 0) + 1
+    return [{"name": n, "count": counts[n]} for n in sorted(counts)]
+
+
+def build_context_harmix(
+    *, dataset: str, exp_name: str, docs: list[dict[str, Any]]
+) -> dict[str, Any]:
+    baselines = sorted({d.get("baseline", "?") for d in docs})
+    judges = sorted({d.get("judge_model", "?") for d in docs})
+    samples = sorted({d.get("sample_id", "?") for d in docs})
+    dataset_names = sorted({d.get("dataset_name", dataset) for d in docs})
+    batch_sizes = sorted({d.get("batch_size") or d.get("pam_batch_size") or 1 for d in docs})
+    responses = _responses_harmix(docs)
+    return {
+        "is_harmix": True,
+        "dataset": dataset,
+        "exp_name": exp_name,
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "dataset_name": ", ".join(dataset_names) or dataset,
+        "baselines": baselines,
+        "batch_sizes": batch_sizes,
+        "judge_models": judges,
+        "sample_count": len(samples),
+        "headline": _aggregate_headline_harmix(docs),
+        "per_sample": _per_sample_harmix(docs),
+        "per_sample_tokens": _per_sample_tokens(docs),
+        "show_cost": any((d.get("total_cost_usd") or 0) > 0 for d in docs),
+        # All responses (correct + incorrect + unjudged), filterable by verdict
+        # and persona; default view shows everything.
+        "responses": responses,
+        "verdict_filters": _verdict_filters(responses),
+        "persona_filters": _persona_filters(responses),
+    }
+
+
 def render(context: dict[str, Any]) -> str:
-    template = _env.get_template("report.html.j2")
+    template_name = "report_harmix.html.j2" if context.get("is_harmix") else "report.html.j2"
+    template = _env.get_template(template_name)
     return template.render(**context)
+
+
+def build_report_context(
+    *, dataset: str, exp_name: str, docs: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Pick the right context builder for the dataset (harmix is judge-only)."""
+    if dataset == "harmix":
+        return build_context_harmix(dataset=dataset, exp_name=exp_name, docs=docs)
+    return build_context(dataset=dataset, exp_name=exp_name, docs=docs)
 
 
 def render_to_file(
     *, dataset: str, exp_name: str, docs: list[dict[str, Any]], output_path: Path
 ) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    html = render(build_context(dataset=dataset, exp_name=exp_name, docs=docs))
+    html = render(build_report_context(dataset=dataset, exp_name=exp_name, docs=docs))
     output_path.write_text(html, encoding="utf-8")
     return output_path

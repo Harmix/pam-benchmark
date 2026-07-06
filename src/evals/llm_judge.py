@@ -45,6 +45,14 @@ JUDGE_USER_TEMPLATE = (
     "- reasoning: 1-3 short sentences justifying the verdict."
 )
 
+# Extra block injected between MODEL ANSWER and the schema instructions when a
+# case carries grading_notes (Harmix). The notes are authoritative grading
+# guidance/checklist criteria and take precedence over surface wording.
+_GRADING_NOTES_BLOCK = (
+    "GRADING NOTES (authoritative extra criteria — apply these strictly, they "
+    "override surface wording):\n{grading_notes}\n\n"
+)
+
 
 class JudgeVerdict(BaseModel):
     """Schema enforced on the judge model's output via `instructor`."""
@@ -73,21 +81,29 @@ async def judge_answer(
     ground_truth: str,
     model_answer: str,
     judge_model: str = "gpt-4o",
+    grading_notes: str | None = None,
     max_attempts: int = 3,
     temperature: float = 0.0,
 ) -> JudgeResult:
-    """Score one (question, ground_truth, model_answer) triple via LLM judge."""
+    """Score one (question, ground_truth, model_answer) triple via LLM judge.
+
+    When `grading_notes` is provided (Harmix), an authoritative grading-criteria
+    block is injected into the prompt so the judge applies those checklist rules.
+    """
     client = _ClientHolder.get(judge_model)
+    user_content = JUDGE_USER_TEMPLATE.format(
+        question=question,
+        ground_truth=ground_truth or "(empty)",
+        model_answer=model_answer or "(empty)",
+    )
+    if grading_notes:
+        notes_block = _GRADING_NOTES_BLOCK.format(grading_notes=grading_notes)
+        # Insert the notes block right before the schema instructions.
+        marker = "Return a JSON verdict"
+        user_content = user_content.replace(marker, notes_block + marker, 1)
     messages = [
         {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": JUDGE_USER_TEMPLATE.format(
-                question=question,
-                ground_truth=ground_truth or "(empty)",
-                model_answer=model_answer or "(empty)",
-            ),
-        },
+        {"role": "user", "content": user_content},
     ]
 
     last_exc: BaseException | None = None
@@ -141,3 +157,30 @@ async def judge_many(
             )
 
     return await asyncio.gather(*(_one(q, gt, ma) for q, gt, ma in triples))
+
+
+async def judge_many_with_notes(
+    items: list[tuple[str, str, str, str | None]],
+    *,
+    judge_model: str = "gpt-4o",
+    concurrency: int = 8,
+) -> list[JudgeResult]:
+    """Judge many `(question, ground_truth, model_answer, grading_notes)` tuples.
+
+    Like `judge_many` but threads per-item `grading_notes` into each verdict
+    (used by Harmix). `grading_notes` may be `None` for items with no extra
+    criteria.
+    """
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _one(q: str, gt: str, ma: str, notes: str | None) -> JudgeResult:
+        async with sem:
+            return await judge_answer(
+                question=q,
+                ground_truth=gt,
+                model_answer=ma,
+                judge_model=judge_model,
+                grading_notes=notes,
+            )
+
+    return await asyncio.gather(*(_one(q, gt, ma, notes) for q, gt, ma, notes in items))

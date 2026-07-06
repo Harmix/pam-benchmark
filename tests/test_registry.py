@@ -7,6 +7,7 @@ import pytest
 from baselines.base import Baseline
 from baselines.litellm_baseline import LiteLLMBaseline
 from datasets.base import DatasetLoader
+from datasets.harmix.loader import HarmixLoader
 from datasets.locomo.loader import LoCoMoLoader
 from registry import get_baseline, get_dataset, get_task_runner, known_baselines
 
@@ -17,6 +18,19 @@ def test_get_dataset_locomo_returns_loader():
     assert isinstance(loader, DatasetLoader)
     assert loader.name == "locomo"
     assert loader.num_samples() > 0
+
+
+def test_get_dataset_harmix_returns_loader():
+    loader = get_dataset("harmix")
+    assert isinstance(loader, HarmixLoader)
+    assert isinstance(loader, DatasetLoader)
+    assert loader.name == "harmix"
+    assert loader.num_samples() == 3
+
+
+def test_get_task_runner_harmix_returns_callable():
+    runner = get_task_runner("harmix")
+    assert callable(runner)
 
 
 def test_get_dataset_unknown_raises_with_available_list():

@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from reporting.html import build_context
+from reporting.html import build_context, build_context_harmix
 
 
 def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) -> str:
+    if dataset == "harmix":
+        return _render_markdown_harmix(dataset=dataset, exp_name=exp_name, docs=docs)
     ctx = build_context(dataset=dataset, exp_name=exp_name, docs=docs)
     h = ctx["headline"]
     lines: list[str] = [
@@ -82,5 +84,49 @@ def render_markdown(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) 
             f"{row['avg_context']:.0f} | {row['avg_prompt']:.0f} | "
             f"{row['avg_agent_input']:.0f} | {row['avg_agent_output']:.0f} | "
             f"{row['avg_agent_cache_read']:.0f} | {row['avg_agent_cache_write']:.0f} |"
+        )
+    return "\n".join(lines)
+
+
+def _render_markdown_harmix(*, dataset: str, exp_name: str, docs: list[dict[str, Any]]) -> str:
+    """Judge-only markdown summary for Harmix (no token-F1, no categories)."""
+    ctx = build_context_harmix(dataset=dataset, exp_name=exp_name, docs=docs)
+    h = ctx["headline"]
+    show_cost = ctx["show_cost"]
+    lines: list[str] = [
+        f"# {dataset.title()} report — {exp_name}",
+        "",
+        f"- Generated: {ctx['generated_at']}",
+        f"- Baselines: {', '.join(ctx['baselines'])}",
+        f"- Batch size: {', '.join(str(b) for b in ctx['batch_sizes'])}",
+        f"- Judge: {', '.join(ctx['judge_models'])}",
+        f"- Personas: {ctx['sample_count']}",
+        "",
+        "## Headline",
+        "",
+        f"- LLM-judge accuracy: **{h['judge_accuracy_pct']}%** "
+        f"({h['judge_correct']}/{h['judged']} judged)",
+        f"- Total questions: {h['total_questions']} · open/unjudged: {h['unjudged']}",
+        f"- Avg latency / batch: {h['avg_latency_ms']:.0f} ms",
+    ]
+    if show_cost:
+        lines.append(f"- Total cost: ${h['total_cost_usd']:.4f}")
+    lines += [
+        "",
+        "## Per persona",
+        "",
+        "| Baseline | Persona | Q | Judged | Judge | Avg. Context Tokens | p50/p95 ms | "
+        "Memory Creation | Answer+Judge |" + (" Cost (USD) |" if show_cost else ""),
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|" + ("---:|" if show_cost else ""),
+    ]
+    for row in ctx["per_sample"]:
+        cost = f" ${row['total_cost_usd']:.4f} |" if show_cost else ""
+        lines.append(
+            f"| {row['baseline']} | {row['sample_id']} | {row['total_questions']} | "
+            f"{row['judged']} | {row['judge_accuracy'] * 100:.1f}% | "
+            f"{row['avg_context_tokens']:.0f} | "
+            f"{row['p50_latency_ms']:.0f}/{row['p95_latency_ms']:.0f} | "
+            f"{row['memory_creation_duration_sec']:.1f}s | "
+            f"{row['execution_time_seconds']:.1f}s |" + cost
         )
     return "\n".join(lines)

@@ -6,6 +6,7 @@ Endpoints exercised by the benchmark:
   - `POST /v1/admin/users/{user_id}/tokens`                        (mint per-user token — debug reuse)
   - `DELETE /v1/admin/delete-account/{user_id}`                    (per-sample user)
   - `POST /v1/memory/process-generic-files/{user_id}`              (upload + kick off memory pipeline)
+  - `POST /v1/memory/process-snapshot/{user_id}`                   (stage a pre-built snapshot + kick off pipeline — Harmix)
   - `GET  /v1/memory/get-memory-pipeline-status/{user_id}/{run_id}` (poll status)
   - `POST /v1/dev/rotate-key`                                      (mint a Memory MCP key — pam_mcp)
   - `POST /v1/messages/stream`                                     (SSE chat — questions)
@@ -366,6 +367,42 @@ class PamClient:
                 raise RuntimeError(f"process_generic_files: no run_id in response: {data!r}")
             run_ids.append(run_id)
         return run_ids
+
+    def process_snapshot(self, snapshot_uri: str, sources: list[str]) -> str:
+        """Stage a pre-built snapshot zip and kick off the memory pipeline.
+
+        Calls `POST /v1/memory/process-snapshot/{user_id}` with the snapshot's
+        `gs://…state_after_sources_download.zip` URI and an explicit `sources`
+        list (mapped to pipeline extract keys, e.g. `gmail` /
+        `meeting_transcripts`). The server mints a run_id, copies the zip into
+        the user's run directory, and publishes a RunRequested that skips
+        sources_download and runs extract onward for `sources`. Returns the
+        `run_id` to poll via `wait_for_memory`.
+
+        Used for datasets whose memory is pre-staged in GCS (e.g. Harmix)
+        instead of uploaded as files via `process_generic_files`.
+        """
+        if self.user_id is None:
+            raise RuntimeError(
+                "process_snapshot requires user_id (call login + create_account first)"
+            )
+        url = f"{self.base_url}/memory/process-snapshot/{self.user_id}"
+        body = {"snapshot_uri": snapshot_uri, "sources": list(sources)}
+        headers = {**self._headers(), "Content-Type": "application/json"}
+        resp = self.session.post(url, json=body, headers=headers, timeout=300)
+        if resp.status_code == 401:
+            self.refresh_token()
+            headers = {**self._headers(), "Content-Type": "application/json"}
+            resp = self.session.post(url, json=body, headers=headers, timeout=300)
+        self._raise_for_auth(resp, url)
+        if not resp.ok:
+            logger.warning("Pam process_snapshot failed: %s %s", resp.status_code, resp.text[:500])
+        resp.raise_for_status()
+        data = resp.json()
+        run_id = data.get("run_id")
+        if not run_id:
+            raise RuntimeError(f"process_snapshot: no run_id in response: {data!r}")
+        return run_id
 
     # --- 3. Memory pipeline status polling --------------------------------
 

@@ -19,13 +19,14 @@ from rich.console import Console
 
 from config import RunConfig
 from datasets.locomo.schemas import CATEGORY_NAMES, LoCoMoSample
-from evals.llm_judge import judge_many
+from evals.llm_judge import judge_many, judge_many_with_notes
 from evals.qa_f1 import score_locomo_qa
 from evals.runtime import summarize_latencies
 from mongo import write_sample_result
 from progress import add_sample_task, progress_for
 from registry import get_baseline, get_dataset, get_task_runner
 from seeds import seed_all
+from tasks.harmix.pipeline import HarmixPrediction
 from tasks.locomo.pipeline import LoCoMoPrediction
 from utils.io import write_json
 
@@ -303,6 +304,173 @@ async def _process_sample(
     return SampleResult(sample_id=sample.sample_id, sample_index=sample_index, document=document)
 
 
+def _aggregate_harmix(
+    predictions: list[HarmixPrediction],
+    verdict_by_index: dict[int, Any],
+) -> dict[str, Any]:
+    """Aggregate for Harmix: LLM-judge only (no F1, no categories).
+
+    Cases with `expected_answer is None` (open/draft tasks) are answered and
+    recorded but excluded from judge accuracy — `judged_count` is the denominator.
+    """
+    total = len(predictions)
+    judged = len(verdict_by_index)
+    judge_correct = sum(1 for v in verdict_by_index.values() if v.correct)
+
+    latencies = summarize_latencies(p.latency_ms for p in predictions)
+    total_in_tok = sum(p.input_tokens for p in predictions)
+    total_out_tok = sum(p.output_tokens for p in predictions)
+    total_prompt_tok = sum(p.prompt_tokens for p in predictions)
+    total_context_tok = sum(p.context_tokens for p in predictions)
+    total_agent_in_tok = sum(p.agent_input_tokens for p in predictions)
+    total_agent_out_tok = sum(p.agent_output_tokens for p in predictions)
+    total_agent_cache_read_tok = sum(p.agent_cache_read_tokens for p in predictions)
+    total_agent_cache_write_tok = sum(p.agent_cache_write_tokens for p in predictions)
+    total_cost = sum(p.est_cost_usd for p in predictions)
+
+    judge_acc = judge_correct / judged if judged else 0.0
+
+    return {
+        "total_questions": total,
+        "judged_count": judged,
+        "unjudged_count": total - judged,  # open tasks with no gold answer
+        "judge_accuracy": round(judge_acc, 4),
+        "judge_correct_count": judge_correct,
+        "total_input_tokens": total_in_tok,
+        "total_output_tokens": total_out_tok,
+        "total_prompt_tokens": total_prompt_tok,
+        "total_context_tokens": total_context_tok,
+        "total_agent_input_tokens": total_agent_in_tok,
+        "total_agent_output_tokens": total_agent_out_tok,
+        "total_agent_cache_read_tokens": total_agent_cache_read_tok,
+        "total_agent_cache_write_tokens": total_agent_cache_write_tok,
+        "total_cost_usd": round(total_cost, 6),
+        **latencies,
+    }
+
+
+def _qa_responses_harmix(
+    predictions: list[HarmixPrediction],
+    verdict_by_index: dict[int, Any],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for i, pred in enumerate(predictions):
+        v = verdict_by_index.get(i)
+        rows.append(
+            {
+                "question_num": pred.question_num,
+                "case_id": pred.case_id,
+                "question": pred.question,
+                "expected_answer": pred.expected_answer,
+                "model_answer": pred.model_answer,
+                "grading_notes": pred.grading_notes,
+                "judged": v is not None,
+                "judge_correct": v.correct if v is not None else None,
+                "judge_score": round(v.score, 4) if v is not None else None,
+                "judge_confidence": round(v.confidence, 4) if v is not None else None,
+                "judge_reasoning": v.reasoning if v is not None else None,
+                "input_tokens": pred.input_tokens,
+                "output_tokens": pred.output_tokens,
+                "prompt_tokens": pred.prompt_tokens,
+                "context_tokens": pred.context_tokens,
+                "agent_input_tokens": pred.agent_input_tokens,
+                "agent_output_tokens": pred.agent_output_tokens,
+                "agent_cache_read_tokens": pred.agent_cache_read_tokens,
+                "agent_cache_write_tokens": pred.agent_cache_write_tokens,
+                "est_cost_usd": round(pred.est_cost_usd, 6),
+                "latency_ms": round(pred.latency_ms, 2),
+            }
+        )
+    return rows
+
+
+async def _process_sample_harmix(
+    sample: Any,
+    sample_index: int,
+    cfg: RunConfig,
+    baseline: Any,
+    task_runner: Any,
+    progress: Any,
+    responses_log: Path | None = None,
+) -> SampleResult:
+    """Process one Harmix environment: answer its cases, judge with grading notes."""
+    n_questions = (
+        len(sample.qa) if cfg.max_questions is None else min(cfg.max_questions, len(sample.qa))
+    )
+    task_id = add_sample_task(progress, sample.sample_id, n_questions)
+
+    if responses_log is not None:
+        _append_log(responses_log, _responses_log_header(sample.sample_id, sample_index))
+
+    def _advance(_pred: HarmixPrediction) -> None:
+        progress.advance(task_id, 1)
+
+    def _log_batch(preds: list[HarmixPrediction]) -> None:
+        if responses_log is not None:
+            _append_log(responses_log, _responses_log_entry(preds))
+
+    start = time.perf_counter()
+    predictions: list[HarmixPrediction] = await task_runner(
+        sample,
+        baseline=baseline,
+        seed=cfg.seed,
+        model_name=cfg.baseline_model or cfg.baseline,
+        max_questions=cfg.max_questions,
+        on_question_done=_advance,
+        on_batch_done=_log_batch,
+    )
+    answer_seconds = time.perf_counter() - start
+
+    # LLM judge (sonnet-4-5 by default) — only cases with a gold answer.
+    judgeable = [(i, p) for i, p in enumerate(predictions) if p.expected_answer is not None]
+    items = [
+        (p.question, p.expected_answer or "", p.model_answer, p.grading_notes) for _, p in judgeable
+    ]
+    judge_start = time.perf_counter()
+    judged = await judge_many_with_notes(
+        items, judge_model=cfg.judge_model, concurrency=cfg.judge_concurrency
+    )
+    judge_seconds = time.perf_counter() - judge_start
+    verdict_by_index = {judgeable[k][0]: judged[k] for k in range(len(judgeable))}
+
+    aggregate = _aggregate_harmix(predictions, verdict_by_index)
+    qa_rows = _qa_responses_harmix(predictions, verdict_by_index)
+
+    baseline_extras: dict[str, Any] = {}
+    if hasattr(baseline, "extras"):
+        try:
+            baseline_extras = baseline.extras() or {}
+        except Exception:  # pragma: no cover — defensive
+            baseline_extras = {}
+
+    baseline_kwargs = dict(cfg.baseline_kwargs)
+    if hasattr(baseline, "baseline_kwargs_extra"):
+        with contextlib.suppress(Exception):  # defensive
+            baseline_kwargs.update(baseline.baseline_kwargs_extra() or {})
+
+    document: dict[str, Any] = {
+        "exp_name": cfg.exp_name,
+        "sample_id": sample.sample_id,
+        "sample_index": sample_index,
+        "seed": cfg.seed,
+        "baseline": cfg.baseline,
+        "baseline_kwargs": baseline_kwargs,
+        "judge_model": cfg.judge_model,
+        "dataset_name": f"{cfg.dataset}@1.0",
+        "task_name": cfg.resolved_task(),
+        "memory_sources": list(getattr(sample, "memory_sources", [])),
+        **aggregate,
+        **baseline_extras,
+        "qa_responses": qa_rows,
+        "execution_time_seconds": round(answer_seconds + judge_seconds, 2),
+        "answer_phase_seconds": round(answer_seconds, 2),
+        "judge_phase_seconds": round(judge_seconds, 2),
+        "max_questions": cfg.max_questions or 0,
+        **_provenance(),
+    }
+    return SampleResult(sample_id=sample.sample_id, sample_index=sample_index, document=document)
+
+
 async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     seed_all(cfg.seed)
     loader = get_dataset(cfg.dataset)
@@ -342,8 +510,13 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
     )
     await baseline.setup(seed=cfg.seed)
 
-    # Decide which samples to process
-    if cfg.sample_index is not None:
+    # Decide which samples to process. A string --sample-id (e.g. a Harmix
+    # environment id) wins over --sample-index.
+    if cfg.sample_id is not None:
+        if not hasattr(loader, "index_for_sample_id"):
+            raise ValueError(f"--sample-id is not supported for dataset {cfg.dataset!r}")
+        indices = [loader.index_for_sample_id(cfg.sample_id)]
+    elif cfg.sample_index is not None:
         indices = [cfg.sample_index]
     else:
         indices = list(range(loader.num_samples()))
@@ -372,7 +545,8 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             if cfg.dry_run:
                 console.log(f"[yellow]dry-run[/yellow] would process {sample.sample_id}")
                 continue
-            r = await _process_sample(
+            processor = _process_sample_harmix if cfg.dataset == "harmix" else _process_sample
+            r = await processor(
                 sample, sample_index, cfg, baseline, task_runner, progress, responses_log
             )
             results.append(r)

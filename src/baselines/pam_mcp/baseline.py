@@ -37,7 +37,6 @@ from baselines.pam.client import PamClient
 from baselines.pam.serialize import serialize_sample
 from baselines.pam_mcp import prompts
 from batch_protocol import count_tokens, distribute, parse_batch_response, render_batch_prompt
-from datasets.locomo.schemas import LoCoMoSample
 from env import require
 from harnesses.base import Harness, HarnessResult
 
@@ -138,7 +137,7 @@ class PamMcpBaseline(BaselineBase):
             self._harness_log.unlink(missing_ok=True)  # fresh log per run
         logger.info("pam_mcp ready (admin login + harness auth resolved).")
 
-    async def prepare_for_sample(self, sample: LoCoMoSample) -> None:
+    async def prepare_for_sample(self, sample: Any) -> None:
         self._current_sample_id = sample.sample_id
         self._memory_creation_sec = 0.0
         self._mcp_key = None
@@ -165,30 +164,51 @@ class PamMcpBaseline(BaselineBase):
 
         # 1. Create per-sample user on the MCP-only `dev` plan (unique email
         # keeps Pam state isolated). The plan grants MEMORY_MCP so the account
-        # can mint a Memory MCP key below.
+        # can mint a Memory MCP key below. One account per sample — for Harmix a
+        # sample is one persona/environment, for LoCoMo one conversation.
         suffix = uuid.uuid4().hex[:8]
-        email = f"locomo-{sample.sample_id}-{int(time.time())}-{suffix}@benchmark.local"
+        email = f"bench-{sample.sample_id}-{int(time.time())}-{suffix}@benchmark.local"
         await asyncio.to_thread(
             self.client.create_account,
             email=email,
             password="benchmark-run",
-            name=f"LoCoMo {sample.sample_id}",
+            name=f"Bench {sample.sample_id}",
             plan=_MCP_PLAN,
         )
         self._pam_user_id = self.client.user_id
         logger.info("pam_mcp created user_id=%s for sample=%s", self._pam_user_id, sample.sample_id)
 
-        # 2. Upload conversation + kick off the memory pipeline (same as `pam`).
-        files = serialize_sample(sample)
+        # 2. Kick off the memory pipeline. Two paths:
+        #   - snapshot datasets (Harmix): the memory is pre-staged in GCS, so
+        #     the server copies the snapshot zip and runs extract for an
+        #     explicit `--sources` list (skipping sources_download).
+        #   - upload datasets (LoCoMo): serialize the conversation and upload it
+        #     via process-generic-files (which zips it and runs extract_generic).
         mem_start = time.time()
-        run_ids = await asyncio.to_thread(self.client.process_generic_files, files)
+        snapshot_uri = getattr(sample, "memory_snapshot", None)
+        if snapshot_uri:
+            sources = list(getattr(sample, "pipeline_sources", []) or [])
+            run_id = await asyncio.to_thread(self.client.process_snapshot, snapshot_uri, sources)
+            run_ids = [run_id]
+            logger.info(
+                "pam_mcp process_snapshot for sample=%s (user_id=%s) snapshot=%s "
+                "sources=%s -> run_id=%s",
+                sample.sample_id,
+                self._pam_user_id,
+                snapshot_uri,
+                sources,
+                run_id,
+            )
+        else:
+            files = serialize_sample(sample)
+            run_ids = await asyncio.to_thread(self.client.process_generic_files, files)
+            logger.info(
+                "pam_mcp process_generic_files for sample=%s (user_id=%s) -> run_ids=%s",
+                sample.sample_id,
+                self._pam_user_id,
+                run_ids,
+            )
         self._last_memory_run_ids = list(run_ids)
-        logger.info(
-            "pam_mcp process_generic_files for sample=%s (user_id=%s) -> run_ids=%s",
-            sample.sample_id,
-            self._pam_user_id,
-            run_ids,
-        )
 
         # 3. Poll each memory pipeline run until terminal status (same polling).
         await asyncio.to_thread(self.client.wait_for_memory, run_ids)
