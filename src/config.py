@@ -35,6 +35,9 @@ class RunConfig(BaseModel):
 
     # Scope
     sample_index: int | None = None  # None = all
+    # Select a single sample by its string id (e.g. a Harmix environment id like
+    # "oleksandr"). Resolved to an index at run time; wins over sample_index.
+    sample_id: str | None = None
     max_questions: int | None = None  # None = all per sample
 
     # Outputs

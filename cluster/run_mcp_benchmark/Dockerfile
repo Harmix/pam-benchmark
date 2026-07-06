@@ -57,6 +57,12 @@ RUN mkdir -p /app/outputs
 RUN test -f /app/src/datasets/locomo/data/locomo10.json \
     || (echo "ERROR: locomo10.json missing from build context. Check .dockerignore." >&2 && exit 1)
 
+# Fail the build early if the Harmix bench cases didn't land. Only the JSON is
+# baked in (allow-listed in .dockerignore); per-persona memory snapshots are
+# read from GCS at run time, not bundled.
+RUN test -f /app/src/datasets/harmix/data/harmix_bench_cases.json \
+    || (echo "ERROR: harmix_bench_cases.json missing from build context. Check .dockerignore." >&2 && exit 1)
+
 # Fail the build early if the Claude Code CLI isn't on PATH.
 RUN command -v claude >/dev/null \
     || (echo "ERROR: claude CLI not installed in image." >&2 && exit 1)

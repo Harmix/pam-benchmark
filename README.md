@@ -46,6 +46,7 @@ Why a custom benchmark? Public memory benchmarks are saturating for top models, 
 | Dataset | Status | Samples | Task | Source |
 |---|---|---|---|---|
 | **LoCoMo** | ✅ Shipped | 10 conversations · ~1,986 QA total | Multi-session dialogue QA across single-hop, temporal, open-domain, multi-hop, and adversarial recall | [snap-research/locomo](https://github.com/snap-research/locomo) ([ACL 2024](https://aclanthology.org/2024.acl-long.747.pdf)) |
+| **Harmix** | ✅ Shipped | 3 personas (environments) · 42 QA total | Golden-persona recall/reasoning against a fixed per-person memory built from a pre-staged GCS snapshot; graded by an LLM judge (claude-sonnet-4-5) that honors per-question grading notes | Internal Harmix bench ([`src/datasets/harmix/README.md`](src/datasets/harmix/README.md)) |
 | **MemTrack** | 🚧 Planned | — | Long-term memory & state tracking for agents across multi-platform workflows (Slack + Linear + Git) with async events and conflicting information — close to Pam's production workload | [Deshpande et al., NeurIPS 2025 SEA Workshop](https://arxiv.org/abs/2510.01353) |
 | **LongMemEval** | 🚧 Planned | — | Long-conversation memory eval | [LongMemEval](https://github.com/xiaowu0162/LongMemEval) |
 
@@ -131,6 +132,26 @@ uv run python scripts/run_mcp_benchmark.py \
   --mcp-batch-size 10
 ```
 
+**Run the Harmix persona bench with Pam + Claude Code** (`pam_mcp`): each persona
+(environment) gets its own Pam account whose memory is built from the persona's
+pre-staged GCS snapshot, then questions are answered through the PAM Memory MCP
+tool and graded by `claude-sonnet-4-5`. `--dataset harmix` defaults to
+`--mcp-batch-size 1` and `--judge-model claude-sonnet-4-5`; `--sample-id`
+selects a single persona by id (`nazar` / `oleksandr` / `nick`):
+
+```bash
+uv run python scripts/run_mcp_benchmark.py \
+  --dataset harmix --harness claude-code --baseline pam_mcp \
+  --harness-model <vertex-claude-model-id> --exp-name harmix_v1 \
+  --sample-id oleksandr --save-responses
+```
+
+The same debug flags as the LoCoMo `pam_mcp` flow apply
+(`--save-responses`, `--backup-memory`, `--pam-debug-user-id`, `--mcp-keep-memory`,
+`--mcp-max-turns`, `--max-questions`). See
+[`docs/harmix_dataset_plan.md`](docs/harmix_dataset_plan.md) for the cross-repo
+memory-build design.
+
 ### `secrets.env`
 
 A gitignored file with the keys for whatever you run. Minimal set for an LLM baseline:
@@ -177,6 +198,7 @@ Patterns and conventions: [`src/baselines/README.md`](src/baselines/README.md).
 |---|---|
 | [`docs/blog_post_notes_locomo.md`](docs/blog_post_notes_locomo.md) | LoCoMo results write-up and blog notes (Pam vs. other memory systems) |
 | [`docs/mcp_harness_benchmark_plan.md`](docs/mcp_harness_benchmark_plan.md) | Design of the memory-on-agentic-harness experiment |
+| [`docs/harmix_dataset_plan.md`](docs/harmix_dataset_plan.md) | Harmix persona-bench integration (snapshot-based memory build, cross-repo trigger, sonnet judge) |
 | [`docs/benchmark_rewrite_plan.md`](docs/benchmark_rewrite_plan.md) | Architecture, decisions, and roadmap of the harness |
 | [`docs/init_memory_bank.md`](docs/init_memory_bank.md) | Methodology standards (datasheets, model cards, reproducibility) |
 | [`src/baselines/pam/README.md`](src/baselines/pam/README.md) | How the Pam baseline talks to the Pam API |

@@ -11,12 +11,14 @@ from typing import Any
 from baselines.base import Baseline
 from baselines.litellm_baseline import LiteLLMBaseline
 from datasets.base import DatasetLoader
+from datasets.harmix.loader import HarmixLoader
 from datasets.locomo.loader import LoCoMoLoader
 
 # Datasets ----------------------------------------------------------------
 
 _DATASETS: dict[str, Callable[..., DatasetLoader]] = {
     "locomo": LoCoMoLoader,
+    "harmix": HarmixLoader,
 }
 
 
@@ -37,7 +39,11 @@ def get_task_runner(name: str) -> Callable[..., Any]:
         from tasks.locomo.pipeline import run_sample
 
         return run_sample
-    raise ValueError(f"unknown task: {name!r}. Available: ['locomo']")
+    if name == "harmix":
+        from tasks.harmix.pipeline import run_sample as harmix_run_sample
+
+        return harmix_run_sample
+    raise ValueError(f"unknown task: {name!r}. Available: ['locomo', 'harmix']")
 
 
 # Baselines ---------------------------------------------------------------

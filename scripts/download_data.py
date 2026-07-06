@@ -47,8 +47,25 @@ def main(
         )
         raise typer.Exit(code=1)
 
+    if dataset == "harmix":
+        from datasets.harmix.loader import DEFAULT_DATA_PATH as HARMIX_PATH
+
+        if HARMIX_PATH.exists():
+            size_kb = HARMIX_PATH.stat().st_size / 1024
+            console.print(
+                f"[green]✓[/green] Harmix bench cases present at "
+                f"[cyan]{HARMIX_PATH}[/cyan] ({size_kb:.1f} KB)"
+            )
+            # Per-environment memory snapshots live in GCS (memory_snapshot URIs)
+            # and are read by the pipeline at run time — nothing to download here.
+            return
+        console.print(
+            f"[red]Harmix bench cases missing.[/red] Expected at [cyan]{HARMIX_PATH}[/cyan]."
+        )
+        raise typer.Exit(code=1)
+
     console.print(f"[red]Unknown dataset:[/red] {dataset}")
-    console.print("Supported: locomo")
+    console.print("Supported: locomo, harmix")
     raise typer.Exit(code=1)
 
 
