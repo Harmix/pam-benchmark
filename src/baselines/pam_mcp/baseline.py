@@ -36,7 +36,13 @@ from baselines.base import BaselineBase, BaselineResponse, TokenUsage, split_inp
 from baselines.pam.client import PamClient
 from baselines.pam.serialize import serialize_sample
 from baselines.pam_mcp import prompts
-from batch_protocol import count_tokens, distribute, parse_batch_response, render_batch_prompt
+from batch_protocol import (
+    count_tokens,
+    distribute,
+    parse_batch_response,
+    render_batch_prompt,
+    strip_reasoning_scaffold,
+)
 from env import require
 from harnesses.base import Harness, HarnessResult
 
@@ -75,6 +81,7 @@ class PamMcpBaseline(BaselineBase):
         harness_model: str | None = None,
         output_root: Path,
         batch_size: int = 10,
+        raw_prompt: bool = False,
         max_turns: int | None = None,
         debug_user_id: int | None = None,
         backup_memory: bool = False,
@@ -89,7 +96,10 @@ class PamMcpBaseline(BaselineBase):
         self.harness = harness
         self._harness_model = harness_model or getattr(harness, "model", None)
         self._output_root = Path(output_root)
-        self.batch_size = max(1, int(batch_size or 1))
+        # Raw mode asks one question at a time with no answer-format scaffolding,
+        # so batching is meaningless — pin batch size to 1.
+        self._raw_prompt = bool(raw_prompt)
+        self.batch_size = 1 if self._raw_prompt else max(1, int(batch_size or 1))
         self._max_turns = max_turns
         # When set, the full harness transcript (thinking, tool calls, json
         # events) for every answer run is appended to harness.log in the output
@@ -275,8 +285,17 @@ class PamMcpBaseline(BaselineBase):
             return []
         assert self._scratch_dir is not None
 
-        rendered = render_batch_prompt(prompts_list)
         n = len(prompts_list)
+        if self._raw_prompt:
+            # Raw mode: send the dataset's question verbatim, one at a time, with
+            # no numbered-batch answer scaffolding. The MCP system prompt still
+            # drives retrieval; the agent answers the question naturally.
+            assert n == 1, "raw_prompt mode requires batch_size=1"
+            rendered = prompts_list[0]
+            sent_prompt = prompts_list[0]
+        else:
+            rendered = render_batch_prompt(prompts_list)
+            sent_prompt = prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL)
         self._batch_index += 1
         batch_no = self._batch_index
         total_batches = self._total_batches or batch_no
@@ -323,13 +342,17 @@ class PamMcpBaseline(BaselineBase):
                 # already connected (from prepare_for_sample), so no per-batch
                 # handshake. The session relaunches internally if MCP is dead.
                 result = await self._session.send(
-                    prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL),
+                    sent_prompt,
                     log_label=(
                         f"[{self._current_sample_id}] answer batch "
                         f"{batch_no}/{total_batches} (attempt {attempt + 1})"
                     ),
                 )
-                parsed = parse_batch_response(result.text, n)
+                parsed = (
+                    [strip_reasoning_scaffold(result.text).strip()]
+                    if self._raw_prompt
+                    else parse_batch_response(result.text, n)
+                )
                 last_exc = None
             except Exception as e:
                 last_exc = e
@@ -467,6 +490,7 @@ class PamMcpBaseline(BaselineBase):
             "harness": self.harness.name,
             "harness_model": self._harness_model,
             "batch_size": self.batch_size,
+            "raw_prompt": self._raw_prompt,
             "pam_memory_run_ids": list(self._last_memory_run_ids),
             "harness_session_ids": list(self._session_ids),
             "mcp_url": self._mcp_url,

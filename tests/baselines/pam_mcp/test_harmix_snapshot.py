@@ -135,3 +135,42 @@ def test_snapshot_path_calls_process_snapshot_with_mapped_sources(
     assert [p.model_answer for p in preds] == ["ans-1", "ans-1"]
     assert [p.case_id for p in preds] == ["nazar-1", "nazar-2"]
     assert baseline.extras()["pam_memory_run_ids"] == ["snap-run-555"]
+
+
+def test_raw_prompt_sends_question_verbatim_and_keeps_full_answer(
+    monkeypatch, tmp_path, fake_harness_factory
+):
+    # A realistic long answer that the numbered-batch protocol would have
+    # squeezed into a terse "A1:" line — raw mode must keep it whole.
+    answer = (
+        "You have two people named Yaroslav: Yaroslav Morozevych (co-founder, "
+        "joined at founding) and Yaroslav Kravchenko (full-time ~Nov 11, 2025)."
+    )
+    harness = fake_harness_factory(model="gpt-4o", script=[answer])
+    baseline = _baseline(
+        monkeypatch,
+        tmp_path,
+        lambda **_: harness,
+        raw_prompt=True,
+        batch_size=10,  # must be overridden to 1 by raw mode
+    )
+    sample = _harmix_sample(2)
+
+    async def _go():
+        await baseline.setup(seed=42)
+        preds = await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+        return preds
+
+    preds = asyncio.run(_go())
+
+    # raw_prompt forces batch size 1 regardless of the requested batch_size.
+    assert baseline.batch_size == 1
+    assert baseline.extras()["raw_prompt"] is True
+
+    # Each question is sent to the harness VERBATIM: no numbered-batch
+    # scaffolding, no "A1: <short answer>" template, no extra instructions.
+    assert harness.sent_prompts == ["q-1", "q-2"]
+
+    # The full model reply is kept as the answer (not collapsed to an A1: line).
+    assert [p.model_answer for p in preds] == [answer, answer]

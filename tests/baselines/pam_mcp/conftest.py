@@ -45,6 +45,7 @@ class FakeHarness:
         self.model = model
         self.calls: list[dict] = []  # one entry per open_session (the wiring)
         self.sessions: list[FakeSession] = []
+        self.sent_prompts: list[str] = []  # verbatim prompt of every send
         self.send_count = 0
         self._script = script or []
         self._idx = 0
@@ -91,6 +92,7 @@ class FakeHarness:
 
     def _answer(self, prompt) -> HarnessResult:
         self.send_count += 1
+        self.sent_prompts.append(prompt)
         n = len(_Q_LINE.findall(prompt))
         if self._idx < len(self._script):
             text = self._script[self._idx]
