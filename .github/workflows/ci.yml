@@ -40,6 +40,9 @@ jobs:
         run: uv run ruff format --check src scripts tests
 
       - name: Pytest
-        run: uv run pytest -q
+        # Skip Harmix tests: the Harmix dataset (src/datasets/harmix/data/) is
+        # gitignored and not pushed to GitHub for privacy, so its data-loading
+        # tests would fail here. They still run locally where the data is present.
+        run: uv run pytest -q -m "not harmix"
         env:
           PYTHONPATH: src

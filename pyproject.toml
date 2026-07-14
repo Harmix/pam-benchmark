@@ -54,3 +54,9 @@ asyncio_mode = "auto"
 # importlib mode lets the mirrored tests/<subpkg>/ layout work without
 # __init__.py files — and avoids tests/baselines/ shadowing src/baselines/.
 addopts = "-ra --import-mode=importlib"
+markers = [
+    # Auto-applied (see tests/conftest.py) to Harmix tests. The Harmix dataset
+    # under src/datasets/harmix/data/ is gitignored and NOT pushed to GitHub for
+    # privacy, so CI runs `-m 'not harmix'` to skip data-dependent tests.
+    "harmix: depends on the private Harmix dataset (skipped in CI)",
+]

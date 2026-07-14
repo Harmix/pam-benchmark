@@ -13,6 +13,21 @@ from evals.base import JudgeResult
 from tasks.locomo.pipeline import LoCoMoPrediction
 
 
+def pytest_collection_modifyitems(config, items):
+    """Auto-tag Harmix tests with the ``harmix`` marker.
+
+    The Harmix dataset (``src/datasets/harmix/data/``) is gitignored and not
+    pushed to GitHub for privacy, so its data-loading tests can't run in CI.
+    Any test whose node id mentions ``harmix`` (a ``tests/.../harmix`` path or a
+    ``*harmix*`` test name) is tagged here so CI can skip them via
+    ``pytest -m "not harmix"`` — new Harmix tests are covered automatically.
+    """
+    harmix = pytest.mark.harmix
+    for item in items:
+        if "harmix" in item.nodeid.lower():
+            item.add_marker(harmix)
+
+
 def make_prediction(
     *,
     question_num: int = 1,
