@@ -9,9 +9,10 @@ instead of an uploaded conversation file.
 
 `harmix_bench_cases.json` has three top-level keys:
 
-- `environments` — one per persona (`nazar`, `oleksandr`, `nick`). Each carries
-  `id`, `memory_sources` (e.g. `["emails", "meetings"]`) and `memory_snapshot`
-  (a `gs://…zip` URI with all raw source context for that persona).
+- `environments` — one per persona (`nazar`, `nazar_mini`, `oleksandr`,
+  `nick`). Each carries `id`, `memory_sources` (e.g. `["emails", "meetings"]`)
+  and `memory_snapshot` (a `gs://…zip` URI with all raw source context for that
+  persona).
 - `cases` — `{"<env_id>_cases": [ {id, environment, question, context,
   expected_answer, grading_notes}, … ]}`.
 - `_meta` — field docs.

@@ -137,7 +137,7 @@ uv run python scripts/run_mcp_benchmark.py \
 pre-staged GCS snapshot, then questions are answered through the PAM Memory MCP
 tool and graded by `claude-sonnet-4-5`. `--dataset harmix` defaults to
 `--mcp-batch-size 1` and `--judge-model claude-sonnet-4-5`; `--sample-id`
-selects a single persona by id (`nazar` / `oleksandr` / `nick`):
+selects a single persona by id (`nazar` / `nazar_mini` / `oleksandr` / `nick`):
 
 ```bash
 uv run python scripts/run_mcp_benchmark.py \
