@@ -25,7 +25,8 @@ def test_get_dataset_harmix_returns_loader():
     assert isinstance(loader, HarmixLoader)
     assert isinstance(loader, DatasetLoader)
     assert loader.name == "harmix"
-    assert loader.num_samples() == 3
+    # nazar, nazar_mini, oleksandr, nick.
+    assert loader.num_samples() == 4
 
 
 def test_get_task_runner_harmix_returns_callable():

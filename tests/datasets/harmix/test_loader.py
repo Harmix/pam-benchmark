@@ -19,9 +19,9 @@ def test_source_mapping():
 
 def test_loader_reads_shipped_cases():
     ld = HarmixLoader()
-    assert ld.num_samples() == 3
+    assert ld.num_samples() == 4
     ids = [ld.get_sample(i).sample_id for i in range(ld.num_samples())]
-    assert ids == ["nazar", "oleksandr", "nick"]
+    assert ids == ["nazar", "oleksandr", "nick", "nazar_mini"]
 
     oleksandr = ld.get_sample(ld.index_for_sample_id("oleksandr"))
     assert isinstance(oleksandr, HarmixSample)
@@ -32,6 +32,18 @@ def test_loader_reads_shipped_cases():
     # Open/draft tasks keep a null gold answer.
     nulls = [c.id for c in oleksandr.qa if c.expected_answer is None]
     assert "oleksandr-17" in nulls and "oleksandr-19" in nulls
+
+
+def test_loader_reads_nazar_mini_environment():
+    ld = HarmixLoader()
+    mini = ld.get_sample(ld.index_for_sample_id("nazar_mini"))
+    assert mini.memory_sources == ["emails", "meetings"]
+    assert mini.pipeline_sources == ["gmail", "meeting_transcripts"]
+    assert mini.memory_snapshot.startswith("gs://")
+    # Carries the same 11 questions as nazar, re-ided under its own environment.
+    nazar = ld.get_sample(ld.index_for_sample_id("nazar"))
+    assert [c.question for c in mini.qa] == [c.question for c in nazar.qa]
+    assert all(c.id.startswith("nazar_mini-") for c in mini.qa)
 
 
 def test_index_for_unknown_id_raises():

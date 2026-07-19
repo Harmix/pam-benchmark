@@ -59,6 +59,13 @@ def main(
     mcp_max_turns: int = typer.Option(
         None, "--mcp-max-turns", help="Cap agent turns per harness invocation"
     ),
+    raw_prompt: bool = typer.Option(
+        None,
+        "--raw-prompt/--no-raw-prompt",
+        help="Ask one question at a time, sending the dataset's question verbatim "
+        "with no answer-format scaffolding (forces batch size 1). "
+        "Default: on for harmix, off otherwise.",
+    ),
     judge_model: str = typer.Option(
         None,
         "--judge-model",
@@ -105,8 +112,16 @@ def main(
     # Dataset-aware defaults (only applied when the flag was left unset):
     #   - harmix answers one persona-scoped question at a time (batch size 1)
     #     and is graded by claude-sonnet-4-5 with grading notes.
+    #   - harmix also skips the numbered-batch answer scaffolding (raw_prompt):
+    #     each question is sent verbatim so the agent answers it naturally
+    #     instead of being pushed toward a terse "A1: <short answer>" line.
+    if raw_prompt is None:
+        raw_prompt = dataset == "harmix"
     if mcp_batch_size is None:
         mcp_batch_size = 1 if dataset == "harmix" else 10
+    # Raw single-question mode is incompatible with batching — force size 1.
+    if raw_prompt:
+        mcp_batch_size = 1
     if judge_model is None:
         judge_model = "claude-sonnet-4-5" if dataset == "harmix" else "gpt-4o"
 
@@ -132,6 +147,7 @@ def main(
         mcp_batch_size=mcp_batch_size,
         mcp_keep_memory=mcp_keep_memory,
         mcp_max_turns=mcp_max_turns,
+        raw_prompt=raw_prompt,
         pam_debug_user_id=pam_debug_user_id,
         backup_memory=backup_memory,
     )
