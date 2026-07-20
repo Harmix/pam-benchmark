@@ -21,6 +21,7 @@ scripts/view_conversation.py
 agents/mem0
 agents/backboard
 agents/LongMemEval
+scripts/analyze_harmix_pipeline_cost.py
 
 datasets/longmemeval/*.json
 !datasets/longmemeval/registry.json
