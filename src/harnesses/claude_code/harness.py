@@ -45,6 +45,12 @@ class ClaudeCodeHarness:
     # with "No such tool available". A generous default lets the connection
     # complete; overridable via the MCP_TIMEOUT env var. (ms)
     MCP_STARTUP_TIMEOUT_MS = 60000
+    # Per-tool-call hard wall-clock timeout (Claude Code's MCP_TOOL_TIMEOUT).
+    # A single `retrieve_memory` over a large PAM Memory (e.g. a full mailbox)
+    # can run well past Claude Code's ~60s default and return "The operation
+    # timed out."; a 10-minute ceiling lets slow retrievals finish. Overridable
+    # via the MCP_TOOL_TIMEOUT env var. (ms)
+    MCP_TOOL_TIMEOUT_MS = 600000
     # If a required MCP tool is dead for a whole invocation (every call returned
     # "No such tool available"), retry the invocation — a fresh process reconnects.
     MCP_CONNECT_RETRIES = 2
@@ -210,6 +216,7 @@ class ClaudeCodeHarness:
         )
         env = {**os.environ, **(self._env or {})}
         env.setdefault("MCP_TIMEOUT", str(self.MCP_STARTUP_TIMEOUT_MS))
+        env.setdefault("MCP_TOOL_TIMEOUT", str(self.MCP_TOOL_TIMEOUT_MS))
 
         loop = asyncio.get_running_loop()
         t0 = loop.time()
@@ -361,6 +368,7 @@ class ClaudeCodeSession:
         )
         env = {**os.environ, **(self._h._env or {})}
         env.setdefault("MCP_TIMEOUT", str(self._h.MCP_STARTUP_TIMEOUT_MS))
+        env.setdefault("MCP_TOOL_TIMEOUT", str(self._h.MCP_TOOL_TIMEOUT_MS))
         self._proc = await asyncio.create_subprocess_exec(
             *self._argv,
             cwd=str(self._working_dir),
