@@ -1,6 +1,7 @@
 # Harmix dataset — `claude-code + pam_mcp` integration plan
 
-Integrate the **Harmix** golden-persona bench (`src/datasets/harmix/data/harmix_bench_cases.json`)
+Integrate the **Harmix** golden-persona bench (`harmix_bench_cases.json`, read from
+`gs://pam-dev-memory-data/benchmark/datasets/harmix/`)
 into the MCP-memory-on-harness experiment (`scripts/run_mcp_benchmark.py`), mirroring
 the LoCoMo `pam_mcp` flow but building each memory from a **pre-staged GCS snapshot**
 instead of an uploaded conversation file.
@@ -101,9 +102,9 @@ and, once `completed`, mints a Memory MCP key and answers exactly like LoCoMo `p
 - `src/mcp_cli.py` — add `--sample-id` (select env by id, e.g. `oleksandr`); default
   `--mcp-batch-size 1` for harmix; keep every existing flag (`--save-responses`,
   `--backup-memory`, `--pam-debug-user-id`, `--mcp-keep-memory`, `--mcp-max-turns`, …).
-- `scripts/download_data.py` — verify `harmix_bench_cases.json` presence.
-- `cluster/run_mcp_benchmark/Dockerfile` — add a build-time `test -f harmix_bench_cases.json`
-  (already allow-listed in `.dockerignore`); add `google-cloud-storage` (already installed).
+- `scripts/download_data.py` — verify `harmix_bench_cases.json` is reachable in GCS.
+- `cluster/run_mcp_benchmark/Dockerfile` — nothing baked in for Harmix; the bench-cases
+  JSON is read from GCS at run time via `google-cloud-storage` (already installed).
 - `README.md` + this doc — document the new dataset.
 - `tests/` — loader, source mapping, snapshot-trigger wiring (fake client), judge-with-notes.
 

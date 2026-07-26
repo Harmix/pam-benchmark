@@ -121,6 +121,8 @@ open reports/local_smoke/report.html
 
 `--exp-name` is the key that groups results, artifacts, and reports. For multi-seed runs, call `run_benchmark.py` N times with the same `--exp-name` and different `--seed`. Everything works without Mongo via `--no-mongo`.
 
+📖 **Every flag** of every entrypoint — which datasets/baselines it applies to, and how the dataset-conditional defaults resolve — is documented in [`docs/flags.md`](docs/flags.md).
+
 **Run Pam** (needs `PAM_API_*` secrets): swap in `--baseline pam` and tune `--pam-batch-size`.
 
 **Run a memory system on an agentic harness** (needs a `claude` CLI + Vertex secrets):
@@ -147,8 +149,9 @@ uv run python scripts/run_mcp_benchmark.py \
 ```
 
 The same debug flags as the LoCoMo `pam_mcp` flow apply
-(`--save-responses`, `--backup-memory`, `--pam-debug-user-id`, `--mcp-keep-memory`,
-`--mcp-max-turns`, `--max-questions`). See
+(`--save-responses`, `--backup-memory`, `--pam-debug-user-id`,
+`--mcp-max-turns`, `--max-questions`; `--mcp-keep-memory` is a `memory_md_mcp`-only
+knob — see [`docs/flags.md`](docs/flags.md)). See
 [`docs/harmix_dataset_plan.md`](docs/harmix_dataset_plan.md) for the cross-repo
 memory-build design.
 
@@ -196,6 +199,7 @@ Patterns and conventions: [`src/baselines/README.md`](src/baselines/README.md).
 
 | Doc | What's in it |
 |---|---|
+| [`docs/flags.md`](docs/flags.md) | Full CLI-flag reference for all entrypoints: per-dataset/per-baseline applicability and conditional defaults |
 | [`docs/blog_post_notes_locomo.md`](docs/blog_post_notes_locomo.md) | LoCoMo results write-up and blog notes (Pam vs. other memory systems) |
 | [`docs/mcp_harness_benchmark_plan.md`](docs/mcp_harness_benchmark_plan.md) | Design of the memory-on-agentic-harness experiment |
 | [`docs/harmix_dataset_plan.md`](docs/harmix_dataset_plan.md) | Harmix persona-bench integration (snapshot-based memory build, cross-repo trigger, sonnet judge) |
