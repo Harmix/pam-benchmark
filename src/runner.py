@@ -487,6 +487,7 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             "batch_size": cfg.mcp_batch_size,
             "keep_memory": cfg.mcp_keep_memory,
             "max_turns": cfg.mcp_max_turns,
+            "max_batch_retries": cfg.mcp_max_retries,
             "raw_prompt": cfg.raw_prompt,
             # When --save-responses is set, MCP baselines also dump the full
             # harness transcript (thinking, tool calls, json events) to

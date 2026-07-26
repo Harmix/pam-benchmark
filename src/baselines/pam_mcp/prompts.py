@@ -23,6 +23,44 @@ SYSTEM_PROMPT = (
 )
 
 
+def raw_answer_prompt(question: str, tool_name: str = "mcp__pam_memory__retrieve_memory") -> str:
+    """Single-question (raw-mode) prompt that MANDATES a retrieval before answering.
+
+    Raw mode sends the dataset's question naturally (no numbered-batch answer
+    scaffolding), but the soft MCP system prompt alone left retrieval to the
+    model's discretion — it frequently answered in one turn without calling the
+    tool (``num_turns=1``), which fires the "answered without calling …" warning,
+    wastes retries, and scores an answer produced from nothing. This wrapper keeps
+    the question natural while making the tool call non-negotiable, so the agent
+    answers from PAM Memory every time.
+    """
+    return (
+        f"Before you answer, you MUST call the `{tool_name}` tool — by that exact "
+        "name, one or more times, with a natural-language query — to retrieve the "
+        "relevant facts from PAM Memory. The answer depends on company-specific "
+        "context (people, projects, decisions, customers, history, internal terms) "
+        "that you have not seen, so you cannot answer correctly from prior "
+        "knowledge.\n\n"
+        "Rules:\n"
+        f"- Call `{tool_name}` first, before writing any answer. Never invent, "
+        "abbreviate, or rename it, and do not use Bash or any other tool.\n"
+        "- Base your answer ONLY on what the retrieved memory supports; do not "
+        "guess beyond it, but still give your single best answer.\n\n"
+        f"Question: {question}"
+    )
+
+
+# Prepended to the prompt on a retry after the agent answered WITHOUT retrieving.
+# The plain re-send used to just re-roll the same prompt; this makes the retry
+# actually escalate so the tool call happens.
+def retrieval_retry_prefix(tool_name: str = "mcp__pam_memory__retrieve_memory") -> str:
+    return (
+        "Your previous attempt answered WITHOUT calling the required memory tool — "
+        f"that is not acceptable. This time you MUST call `{tool_name}` first and "
+        "answer only from what it returns.\n\n"
+    )
+
+
 def answer_prompt(batch_prompt: str, tool_name: str = "mcp__pam_memory__retrieve_memory") -> str:
     """Answer a numbered Q1..QN batch using ONLY the PAM Memory MCP tool.
 

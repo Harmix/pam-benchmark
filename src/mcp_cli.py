@@ -59,6 +59,12 @@ def main(
     mcp_max_turns: int = typer.Option(
         None, "--mcp-max-turns", help="Cap agent turns per harness invocation"
     ),
+    mcp_max_retries: int = typer.Option(
+        None,
+        "--mcp-max-retries",
+        help="Retries when a batch comes back empty or answered without retrieving "
+        "(pam_mcp). Default: 2.",
+    ),
     raw_prompt: bool = typer.Option(
         None,
         "--raw-prompt/--no-raw-prompt",
@@ -147,6 +153,7 @@ def main(
         mcp_batch_size=mcp_batch_size,
         mcp_keep_memory=mcp_keep_memory,
         mcp_max_turns=mcp_max_turns,
+        mcp_max_retries=mcp_max_retries,
         raw_prompt=raw_prompt,
         pam_debug_user_id=pam_debug_user_id,
         backup_memory=backup_memory,

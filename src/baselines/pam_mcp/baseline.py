@@ -83,6 +83,7 @@ class PamMcpBaseline(BaselineBase):
         batch_size: int = 10,
         raw_prompt: bool = False,
         max_turns: int | None = None,
+        max_batch_retries: int | None = None,
         debug_user_id: int | None = None,
         backup_memory: bool = False,
         mcp_url: str | None = None,
@@ -101,6 +102,12 @@ class PamMcpBaseline(BaselineBase):
         self._raw_prompt = bool(raw_prompt)
         self.batch_size = 1 if self._raw_prompt else max(1, int(batch_size or 1))
         self._max_turns = max_turns
+        # Retries when a batch comes back empty (0/N) or answered without a
+        # retrieval. Defaults to the class tunable; overridable per run so a
+        # noisier environment can be given more headroom.
+        self._max_batch_retries = (
+            int(max_batch_retries) if max_batch_retries is not None else self.MAX_BATCH_RETRIES
+        )
         # When set, the full harness transcript (thinking, tool calls, json
         # events) for every answer run is appended to harness.log in the output
         # dir, alongside responses.log.
@@ -287,15 +294,17 @@ class PamMcpBaseline(BaselineBase):
 
         n = len(prompts_list)
         if self._raw_prompt:
-            # Raw mode: send the dataset's question verbatim, one at a time, with
-            # no numbered-batch answer scaffolding. The MCP system prompt still
-            # drives retrieval; the agent answers the question naturally.
+            # Raw mode: one question at a time, no numbered-batch answer
+            # scaffolding. `rendered` stays the bare question (for token counting
+            # and the responses.log record), but the prompt actually sent wraps it
+            # with a mandatory-retrieval directive — the soft MCP system prompt
+            # alone let the agent answer without ever calling the tool.
             assert n == 1, "raw_prompt mode requires batch_size=1"
             rendered = prompts_list[0]
-            sent_prompt = prompts_list[0]
+            base_prompt = prompts.raw_answer_prompt(prompts_list[0], tool_name=self.MCP_TOOL)
         else:
             rendered = render_batch_prompt(prompts_list)
-            sent_prompt = prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL)
+            base_prompt = prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL)
         self._batch_index += 1
         batch_no = self._batch_index
         total_batches = self._total_batches or batch_no
@@ -321,7 +330,11 @@ class PamMcpBaseline(BaselineBase):
         parsed: list[str] = [""] * n
         answered = 0
         last_exc: Exception | None = None
-        attempts_total = self.MAX_BATCH_RETRIES + 1
+        attempts_total = self._max_batch_retries + 1
+        # First attempt sends the base prompt; retries escalate with a firmer
+        # "you did NOT retrieve — call the tool now" preamble so the re-send
+        # actually forces the tool call instead of re-rolling the same prompt.
+        sent_prompt = base_prompt
         for attempt in range(attempts_total):
             if attempt > 0:
                 delay = self.BATCH_RETRY_BASE_SLEEP_SEC * (2 ** (attempt - 1))
@@ -331,9 +344,10 @@ class PamMcpBaseline(BaselineBase):
                     batch_no,
                     total_batches,
                     attempt,
-                    self.MAX_BATCH_RETRIES,
+                    self._max_batch_retries,
                     delay,
                 )
+                sent_prompt = prompts.retrieval_retry_prefix(self.MCP_TOOL) + base_prompt
                 if delay > 0:
                     await asyncio.sleep(delay)
             try:

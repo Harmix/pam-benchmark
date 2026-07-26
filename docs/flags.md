@@ -84,7 +84,8 @@ parsed, stored in `RunConfig`, written to `config.yaml`, and otherwise inert.
 | `--mcp-batch-size` | int, default `None` | all | Questions per answer batch. **Conditional default:** `1` for `--dataset harmix`, `10` otherwise. **Forced to `1`** whenever `--raw-prompt` is on, regardless of what was passed. |
 | `--mcp-keep-memory` | flag, default off | **`memory_md_mcp` only** | Keep the per-sample on-disk memory (`<output-dir>/<sample_id>/memory/`) after the run, and reuse it if already present instead of rebuilding. Default wipes it. `pam_mcp` ignores this (its memory lives server-side in Pam — use `--backup-memory` there instead). |
 | `--mcp-max-turns` | int, default `None` | all | Cap agent turns per harness invocation (`claude --max-turns`). **Default (unset):** no cap. |
-| `--raw-prompt` / `--no-raw-prompt` | tri-state bool, default `None` | **`pam_mcp` only** (see below) | Ask one question at a time and send the dataset's question verbatim, with no numbered-batch answer scaffolding, so the agent answers naturally instead of being pushed toward a terse `A1: <short answer>` line. **Conditional default:** on for `--dataset harmix`, off otherwise. |
+| `--mcp-max-retries` | int, default `None` | **`pam_mcp`** (see below) | Retries when a batch comes back empty (0/N) or answered without calling `retrieve_memory` (`num_turns < 2`); retries escalate the prompt to force the tool call. **Default (unset):** `2`. Raise it for noisier environments. `memory_md_mcp` swallows the kwarg. |
+| `--raw-prompt` / `--no-raw-prompt` | tri-state bool, default `None` | **`pam_mcp` only** (see below) | Ask one question at a time with no numbered-batch answer scaffolding (so the agent answers naturally instead of a terse `A1: <short answer>` line). The dataset's question is carried through inside a **mandatory-retrieval directive** that requires calling `retrieve_memory` before answering — the soft system prompt alone let the agent skip the tool. **Conditional default:** on for `--dataset harmix`, off otherwise. |
 | `--judge-model` | str, default `None` | all | **Conditional default:** `claude-sonnet-4-5` for `--dataset harmix`, `gpt-4o` otherwise. Harmix judging additionally honors each case's `grading_notes` (`judge_many_with_notes`). |
 | `--judge-concurrency` | int, default `8` | all | Max concurrent judge calls. |
 | `--output-dir` | path, default `None` | all | **Conditional default:** `outputs/<exp-name>/<harness>/<seed>/` — the extra `<harness>` segment (inserted whenever `harness` is set) keeps multiple harnesses under one experiment from colliding. Doubles as the harness's per-sample working area. |
@@ -101,7 +102,8 @@ forwarded when `--baseline pam_mcp`; with `memory_md_mcp` they are parsed and
 ignored.
 
 **`--raw-prompt` caveat.** `PamMcpBaseline` honors it (skips
-`render_batch_prompt`/`parse_batch_response` and sends the question verbatim).
+`render_batch_prompt`/`parse_batch_response` and wraps the single question in a
+mandatory-retrieval directive via `prompts.raw_answer_prompt`).
 `McpHarnessBaseline` (`memory_md_mcp`) does **not** — it swallows the kwarg, so
 passing `--raw-prompt` there only has the side effect of pinning the batch size
 to 1 while the numbered Q/A protocol still applies.
