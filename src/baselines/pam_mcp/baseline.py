@@ -74,6 +74,9 @@ class PamMcpBaseline(BaselineBase):
     INTER_BATCH_SLEEP_SEC: float = 5.0
     MAX_BATCH_RETRIES: int = 2
     BATCH_RETRY_BASE_SLEEP_SEC: float = 5.0
+    # Stagger between warming each avg@k pool session, so their MCP handshakes
+    # don't cold-start all at once (which makes the tool fail to register).
+    POOL_WARMUP_STAGGER_SEC: float = 3.0
 
     def __init__(
         self,
@@ -283,6 +286,22 @@ class PamMcpBaseline(BaselineBase):
                     log_path=self._harness_log,
                 )
             )
+        # Warm the pool ONE AT A TIME so the K MCP handshakes don't stampede on
+        # the first question (concurrent cold-starts make the tool fail to
+        # register). A single session cold-starts lazily as before.
+        if self._pool_size > 1:
+            for idx, session in enumerate(self._sessions):
+                warmup = getattr(session, "warmup", None)
+                if warmup is not None:
+                    await warmup()
+                    logger.info(
+                        "pam_mcp warmed pool session %d/%d for sample=%s",
+                        idx + 1,
+                        self._pool_size,
+                        self._current_sample_id,
+                    )
+                if idx < len(self._sessions) - 1 and self.POOL_WARMUP_STAGGER_SEC > 0:
+                    await asyncio.sleep(self.POOL_WARMUP_STAGGER_SEC)
 
     async def _close_sessions(self) -> None:
         sessions, self._sessions = self._sessions, []

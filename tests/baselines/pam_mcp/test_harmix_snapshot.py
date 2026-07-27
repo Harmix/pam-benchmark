@@ -250,6 +250,7 @@ def test_avg_at_k_generates_k_parallel_samples_per_question(
 
     assert baseline.samples_per_question == 3
     assert len(harness.calls) == 3  # pool of 3 sessions opened once
+    assert harness.warmups == 3  # each pool session warmed sequentially before answering
     assert harness.send_count == 6  # 2 questions x 3 samples
     for p in preds:
         assert p.n_samples == 3
