@@ -318,11 +318,17 @@ class PamMcpBaseline(BaselineBase):
                 await session.aclose()
 
     def _mcp_servers(self) -> dict[str, Any]:
+        headers = {"Authorization": self._mcp_key or ""}
+        # Pin the retrieval experiment for this MCP session. The MCP tool has no
+        # `experiment` argument, so PAM reads it from this header at `initialize`
+        # and applies it to every retrieve. Omitted when unset ⇒ baseline.
+        if self._pam_exp_config:
+            headers["X-Pam-Experiment"] = self._pam_exp_config
         return {
             self.MCP_SERVER_NAME: {
                 "type": "http",
                 "url": self._mcp_url,
-                "headers": {"Authorization": self._mcp_key or ""},
+                "headers": headers,
             }
         }
 

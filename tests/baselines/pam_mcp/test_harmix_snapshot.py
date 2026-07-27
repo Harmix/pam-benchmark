@@ -176,6 +176,22 @@ def test_pam_exp_config_defaults_to_baseline_in_extras(monkeypatch, tmp_path, fa
     assert baseline.extras()["pam_exp_config"] == "baseline"
 
 
+def test_pam_exp_config_sets_mcp_experiment_header(monkeypatch, tmp_path, fake_harness_factory):
+    # Retrieval arm rides as the X-Pam-Experiment header on the MCP connection,
+    # which PAM reads at `initialize` to pin the experiment for the session.
+    baseline = _baseline(
+        monkeypatch, tmp_path, fake_harness_factory, pam_exp_config="introspective_v2"
+    )
+    headers = baseline._mcp_servers()[baseline.MCP_SERVER_NAME]["headers"]
+    assert headers["X-Pam-Experiment"] == "introspective_v2"
+
+
+def test_no_pam_exp_config_omits_mcp_experiment_header(monkeypatch, tmp_path, fake_harness_factory):
+    baseline = _baseline(monkeypatch, tmp_path, fake_harness_factory)
+    headers = baseline._mcp_servers()[baseline.MCP_SERVER_NAME]["headers"]
+    assert "X-Pam-Experiment" not in headers
+
+
 def test_raw_prompt_mandates_retrieval_and_keeps_full_answer(
     monkeypatch, tmp_path, fake_harness_factory
 ):
