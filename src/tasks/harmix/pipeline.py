@@ -41,6 +41,10 @@ class HarmixPrediction:
     raw: dict[str, Any] = field(default_factory=dict)
     raw_prompt: str = ""
     raw_response_text: str = ""
+    # avg@k: the K raw answers for this question (carried to the runner, which
+    # judges each and picks the representative). Empty ⇒ single-response (K=1).
+    sample_answers: list[str] = field(default_factory=list)
+    n_samples: int = 1
 
 
 def _chunked(items: list[Any], size: int) -> Iterator[list[Any]]:
@@ -82,6 +86,49 @@ def _build_prediction(
     )
 
 
+def _build_multi_prediction(
+    *,
+    question_num: int,
+    case: HarmixCase,
+    prompt: str,
+    responses: list[BaselineResponse],
+) -> HarmixPrediction:
+    """One prediction carrying the K avg@k samples for a question.
+
+    Token/cost fields sum across the K draws (total compute spent); latency is the
+    mean per-draw latency (the K run in parallel). `model_answer` is a placeholder
+    (first draw) — the runner overwrites it with the representative once judged.
+    """
+    answers = [(r.text or "").strip() for r in responses]
+
+    def _sum(attr: str) -> int:
+        return sum(int(getattr(r.usage, attr, 0) or 0) for r in responses)
+
+    n = len(responses) or 1
+    return HarmixPrediction(
+        question_num=question_num,
+        case_id=case.id,
+        question=case.question,
+        expected_answer=case.expected_answer,
+        grading_notes=case.grading_notes,
+        model_answer=answers[0] if answers else "",
+        sample_answers=answers,
+        n_samples=len(responses),
+        input_tokens=_sum("input_tokens"),
+        output_tokens=_sum("output_tokens"),
+        est_cost_usd=sum(float(r.usage.est_cost_usd or 0.0) for r in responses),
+        latency_ms=sum(r.latency_ms for r in responses) / n,
+        prompt_tokens=_sum("prompt_tokens"),
+        context_tokens=_sum("context_tokens"),
+        agent_input_tokens=_sum("agent_input_tokens"),
+        agent_output_tokens=_sum("agent_output_tokens"),
+        agent_cache_read_tokens=_sum("agent_cache_read_tokens"),
+        agent_cache_write_tokens=_sum("agent_cache_write_tokens"),
+        raw_prompt=prompt,
+        raw_response_text=answers[0] if answers else "",
+    )
+
+
 async def run_sample(
     sample: HarmixSample,
     *,
@@ -100,10 +147,30 @@ async def run_sample(
     """
     cases = sample.qa if max_questions is None else sample.qa[:max_questions]
     batch_size = max(1, getattr(baseline, "batch_size", 1) or 1)
+    k = int(getattr(baseline, "samples_per_question", 1) or 1)
+    sampler = getattr(baseline, "answer_samples", None)
 
     await baseline.prepare_for_sample(sample)
     out: list[HarmixPrediction] = []
     try:
+        # avg@k path: K parallel responses per question, one question at a time
+        # (barrier inside answer_samples). Judging/averaging happens in the runner.
+        if k > 1 and sampler is not None:
+            for question_num, case in enumerate(cases, start=1):
+                responses = await sampler(case.question)
+                pred = _build_multi_prediction(
+                    question_num=question_num,
+                    case=case,
+                    prompt=case.question,
+                    responses=responses,
+                )
+                out.append(pred)
+                if on_question_done is not None:
+                    on_question_done(pred)
+                if on_batch_done is not None:
+                    on_batch_done([pred])
+            return out
+
         question_num = 0
         for chunk in _chunked(list(cases), batch_size):
             prompts = [c.question for c in chunk]

@@ -82,6 +82,9 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       <span><b>Dataset:</b> {{ dataset_name }}</span>
       <span><b>Baselines:</b> {{ baselines|join(', ') }}</span>
       <span><b>Batch size:</b> {{ batch_sizes|join(', ') }}</span>
+      {% if samples_per_question > 1 %}
+      <span><b>Samples/question:</b> {{ samples_per_question }} (avg@{{ samples_per_question }}, showing closest-to-mean answer)</span>
+      {% endif %}
       <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
       <span><b>Personas:</b> {{ sample_count }}</span>
     </div>
@@ -94,7 +97,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <div class="cards">
       <div class="card">
         <div class="card-value {{ headline.judge_class }}">{{ headline.judge_accuracy_pct }}%</div>
-        <div class="card-label">LLM-judge accuracy</div>
+        <div class="card-label">LLM-judge accuracy{% if samples_per_question > 1 %} (avg@{{ samples_per_question }}){% endif %}</div>
       </div>
       <div class="card">
         <div class="card-value">{{ headline.judge_correct }}/{{ headline.judged }}</div>
@@ -136,7 +139,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
           <td>{{ row.sample_id }}</td>
           <td>{{ row.total_questions }}</td>
           <td>{{ row.judged }}{% if row.unjudged %} <span class="muted">(+{{ row.unjudged }} open)</span>{% endif %}</td>
-          <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span></td>
+          <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span>{% if row.samples_per_question > 1 %} <span class="muted">± {{ '%.1f'|format(row.judge_accuracy_std*100) }} · avg@{{ row.samples_per_question }}</span>{% endif %}</td>
           <td>{{ '%.0f'|format(row.avg_context_tokens) }}</td>
           <td>{{ '%.0f'|format(row.p50_latency_ms) }} / {{ '%.0f'|format(row.p95_latency_ms) }} ms</td>
           <td>{{ '%.1f'|format(row.memory_creation_duration_sec) }} s</td>
@@ -210,12 +213,15 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
               {% else %}
                 <span class="badge">Unjudged (open task)</span>
               {% endif %}
+              {% if r.n_samples and r.n_samples > 1 %}
+                <span class="badge">avg@{{ r.n_samples }} · {{ '%.2f'|format(r.frac_correct or 0.0) }} correct · mean {{ '%.2f'|format(r.mean_score or 0.0) }} ± {{ '%.2f'|format(r.score_std or 0.0) }}</span>
+              {% endif %}
           </h4>
           <div class="error-row"><b>Question:</b> {{ r.question }}</div>
           {% if r.expected_answer is not none %}
             <div class="error-row"><b>Expected:</b> <span class="ans">{{ r.expected_answer }}</span></div>
           {% endif %}
-          <div class="error-row"><b>Model:</b> <span class="ans">{{ r.model_answer }}</span></div>
+          <div class="error-row"><b>Model{% if r.n_samples and r.n_samples > 1 %} (closest-to-mean of {{ r.n_samples }} samples){% endif %}:</b> <span class="ans">{{ r.model_answer }}</span></div>
           {% if r.grading_notes %}
             <div class="error-row"><b>Grading notes:</b> <span class="notes">{{ r.grading_notes }}</span></div>
           {% endif %}

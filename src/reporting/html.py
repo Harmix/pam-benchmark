@@ -315,6 +315,8 @@ def _per_sample_harmix(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "judged": d.get("judged_count", 0),
                 "unjudged": d.get("unjudged_count", 0),
                 "judge_accuracy": judge_acc,
+                "judge_accuracy_std": d.get("judge_accuracy_std", 0.0) or 0.0,
+                "samples_per_question": d.get("samples_per_question", 1) or 1,
                 "judge_class": _accuracy_class(judge_acc * 100),
                 "p50_latency_ms": (d.get("p50_latency_ms", 0.0) or 0.0) * batch_factor,
                 "p95_latency_ms": (d.get("p95_latency_ms", 0.0) or 0.0) * batch_factor,
@@ -373,6 +375,8 @@ def build_context_harmix(
     samples = sorted({d.get("sample_id", "?") for d in docs})
     dataset_names = sorted({d.get("dataset_name", dataset) for d in docs})
     batch_sizes = sorted({d.get("batch_size") or d.get("pam_batch_size") or 1 for d in docs})
+    # avg@k: max K across docs (>1 ⇒ the report shows avg@k + the closest-to-mean answer).
+    samples_per_question = max((d.get("samples_per_question", 1) or 1) for d in docs) if docs else 1
     responses = _responses_harmix(docs)
     return {
         "is_harmix": True,
@@ -384,6 +388,7 @@ def build_context_harmix(
         "batch_sizes": batch_sizes,
         "judge_models": judges,
         "sample_count": len(samples),
+        "samples_per_question": samples_per_question,
         "headline": _aggregate_headline_harmix(docs),
         "per_sample": _per_sample_harmix(docs),
         "per_sample_tokens": _per_sample_tokens(docs),

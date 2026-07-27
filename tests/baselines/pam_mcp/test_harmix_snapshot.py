@@ -228,3 +228,29 @@ def test_max_batch_retries_is_configurable(monkeypatch, tmp_path, fake_harness_f
 
     asyncio.run(_go())
     assert len(harness.sent_prompts) == 2  # 1 + max_batch_retries
+
+
+def test_avg_at_k_generates_k_parallel_samples_per_question(
+    monkeypatch, tmp_path, fake_harness_factory
+):
+    # K=3 → a pool of 3 sessions, and each question fans out to all 3.
+    harness = fake_harness_factory(model="gpt-4o", script=["ans-a", "ans-b", "ans-c"])
+    baseline = _baseline(
+        monkeypatch, tmp_path, lambda **_: harness, raw_prompt=True, samples_per_question=3
+    )
+    sample = _harmix_sample(2)  # 2 questions
+
+    async def _go():
+        await baseline.setup(seed=42)
+        preds = await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+        return preds
+
+    preds = asyncio.run(_go())
+
+    assert baseline.samples_per_question == 3
+    assert len(harness.calls) == 3  # pool of 3 sessions opened once
+    assert harness.send_count == 6  # 2 questions x 3 samples
+    for p in preds:
+        assert p.n_samples == 3
+        assert len(p.sample_answers) == 3
