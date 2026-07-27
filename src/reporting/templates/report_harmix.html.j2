@@ -58,6 +58,11 @@ tr:hover td { background: #f8fafc; }
 .error-row .notes { background:#fffbeb; border-left:3px solid var(--warning); padding:.35rem .6rem;
                     display:block; border-radius:4px; }
 details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: var(--muted); }
+.field-legend { margin: .25rem 0 1rem; }
+.field-legend dl { margin: .5rem 0 0; display: grid; grid-template-columns: max-content 1fr;
+                   gap: .3rem .9rem; font-size: .85rem; }
+.field-legend dt { font-weight: 600; color: var(--text); white-space: nowrap; }
+.field-legend dd { margin: 0; color: var(--muted); }
 .muted { color: var(--muted); font-size: .85rem; }
 .filters { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .filter-btn { padding: .35rem .8rem; border: 1px solid var(--border); background: var(--card);
@@ -83,7 +88,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       <span><b>Baselines:</b> {{ baselines|join(', ') }}</span>
       <span><b>Batch size:</b> {{ batch_sizes|join(', ') }}</span>
       {% if samples_per_question > 1 %}
-      <span><b>Samples/question:</b> {{ samples_per_question }} (avg@{{ samples_per_question }}, showing closest-to-mean answer)</span>
+      <span><b>Samples/question:</b> {{ samples_per_question }}</span>
       {% endif %}
       <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
       <span><b>Personas:</b> {{ sample_count }}</span>
@@ -100,7 +105,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
         <div class="card-label">LLM-judge accuracy{% if samples_per_question > 1 %} (avg@{{ samples_per_question }}){% endif %}</div>
       </div>
       <div class="card">
-        <div class="card-value">{{ headline.judge_correct }}/{{ headline.judged }}</div>
+        <div class="card-value">{{ '%.2f'|format(headline.judge_correct) }}/{{ headline.judged }}</div>
         <div class="card-label">Judge correct / judged</div>
       </div>
       <div class="card">
@@ -117,7 +122,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       </div>
       {% if show_cost %}
       <div class="card">
-        <div class="card-value">${{ '%.4f'|format(headline.total_cost_usd) }}</div>
+        <div class="card-value">${{ '%.2f'|format(headline.total_cost_usd) }}</div>
         <div class="card-label">Total cost</div>
       </div>
       {% endif %}
@@ -185,6 +190,30 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <h2>Responses ({{ responses|length }})</h2>
     <p class="muted">Every question with its answer and judge verdict. Filter by verdict and/or
       persona; unjudged = open/draft cases with no gold answer.</p>
+    <details class="field-legend" open>
+      <summary>What each field means</summary>
+      <dl>
+        <dt>Correct / Incorrect · Judge X.XX</dt>
+        <dd>Verdict of the displayed answer and its LLM-judge score (0–1; partial credit allowed). "Unjudged" = an open/draft case with no gold answer, so it is never scored.</dd>
+        {% if samples_per_question > 1 %}
+        <dt>avg@N · F correct · mean M ± S</dt>
+        <dd>avg@k stats over the N independent samples drawn for this question:
+          <b>F</b> = fraction of the N samples judged correct (this question's contribution to the avg@k accuracy);
+          <b>mean M</b> = mean judge score across the N samples;
+          <b>± S</b> = standard deviation of those N scores (the sample-to-sample variance).</dd>
+        {% endif %}
+        <dt>Question</dt>
+        <dd>The query posed to the agent.</dd>
+        <dt>Expected</dt>
+        <dd>Gold / reference answer used for grading. Absent for open/draft tasks (unjudged).</dd>
+        <dt>Model{% if samples_per_question > 1 %} (closest-to-mean of N samples){% endif %}</dt>
+        <dd>The answer shown{% if samples_per_question > 1 %}: the single sample whose judge score is nearest the mean — a representative draw, not the best or worst one{% endif %}.</dd>
+        <dt>Grading notes</dt>
+        <dd>Authoritative extra grading criteria the judge applied for this case (only when the case defines them).</dd>
+        <dt>Judge reasoning</dt>
+        <dd>The judge's short justification for the displayed answer's verdict.</dd>
+      </dl>
+    </details>
     {% if responses %}
       <div class="filters" id="verdict-filters">
         <span class="muted" style="align-self:center;">Verdict:</span>
