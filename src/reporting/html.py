@@ -311,6 +311,7 @@ def _per_sample_harmix(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             {
                 "baseline": d.get("baseline", "?"),
                 "sample_id": d.get("sample_id", "?"),
+                "pam_exp_config": d.get("pam_exp_config") or "baseline",
                 "total_questions": total_q,
                 "judged": d.get("judged_count", 0),
                 "unjudged": d.get("unjudged_count", 0),
@@ -377,6 +378,8 @@ def build_context_harmix(
     batch_sizes = sorted({d.get("batch_size") or d.get("pam_batch_size") or 1 for d in docs})
     # avg@k: max K across docs (>1 ⇒ the report shows avg@k + the closest-to-mean answer).
     samples_per_question = max((d.get("samples_per_question", 1) or 1) for d in docs) if docs else 1
+    # Experiment-registry preset(s) the memory was built under (--pam-exp-config).
+    pam_exp_configs = sorted({d.get("pam_exp_config") or "baseline" for d in docs})
     responses = _responses_harmix(docs)
     return {
         "is_harmix": True,
@@ -389,8 +392,14 @@ def build_context_harmix(
         "judge_models": judges,
         "sample_count": len(samples),
         "samples_per_question": samples_per_question,
+        "pam_exp_configs": pam_exp_configs,
+        # >1 preset ⇒ several arms under one exp_name; the report adds a column.
+        "multi_arm": len(pam_exp_configs) > 1,
         "headline": _aggregate_headline_harmix(docs),
-        "per_sample": _per_sample_harmix(docs),
+        # Group arms of the same persona together for side-by-side comparison.
+        "per_sample": sorted(
+            _per_sample_harmix(docs), key=lambda r: (r["sample_id"], r["pam_exp_config"])
+        ),
         "per_sample_tokens": _per_sample_tokens(docs),
         "show_cost": any((d.get("total_cost_usd") or 0) > 0 for d in docs),
         # All responses (correct + incorrect + unjudged), filterable by verdict

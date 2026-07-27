@@ -73,6 +73,17 @@ def main(
             "--pam-debug-user-id."
         ),
     ),
+    pam_exp_config: str = typer.Option(
+        None,
+        "--pam-exp-config",
+        help=(
+            "Pam: experiment-registry preset for the memory build (e.g. "
+            "'introspective_v2'). Forwarded to the memory pipeline as "
+            "--experiment; unset ⇒ the pipeline's 'baseline'. Do NOT combine with "
+            "--pam-debug-user-id / --backup-memory — those reuse an account and "
+            "skip the build, so the preset never takes effect."
+        ),
+    ),
 ) -> None:
     """Run one (dataset, baseline, seed) end-to-end."""
     load_secrets()
@@ -103,6 +114,7 @@ def main(
         pam_batch_size=pam_batch_size,
         pam_debug_user_id=pam_debug_user_id,
         backup_memory=backup_memory,
+        pam_exp_config=pam_exp_config,
     )
     run(cfg)
 

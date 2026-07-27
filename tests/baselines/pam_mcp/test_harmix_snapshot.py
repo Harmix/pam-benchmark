@@ -41,19 +41,24 @@ class StubPamClient:
         self.access_token = f"user-{self.user_id}-token"
         return {"user": {"id": self.user_id}, "tokens": {"access_token": self.access_token}}
 
-    def process_snapshot(self, snapshot_uri: str, sources: list[str]) -> str:
+    def process_snapshot(
+        self, snapshot_uri: str, sources: list[str], pam_exp_config: str | None = None
+    ) -> str:
         run_id = f"snap-run-{self.user_id}"
         self._log(
             "process_snapshot",
             snapshot_uri=snapshot_uri,
             sources=list(sources),
+            pam_exp_config=pam_exp_config,
             for_user_id=self.user_id,
             run_id=run_id,
         )
         return run_id
 
-    def process_generic_files(self, files: list[tuple[str, bytes]]) -> list[str]:
-        self._log("process_generic_files", n_files=len(files))
+    def process_generic_files(
+        self, files: list[tuple[str, bytes]], pam_exp_config: str | None = None
+    ) -> list[str]:
+        self._log("process_generic_files", n_files=len(files), pam_exp_config=pam_exp_config)
         return [f"run-{self.user_id}-0"]
 
     def wait_for_memory(self, run_ids: list[str], user_id: int | None = None) -> None:
@@ -135,6 +140,40 @@ def test_snapshot_path_calls_process_snapshot_with_mapped_sources(
     assert [p.model_answer for p in preds] == ["ans-1", "ans-1"]
     assert [p.case_id for p in preds] == ["nazar-1", "nazar-2"]
     assert baseline.extras()["pam_memory_run_ids"] == ["snap-run-555"]
+
+
+def test_pam_exp_config_forwarded_to_process_snapshot_and_extras(
+    monkeypatch, tmp_path, fake_harness_factory
+):
+    baseline = _baseline(
+        monkeypatch, tmp_path, fake_harness_factory, batch_size=1, pam_exp_config="introspective_v2"
+    )
+    sample = _harmix_sample(1)
+
+    async def _go():
+        await baseline.setup(seed=42)
+        await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+
+    asyncio.run(_go())
+    snap = next(c for c in baseline.client.calls if c[0] == "process_snapshot")[1]
+    assert snap["pam_exp_config"] == "introspective_v2"
+    assert baseline.extras()["pam_exp_config"] == "introspective_v2"
+
+
+def test_pam_exp_config_defaults_to_baseline_in_extras(monkeypatch, tmp_path, fake_harness_factory):
+    baseline = _baseline(monkeypatch, tmp_path, fake_harness_factory, batch_size=1)
+    sample = _harmix_sample(1)
+
+    async def _go():
+        await baseline.setup(seed=42)
+        await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+
+    asyncio.run(_go())
+    snap = next(c for c in baseline.client.calls if c[0] == "process_snapshot")[1]
+    assert snap["pam_exp_config"] is None  # nothing sent → pipeline defaults to baseline
+    assert baseline.extras()["pam_exp_config"] == "baseline"
 
 
 def test_raw_prompt_mandates_retrieval_and_keeps_full_answer(

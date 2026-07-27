@@ -59,9 +59,10 @@ Not every combination is runnable — flags follow from this table.
 | `--pam-batch-size` | int, default `10` | **`pam` only** | Questions per SSE chat call (one memory retrieval shared by the batch). Silently ignored by every other baseline — LiteLLM baselines are hardcoded to `batch_size = 1`. |
 | `--pam-debug-user-id` | int, default `None` | **`pam` only** | Reuse an existing Pam user id (and its already-built memory) instead of creating an account, uploading the conversation, and polling the memory pipeline. Needs `PAM_API_KEY`. Also suppresses account deletion in `cleanup_sample`. |
 | `--backup-memory` | flag, default off | **`pam` only** | Keep each conversation's Pam account after the run (no delete-account call) so its memory can be reused later via `--pam-debug-user-id`. |
+| `--pam-exp-config` | str, default `None` | **`pam` only** | Experiment-registry preset for the memory build (e.g. `introspective_v2`). Sent as the `experiment` field on the `process-generic-files` POST; agent-api relays it to the memory pipeline as `--experiment` ([`memory_pipeline_workflow.yaml.tftpl`](../../pam-infrastructure/modules/memory-workflows/memory_pipeline_workflow.yaml.tftpl)). **Unset ⇒** the wire field is omitted ⇒ the pipeline's `baseline` preset (unchanged behavior). Stamped onto each Mongo result doc as the **`pam_exp_config`** column (defaulting to `"baseline"`), so several arms under one `--exp-name` are groupable/comparable. **Do NOT combine with `--pam-debug-user-id` / `--backup-memory`** — those reuse an account and skip the build, so the preset never takes effect. |
 
-**Conditional forwarding.** `--pam-batch-size`, `--pam-debug-user-id`, and
-`--backup-memory` are only forwarded to the baseline when `--baseline pam`
+**Conditional forwarding.** `--pam-batch-size`, `--pam-debug-user-id`,
+`--backup-memory`, and `--pam-exp-config` are only forwarded to the baseline when `--baseline pam`
 ([`runner.py`](../src/runner.py) `_run_async`). For any other baseline they are
 parsed, stored in `RunConfig`, written to `config.yaml`, and otherwise inert.
 
@@ -97,8 +98,9 @@ parsed, stored in `RunConfig`, written to `config.yaml`, and otherwise inert.
 | `--log-format` | `rich` \| `json`, default `rich` | all | As above. |
 | `--pam-debug-user-id` | int, default `None` | **`pam_mcp` only** | Reuse an existing Pam user id and its built memory instead of creating an account and building memory. Needs `PAM_API_KEY`. |
 | `--backup-memory` | flag, default off | **`pam_mcp` only** | Keep the per-sample Pam account after the run (no delete-account) so its memory can be reused later via `--pam-debug-user-id`. |
+| `--pam-exp-config` | str, default `None` | **`pam_mcp` only** | Experiment-registry preset for the memory build (e.g. `introspective_v2`). Sent as the `experiment` field on the `process-snapshot` (harmix) / `process-generic-files` POST; agent-api relays it to the memory pipeline as `--experiment` ([`memory_pipeline_workflow.yaml.tftpl`](../../pam-infrastructure/modules/memory-workflows/memory_pipeline_workflow.yaml.tftpl)). **Unset ⇒** the wire field is omitted ⇒ the pipeline's `baseline` preset. Stamped onto each Mongo result doc as the **`pam_exp_config`** column (defaulting to `"baseline"`), so several arms under one `--exp-name` are groupable/comparable (the harmix report shows an *Exp config* column + header when >1 preset is present). **Do NOT combine with `--pam-debug-user-id` / `--backup-memory`** (they skip the build, so the preset never takes effect). |
 
-**Conditional forwarding.** `--pam-debug-user-id` and `--backup-memory` are only
+**Conditional forwarding.** `--pam-debug-user-id`, `--backup-memory`, and `--pam-exp-config` are only
 forwarded when `--baseline pam_mcp`; with `memory_md_mcp` they are parsed and
 ignored.
 

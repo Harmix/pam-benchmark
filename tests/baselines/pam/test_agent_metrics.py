@@ -44,7 +44,7 @@ class _StubPamClient:
         self.access_token = "user-555-token"
         return {"user": {"id": 555}, "tokens": {"access_token": self.access_token}}
 
-    def process_generic_files(self, files):
+    def process_generic_files(self, files, pam_exp_config=None):
         return ["run-555-0"]
 
     def wait_for_memory(self, run_ids, user_id=None):

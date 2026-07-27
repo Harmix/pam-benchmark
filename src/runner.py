@@ -581,11 +581,15 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             # account-lifecycle knobs as the `pam` baseline.
             baseline_extra["debug_user_id"] = cfg.pam_debug_user_id
             baseline_extra["backup_memory"] = cfg.backup_memory
+            # Experiment-registry preset forwarded to the memory pipeline.
+            baseline_extra["pam_exp_config"] = cfg.pam_exp_config
     elif cfg.baseline == "pam":
         baseline_extra = {
             "batch_size": cfg.pam_batch_size,
             "debug_user_id": cfg.pam_debug_user_id,
             "backup_memory": cfg.backup_memory,
+            # Experiment-registry preset forwarded to the memory pipeline.
+            "pam_exp_config": cfg.pam_exp_config,
         }
     baseline = get_baseline(
         cfg.baseline,
