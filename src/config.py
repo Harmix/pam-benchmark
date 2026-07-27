@@ -55,6 +55,10 @@ class RunConfig(BaseModel):
     mcp_batch_size: int = 10  # questions per batch (mirrors pam_batch_size)
     mcp_keep_memory: bool = False  # keep per-sample memory (debug); default wipes
     mcp_max_turns: int | None = None  # cap agent turns per harness invocation
+    mcp_max_retries: int | None = None  # retries when a batch is empty / skips retrieval
+    # avg@k reliability: K independent responses per question (judged individually,
+    # averaged). 1 = one response per question (default, no extra cost).
+    samples_per_question: int = 1
     # When True, skip the numbered Q/A batch protocol entirely: ask one question
     # at a time and send the dataset's question verbatim (no answer-format
     # scaffolding). Forces batch size 1. Default for harmix; see mcp_cli.

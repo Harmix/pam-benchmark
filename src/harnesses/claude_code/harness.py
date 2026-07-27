@@ -499,6 +499,17 @@ class ClaudeCodeSession:
             break
         return self._h._parse_output(out_text, wall_ms)
 
+    async def warmup(self) -> None:
+        """Launch the process + MCP connection now (idempotent).
+
+        Used to pre-connect a pool of sessions ONE AT A TIME before answering them
+        in parallel: concurrent cold-starts make the MCP handshakes stampede (on a
+        small container the tool fails to register — "No such tool available"), so
+        we stagger the launches here and let later `send()`s reuse warm processes.
+        """
+        if self._proc is None or self._proc.returncode is not None:
+            await self._launch()
+
     async def aclose(self) -> None:
         await self._kill()
         if self._mcp_config_path:

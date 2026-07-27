@@ -5,9 +5,12 @@ against a **fixed per-person memory state** (an *environment*), so every query h
 known reference answer (or a rubric) to grade against — including the reasoning
 behind it, not just isolated facts.
 
-Data file: [`data/harmix_bench_cases.json`](data/harmix_bench_cases.json)
-(≈40 KB, shipped with the repo). Per-persona **memory snapshots** live in GCS and are
-read by the memory pipeline at run time (see [Memory build](#memory-build)).
+Data file: `harmix_bench_cases.json` (≈40 KB). It is the **source of truth in GCS** at
+`gs://pam-dev-memory-data/benchmark/datasets/harmix/harmix_bench_cases.json` and is read
+**straight into memory** by `HarmixLoader` at load time (google-cloud-storage; no local
+copy) — override with `HARMIX_BENCH_CASES_URI` or an explicit `data_path`. Per-persona
+**memory snapshots** live in the same GCS prefix and are read by the memory pipeline at run
+time (see [Memory build](#memory-build)).
 
 ## Layout
 
@@ -92,6 +95,6 @@ uv run python scripts/run_mcp_benchmark.py \
 
 ## License
 
-The persona data is internal Harmix content and is **not** an open dataset. Only the
-machine-readable `harmix_bench_cases.json` is committed; per-persona memory snapshots are
-kept in GCS and are not redistributed here.
+The persona data is internal Harmix content and is **not** an open dataset. The
+machine-readable `harmix_bench_cases.json` and the per-persona memory snapshots are kept
+in GCS and are not redistributed here.

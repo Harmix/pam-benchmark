@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import statistics
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -304,18 +305,72 @@ async def _process_sample(
     return SampleResult(sample_id=sample.sample_id, sample_index=sample_index, document=document)
 
 
+@dataclass
+class _HarmixVerdict:
+    """Aggregated judge verdict for one question (avg@k when n_samples>1).
+
+    For K=1 this is just the single verdict (frac_correct ∈ {0,1}, std 0). For K>1
+    it holds the avg@k stats plus the representative sample we display.
+    """
+
+    correct: bool  # representative sample's correctness (drives the display bucket)
+    score: float  # representative sample's score
+    confidence: float
+    reasoning: str
+    mean_score: float  # mean of the K judge scores
+    frac_correct: float  # mean of the K correct flags == avg@k for this question
+    score_std: float  # std of the K judge scores
+    n_samples: int
+    shown_answer: str  # the sample answer closest to the mean score (what we show)
+
+
+def _aggregate_samples(answers: list[str], verdicts: list[Any]) -> _HarmixVerdict:
+    """Average K per-sample verdicts and pick the closest-to-mean representative."""
+    scores = [float(v.score) for v in verdicts]
+    corrects = [1.0 if v.correct else 0.0 for v in verdicts]
+    mean_score = statistics.fmean(scores) if scores else 0.0
+    frac = statistics.fmean(corrects) if corrects else 0.0
+    std = statistics.pstdev(scores) if len(scores) > 1 else 0.0
+    # Representative = the sample whose score is closest to the mean; ties → the
+    # one the judge was most confident about. Keeps the shown answer consistent
+    # with the reported per-question number (not the best/worst draw).
+    rep = min(
+        range(len(verdicts)),
+        key=lambda j: (abs(scores[j] - mean_score), -float(verdicts[j].confidence)),
+    )
+    rv = verdicts[rep]
+    shown = answers[rep] if rep < len(answers) else (answers[0] if answers else "")
+    return _HarmixVerdict(
+        correct=bool(rv.correct),
+        score=float(rv.score),
+        confidence=float(rv.confidence),
+        reasoning=rv.reasoning,
+        mean_score=mean_score,
+        frac_correct=frac,
+        score_std=std,
+        n_samples=len(verdicts),
+        shown_answer=shown,
+    )
+
+
 def _aggregate_harmix(
     predictions: list[HarmixPrediction],
     verdict_by_index: dict[int, Any],
 ) -> dict[str, Any]:
     """Aggregate for Harmix: LLM-judge only (no F1, no categories).
 
+    Headline metric is **avg@k** — the mean over judged questions of each
+    question's fraction-correct across its K samples (= plain accuracy when K=1).
     Cases with `expected_answer is None` (open/draft tasks) are answered and
-    recorded but excluded from judge accuracy — `judged_count` is the denominator.
+    recorded but excluded — `judged_count` is the denominator.
     """
     total = len(predictions)
     judged = len(verdict_by_index)
-    judge_correct = sum(1 for v in verdict_by_index.values() if v.correct)
+    fracs = [v.frac_correct for v in verdict_by_index.values()]
+    # Expected #correct across avg@k (float; equals an integer count when K=1).
+    judge_correct = sum(fracs)
+    judge_acc_std = statistics.pstdev(fracs) if len(fracs) > 1 else 0.0
+    n_samples = max((v.n_samples for v in verdict_by_index.values()), default=1)
 
     latencies = summarize_latencies(p.latency_ms for p in predictions)
     total_in_tok = sum(p.input_tokens for p in predictions)
@@ -334,8 +389,10 @@ def _aggregate_harmix(
         "total_questions": total,
         "judged_count": judged,
         "unjudged_count": total - judged,  # open tasks with no gold answer
-        "judge_accuracy": round(judge_acc, 4),
-        "judge_correct_count": judge_correct,
+        "judge_accuracy": round(judge_acc, 4),  # avg@k (== accuracy when K=1)
+        "judge_accuracy_std": round(judge_acc_std, 4),  # std across questions of frac-correct
+        "samples_per_question": n_samples,
+        "judge_correct_count": round(judge_correct, 4),  # expected #correct (float for K>1)
         "total_input_tokens": total_in_tok,
         "total_output_tokens": total_out_tok,
         "total_prompt_tokens": total_prompt_tok,
@@ -369,6 +426,12 @@ def _qa_responses_harmix(
                 "judge_score": round(v.score, 4) if v is not None else None,
                 "judge_confidence": round(v.confidence, 4) if v is not None else None,
                 "judge_reasoning": v.reasoning if v is not None else None,
+                # avg@k: shown model_answer above is the closest-to-mean sample; the
+                # K individual answers are NOT stored — only these summary stats.
+                "n_samples": v.n_samples if v is not None else pred.n_samples,
+                "mean_score": round(v.mean_score, 4) if v is not None else None,
+                "score_std": round(v.score_std, 4) if v is not None else None,
+                "frac_correct": round(v.frac_correct, 4) if v is not None else None,
                 "input_tokens": pred.input_tokens,
                 "output_tokens": pred.output_tokens,
                 "prompt_tokens": pred.prompt_tokens,
@@ -421,17 +484,35 @@ async def _process_sample_harmix(
     )
     answer_seconds = time.perf_counter() - start
 
-    # LLM judge (sonnet-4-5 by default) — only cases with a gold answer.
+    # LLM judge (sonnet-4-5 by default) — only cases with a gold answer. avg@k:
+    # judge EACH of a question's K samples (flattened for one concurrent pass),
+    # then average and pick the representative. K=1 reduces to one item per case.
     judgeable = [(i, p) for i, p in enumerate(predictions) if p.expected_answer is not None]
-    items = [
-        (p.question, p.expected_answer or "", p.model_answer, p.grading_notes) for _, p in judgeable
-    ]
+    flat_items: list[tuple[str, str, str, str | None]] = []
+    flat_map: list[tuple[int, int]] = []  # (prediction index, sample index)
+    for i, p in judgeable:
+        answers = p.sample_answers or [p.model_answer]
+        for s_idx, ans in enumerate(answers):
+            flat_items.append((p.question, p.expected_answer or "", ans, p.grading_notes))
+            flat_map.append((i, s_idx))
     judge_start = time.perf_counter()
-    judged = await judge_many_with_notes(
-        items, judge_model=cfg.judge_model, concurrency=cfg.judge_concurrency
+    flat_verdicts = await judge_many_with_notes(
+        flat_items, judge_model=cfg.judge_model, concurrency=cfg.judge_concurrency
     )
     judge_seconds = time.perf_counter() - judge_start
-    verdict_by_index = {judgeable[k][0]: judged[k] for k in range(len(judgeable))}
+    # Group verdicts back per question, average, and record the representative.
+    grouped: dict[int, list[tuple[int, Any]]] = {}
+    for (i, s_idx), v in zip(flat_map, flat_verdicts, strict=True):
+        grouped.setdefault(i, []).append((s_idx, v))
+    verdict_by_index: dict[int, _HarmixVerdict] = {}
+    for i, sv in grouped.items():
+        sv.sort(key=lambda x: x[0])
+        verdicts = [v for _, v in sv]
+        answers = predictions[i].sample_answers or [predictions[i].model_answer]
+        agg = _aggregate_samples(answers, verdicts)
+        verdict_by_index[i] = agg
+        # Display the representative (closest-to-mean) answer in the report.
+        predictions[i].model_answer = agg.shown_answer
 
     aggregate = _aggregate_harmix(predictions, verdict_by_index)
     qa_rows = _qa_responses_harmix(predictions, verdict_by_index)
@@ -487,6 +568,8 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
             "batch_size": cfg.mcp_batch_size,
             "keep_memory": cfg.mcp_keep_memory,
             "max_turns": cfg.mcp_max_turns,
+            "max_batch_retries": cfg.mcp_max_retries,
+            "samples_per_question": cfg.samples_per_question,
             "raw_prompt": cfg.raw_prompt,
             # When --save-responses is set, MCP baselines also dump the full
             # harness transcript (thinking, tool calls, json events) to
@@ -571,6 +654,8 @@ async def _run_async(cfg: RunConfig, console: Console) -> dict[str, Any]:
                 "total_questions": r.document.get("total_questions"),
                 "overall_accuracy": r.document.get("overall_accuracy"),
                 "judge_accuracy": r.document.get("judge_accuracy"),
+                "judge_accuracy_std": r.document.get("judge_accuracy_std"),
+                "samples_per_question": r.document.get("samples_per_question"),
                 "total_input_tokens": r.document.get("total_input_tokens"),
                 "total_output_tokens": r.document.get("total_output_tokens"),
                 "total_cost_usd": r.document.get("total_cost_usd"),

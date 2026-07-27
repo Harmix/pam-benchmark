@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from baselines.base import Baseline
 from baselines.litellm_baseline import LiteLLMBaseline
 from datasets.base import DatasetLoader
+from datasets.harmix import loader as harmix_loader
 from datasets.harmix.loader import HarmixLoader
 from datasets.locomo.loader import LoCoMoLoader
 from registry import get_baseline, get_dataset, get_task_runner, known_baselines
@@ -20,7 +23,10 @@ def test_get_dataset_locomo_returns_loader():
     assert loader.num_samples() > 0
 
 
-def test_get_dataset_harmix_returns_loader():
+def test_get_dataset_harmix_returns_loader(monkeypatch):
+    # Stub the GCS read with the shipped file's bytes so this runs offline.
+    shipped = Path(harmix_loader.__file__).parent / "data" / "harmix_bench_cases.json"
+    monkeypatch.setattr(harmix_loader, "_read_gcs_bytes", lambda uri: shipped.read_bytes())
     loader = get_dataset("harmix")
     assert isinstance(loader, HarmixLoader)
     assert isinstance(loader, DatasetLoader)

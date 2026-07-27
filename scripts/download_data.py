@@ -48,21 +48,24 @@ def main(
         raise typer.Exit(code=1)
 
     if dataset == "harmix":
-        from datasets.harmix.loader import DEFAULT_DATA_PATH as HARMIX_PATH
+        # The bench-cases JSON and the per-environment memory snapshots both live
+        # in GCS and are read at run time — nothing is bundled locally. Verify the
+        # bench-cases object is reachable so misconfigured auth fails loudly here.
+        from datasets.harmix.loader import DEFAULT_DATA_URI, HarmixLoader
 
-        if HARMIX_PATH.exists():
-            size_kb = HARMIX_PATH.stat().st_size / 1024
+        try:
+            ld = HarmixLoader()
+        except Exception as exc:  # surface any GCS/auth failure as a clear error
             console.print(
-                f"[green]✓[/green] Harmix bench cases present at "
-                f"[cyan]{HARMIX_PATH}[/cyan] ({size_kb:.1f} KB)"
+                f"[red]Could not read Harmix bench cases from[/red] [cyan]{DEFAULT_DATA_URI}[/cyan]: {exc}"
             )
-            # Per-environment memory snapshots live in GCS (memory_snapshot URIs)
-            # and are read by the pipeline at run time — nothing to download here.
-            return
+            raise typer.Exit(code=1) from exc
+
         console.print(
-            f"[red]Harmix bench cases missing.[/red] Expected at [cyan]{HARMIX_PATH}[/cyan]."
+            f"[green]✓[/green] Harmix bench cases reachable at "
+            f"[cyan]{DEFAULT_DATA_URI}[/cyan] ({ld.num_samples()} environments)"
         )
-        raise typer.Exit(code=1)
+        return
 
     console.print(f"[red]Unknown dataset:[/red] {dataset}")
     console.print("Supported: locomo, harmix")

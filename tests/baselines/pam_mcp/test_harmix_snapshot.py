@@ -137,7 +137,7 @@ def test_snapshot_path_calls_process_snapshot_with_mapped_sources(
     assert baseline.extras()["pam_memory_run_ids"] == ["snap-run-555"]
 
 
-def test_raw_prompt_sends_question_verbatim_and_keeps_full_answer(
+def test_raw_prompt_mandates_retrieval_and_keeps_full_answer(
     monkeypatch, tmp_path, fake_harness_factory
 ):
     # A realistic long answer that the numbered-batch protocol would have
@@ -168,9 +168,90 @@ def test_raw_prompt_sends_question_verbatim_and_keeps_full_answer(
     assert baseline.batch_size == 1
     assert baseline.extras()["raw_prompt"] is True
 
-    # Each question is sent to the harness VERBATIM: no numbered-batch
-    # scaffolding, no "A1: <short answer>" template, no extra instructions.
-    assert harness.sent_prompts == ["q-1", "q-2"]
+    # Raw mode keeps the natural single-question shape (no numbered-batch "A1:"
+    # scaffolding) but wraps each question with a mandatory-retrieval directive so
+    # the agent must call the tool before answering — the dataset question itself
+    # is carried through verbatim inside that wrapper.
+    assert len(harness.sent_prompts) == 2
+    for q, sent in zip(["q-1", "q-2"], harness.sent_prompts, strict=True):
+        assert f"Question: {q}" in sent
+        assert baseline.MCP_TOOL in sent
+        assert "MUST call" in sent
+        assert "A1:" not in sent  # no numbered-batch answer template
 
     # The full model reply is kept as the answer (not collapsed to an A1: line).
     assert [p.model_answer for p in preds] == [answer, answer]
+
+
+def test_no_retrieval_retry_escalates_the_prompt(monkeypatch, tmp_path, fake_harness_factory):
+    # First send answers WITHOUT retrieving (num_turns=1) → force-retrieval retry;
+    # the second send retrieves (num_turns=2) and is accepted.
+    harness = fake_harness_factory(model="gpt-4o", script=["got it"], turns=[1, 2])
+    baseline = _baseline(
+        monkeypatch, tmp_path, lambda **_: harness, raw_prompt=True, max_batch_retries=2
+    )
+    sample = _harmix_sample(1)
+
+    async def _go():
+        await baseline.setup(seed=42)
+        preds = await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+        return preds
+
+    preds = asyncio.run(_go())
+
+    # Retried exactly once (2 sends): first miss, then a retrieving answer.
+    assert len(harness.sent_prompts) == 2
+    first, retry = harness.sent_prompts
+    # The retry escalates — it prepends the "you answered WITHOUT retrieving" nudge
+    # that the first attempt does not carry.
+    assert "WITHOUT calling" in retry
+    assert "WITHOUT calling" not in first
+    assert "Question: q-1" in retry  # the question is still carried through
+    # The accepted (retrieving) answer is kept.
+    assert [p.model_answer for p in preds] == ["got it"]
+
+
+def test_max_batch_retries_is_configurable(monkeypatch, tmp_path, fake_harness_factory):
+    # Every attempt skips retrieval (num_turns=1); with max_batch_retries=1 the
+    # baseline makes exactly 2 sends (1 initial + 1 retry) before accepting.
+    harness = fake_harness_factory(model="gpt-4o", script=["ans"], turns=[1, 1, 1, 1])
+    baseline = _baseline(
+        monkeypatch, tmp_path, lambda **_: harness, raw_prompt=True, max_batch_retries=1
+    )
+    sample = _harmix_sample(1)
+
+    async def _go():
+        await baseline.setup(seed=42)
+        await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+
+    asyncio.run(_go())
+    assert len(harness.sent_prompts) == 2  # 1 + max_batch_retries
+
+
+def test_avg_at_k_generates_k_parallel_samples_per_question(
+    monkeypatch, tmp_path, fake_harness_factory
+):
+    # K=3 → a pool of 3 sessions, and each question fans out to all 3.
+    harness = fake_harness_factory(model="gpt-4o", script=["ans-a", "ans-b", "ans-c"])
+    baseline = _baseline(
+        monkeypatch, tmp_path, lambda **_: harness, raw_prompt=True, samples_per_question=3
+    )
+    sample = _harmix_sample(2)  # 2 questions
+
+    async def _go():
+        await baseline.setup(seed=42)
+        preds = await run_sample(sample, baseline=baseline, seed=42, model_name="pam_mcp")
+        await baseline.teardown()
+        return preds
+
+    preds = asyncio.run(_go())
+
+    assert baseline.samples_per_question == 3
+    assert len(harness.calls) == 3  # pool of 3 sessions opened once
+    assert harness.warmups == 3  # each pool session warmed sequentially before answering
+    assert harness.send_count == 6  # 2 questions x 3 samples
+    for p in preds:
+        assert p.n_samples == 3
+        assert len(p.sample_answers) == 3

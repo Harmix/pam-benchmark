@@ -59,6 +59,19 @@ def main(
     mcp_max_turns: int = typer.Option(
         None, "--mcp-max-turns", help="Cap agent turns per harness invocation"
     ),
+    mcp_max_retries: int = typer.Option(
+        None,
+        "--mcp-max-retries",
+        help="Retries when a batch comes back empty or answered without retrieving "
+        "(pam_mcp). Default: 2.",
+    ),
+    samples_per_question: int = typer.Option(
+        1,
+        "--samples-per-question",
+        help="avg@k: K independent responses per question (generated in parallel, "
+        "judged individually, averaged). The report shows the answer closest to the "
+        "mean score. Default 1 (one response/question, no extra cost).",
+    ),
     raw_prompt: bool = typer.Option(
         None,
         "--raw-prompt/--no-raw-prompt",
@@ -147,6 +160,8 @@ def main(
         mcp_batch_size=mcp_batch_size,
         mcp_keep_memory=mcp_keep_memory,
         mcp_max_turns=mcp_max_turns,
+        mcp_max_retries=mcp_max_retries,
+        samples_per_question=samples_per_question,
         raw_prompt=raw_prompt,
         pam_debug_user_id=pam_debug_user_id,
         backup_memory=backup_memory,

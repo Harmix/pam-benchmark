@@ -21,6 +21,6 @@ secrets.env
 src/datasets/*/data/
 # … but bake in the LoCoMo file because Cloud Run has no FS to mount it from.
 !src/datasets/locomo/data/
-!src/datasets/harmix/data/harmix_bench_cases.json
+# Harmix bench cases are NOT baked in — they're read from GCS at run time.
 *.DS_Store
 .python-version

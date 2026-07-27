@@ -24,6 +24,7 @@ Lifecycle (per LoCoMo sample), mirroring `PamBaseline`:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import shutil
@@ -73,6 +74,9 @@ class PamMcpBaseline(BaselineBase):
     INTER_BATCH_SLEEP_SEC: float = 5.0
     MAX_BATCH_RETRIES: int = 2
     BATCH_RETRY_BASE_SLEEP_SEC: float = 5.0
+    # Stagger between warming each avg@k pool session, so their MCP handshakes
+    # don't cold-start all at once (which makes the tool fail to register).
+    POOL_WARMUP_STAGGER_SEC: float = 3.0
 
     def __init__(
         self,
@@ -83,6 +87,8 @@ class PamMcpBaseline(BaselineBase):
         batch_size: int = 10,
         raw_prompt: bool = False,
         max_turns: int | None = None,
+        max_batch_retries: int | None = None,
+        samples_per_question: int = 1,
         debug_user_id: int | None = None,
         backup_memory: bool = False,
         mcp_url: str | None = None,
@@ -101,6 +107,17 @@ class PamMcpBaseline(BaselineBase):
         self._raw_prompt = bool(raw_prompt)
         self.batch_size = 1 if self._raw_prompt else max(1, int(batch_size or 1))
         self._max_turns = max_turns
+        # Retries when a batch comes back empty (0/N) or answered without a
+        # retrieval. Defaults to the class tunable; overridable per run so a
+        # noisier environment can be given more headroom.
+        self._max_batch_retries = (
+            int(max_batch_retries) if max_batch_retries is not None else self.MAX_BATCH_RETRIES
+        )
+        # avg@k: K independent responses per question (raw mode only), generated in
+        # parallel via a pool of K sessions and judged individually downstream. K=1
+        # keeps a single session and the classic one-response-per-question path.
+        self.samples_per_question = max(1, int(samples_per_question or 1))
+        self._pool_size = self.samples_per_question if self._raw_prompt else 1
         # When set, the full harness transcript (thinking, tool calls, json
         # events) for every answer run is appended to harness.log in the output
         # dir, alongside responses.log.
@@ -132,10 +149,12 @@ class PamMcpBaseline(BaselineBase):
         self._session_ids: list[str] = []
         self._batch_index: int = 0
         self._total_batches: int = 0
-        # One persistent Claude Code session per conversation: the MCP server
-        # connects once here (in prepare_for_sample) and every batch reuses it,
-        # instead of re-handshaking (and racing) on every batch.
-        self._session: Any = None
+        # A pool of persistent Claude Code sessions per conversation (size
+        # `_pool_size`: K for avg@k in raw mode, else 1). Each connects its MCP
+        # server once (in prepare_for_sample), shares the one memory/MCP key, and
+        # keeps its own conversation history — the K sessions give K parallel
+        # trajectories for a question.
+        self._sessions: list[Any] = []
 
     # ----- lifecycle ------------------------------------------------------
 
@@ -245,27 +264,50 @@ class PamMcpBaseline(BaselineBase):
             self._mcp_key_prefix,
             self._pam_user_id,
         )
-        await self._open_session()
+        await self._open_sessions()
 
-    async def _open_session(self) -> None:
-        """Open the per-conversation Claude Code session (MCP connects once)."""
-        await self._close_session()
+    async def _open_sessions(self) -> None:
+        """Open the pool of `_pool_size` Claude Code sessions (each connects MCP once).
+
+        Pool size is K for avg@k (raw mode), else 1. Each session gets its own
+        working dir so their MCP configs don't collide, and shares the one MCP key.
+        """
+        await self._close_sessions()
         assert self._scratch_dir is not None
-        self._session = self.harness.open_session(
-            working_dir=self._scratch_dir,
-            allowed_tools=[self.MCP_TOOL],
-            mcp_servers=self._mcp_servers(),
-            system=prompts.SYSTEM_PROMPT,
-            max_turns=self._max_turns,
-            log_path=self._harness_log,
-        )
+        for i in range(self._pool_size):
+            work_dir = self._scratch_dir if self._pool_size == 1 else self._scratch_dir / f"pool{i}"
+            self._sessions.append(
+                self.harness.open_session(
+                    working_dir=work_dir,
+                    allowed_tools=[self.MCP_TOOL],
+                    mcp_servers=self._mcp_servers(),
+                    system=prompts.SYSTEM_PROMPT,
+                    max_turns=self._max_turns,
+                    log_path=self._harness_log,
+                )
+            )
+        # Warm the pool ONE AT A TIME so the K MCP handshakes don't stampede on
+        # the first question (concurrent cold-starts make the tool fail to
+        # register). A single session cold-starts lazily as before.
+        if self._pool_size > 1:
+            for idx, session in enumerate(self._sessions):
+                warmup = getattr(session, "warmup", None)
+                if warmup is not None:
+                    await warmup()
+                    logger.info(
+                        "pam_mcp warmed pool session %d/%d for sample=%s",
+                        idx + 1,
+                        self._pool_size,
+                        self._current_sample_id,
+                    )
+                if idx < len(self._sessions) - 1 and self.POOL_WARMUP_STAGGER_SEC > 0:
+                    await asyncio.sleep(self.POOL_WARMUP_STAGGER_SEC)
 
-    async def _close_session(self) -> None:
-        if self._session is not None:
-            try:
-                await self._session.aclose()
-            finally:
-                self._session = None
+    async def _close_sessions(self) -> None:
+        sessions, self._sessions = self._sessions, []
+        for session in sessions:
+            with contextlib.suppress(Exception):
+                await session.aclose()
 
     def _mcp_servers(self) -> dict[str, Any]:
         return {
@@ -280,48 +322,27 @@ class PamMcpBaseline(BaselineBase):
         responses = await self.answer_batch([prompt])
         return responses[0]
 
-    async def answer_batch(self, prompts_list: list[str]) -> list[BaselineResponse]:
-        if not prompts_list:
-            return []
-        assert self._scratch_dir is not None
+    async def _run_attempts(
+        self,
+        session: Any,
+        base_prompt: str,
+        *,
+        batch_no: int,
+        total_batches: int,
+        n: int,
+    ) -> tuple[HarnessResult | None, list[str], int, Exception | None]:
+        """Send `base_prompt` on one session with the empty/no-retrieval retry loop.
 
-        n = len(prompts_list)
-        if self._raw_prompt:
-            # Raw mode: send the dataset's question verbatim, one at a time, with
-            # no numbered-batch answer scaffolding. The MCP system prompt still
-            # drives retrieval; the agent answers the question naturally.
-            assert n == 1, "raw_prompt mode requires batch_size=1"
-            rendered = prompts_list[0]
-            sent_prompt = prompts_list[0]
-        else:
-            rendered = render_batch_prompt(prompts_list)
-            sent_prompt = prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL)
-        self._batch_index += 1
-        batch_no = self._batch_index
-        total_batches = self._total_batches or batch_no
-
-        # Space out batches within a sample (no sleep before the first one).
-        if batch_no > 1 and self.INTER_BATCH_SLEEP_SEC > 0:
-            await asyncio.sleep(self.INTER_BATCH_SLEEP_SEC)
-
-        # prompt_tokens = tokens of the prompt we send (harness tokenizer),
-        # split evenly across the batch's questions.
-        prompt_share = distribute(count_tokens(self._harness_model, rendered), n)
-
-        logger.info(
-            "pam_mcp: asking batch %d/%d (%d questions) for sample=%s via MCP — waiting...",
-            batch_no,
-            total_batches,
-            n,
-            self._current_sample_id,
-        )
-
-        # Run the harness; retry on a fully-empty (0/N) reply with exp. backoff.
+        Returns `(result, parsed, answered, last_exc)`. First attempt sends the
+        base prompt; retries prepend a firmer "you did NOT retrieve — call the tool
+        now" preamble so the re-send forces the tool call instead of re-rolling.
+        """
         result: HarnessResult | None = None
         parsed: list[str] = [""] * n
         answered = 0
         last_exc: Exception | None = None
-        attempts_total = self.MAX_BATCH_RETRIES + 1
+        attempts_total = self._max_batch_retries + 1
+        sent_prompt = base_prompt
         for attempt in range(attempts_total):
             if attempt > 0:
                 delay = self.BATCH_RETRY_BASE_SLEEP_SEC * (2 ** (attempt - 1))
@@ -331,17 +352,16 @@ class PamMcpBaseline(BaselineBase):
                     batch_no,
                     total_batches,
                     attempt,
-                    self.MAX_BATCH_RETRIES,
+                    self._max_batch_retries,
                     delay,
                 )
+                sent_prompt = prompts.retrieval_retry_prefix(self.MCP_TOOL) + base_prompt
                 if delay > 0:
                     await asyncio.sleep(delay)
             try:
-                assert self._session is not None
-                # One turn on the per-conversation session — the MCP server is
-                # already connected (from prepare_for_sample), so no per-batch
-                # handshake. The session relaunches internally if MCP is dead.
-                result = await self._session.send(
+                # One turn on a per-conversation session — MCP is already connected
+                # (from prepare_for_sample). The session relaunches if MCP is dead.
+                result = await session.send(
                     sent_prompt,
                     log_label=(
                         f"[{self._current_sample_id}] answer batch "
@@ -385,6 +405,132 @@ class PamMcpBaseline(BaselineBase):
                     self.MCP_TOOL,
                     result.num_turns if result is not None else None,
                 )
+        return result, parsed, answered, last_exc
+
+    def _single_response(
+        self,
+        result: HarnessResult | None,
+        answer: str,
+        rendered: str,
+        last_exc: Exception | None,
+    ) -> BaselineResponse:
+        """Build one BaselineResponse from a single-question harness result."""
+        prompt_tok_total = count_tokens(self._harness_model, rendered)
+        if result is None:
+            raw = {"raw_prompt": rendered, "raw_response": f"<harness run failed: {last_exc!r}>"}
+            return self._empty_response(0.0, raw=raw, prompt_tokens=prompt_tok_total)
+        total_input = result.input_tokens + result.cache_read_tokens + result.cache_write_tokens
+        prompt_tok, context_tok = split_input_tokens(total_input, prompt_tok_total)
+        return BaselineResponse(
+            text=answer,
+            usage=TokenUsage(
+                input_tokens=total_input,
+                output_tokens=result.output_tokens,
+                prompt_tokens=prompt_tok,
+                context_tokens=context_tok,
+                est_cost_usd=result.cost_usd,
+                injected_tokens=None,
+                enriched_user_prompt_tokens=None,
+                agent_input_tokens=result.input_tokens,
+                agent_output_tokens=result.output_tokens,
+                agent_cache_read_tokens=result.cache_read_tokens,
+                agent_cache_write_tokens=result.cache_write_tokens,
+            ),
+            latency_ms=result.duration_ms,
+            raw={"raw_prompt": rendered, "raw_response": result.text},
+        )
+
+    async def answer_samples(self, prompt: str) -> list[BaselineResponse]:
+        """avg@k: K independent responses for ONE question, generated in parallel.
+
+        Raw mode only. Fans the same mandatory-retrieval prompt to all K pool
+        sessions concurrently and returns only once every one is back (per-question
+        barrier). Each session keeps its own history → K parallel trajectories.
+        """
+        assert self._raw_prompt, "answer_samples requires raw_prompt mode"
+        assert self._scratch_dir is not None
+        self._batch_index += 1
+        batch_no = self._batch_index
+        total_batches = self._total_batches or batch_no
+
+        # Space out questions within a sample (no sleep before the first one).
+        if batch_no > 1 and self.INTER_BATCH_SLEEP_SEC > 0:
+            await asyncio.sleep(self.INTER_BATCH_SLEEP_SEC)
+
+        rendered = prompt
+        base_prompt = prompts.raw_answer_prompt(prompt, tool_name=self.MCP_TOOL)
+        k = len(self._sessions)
+        logger.info(
+            "pam_mcp: asking question %d/%d with k=%d samples for sample=%s via MCP — waiting...",
+            batch_no,
+            total_batches,
+            k,
+            self._current_sample_id,
+        )
+
+        async def _one(session: Any) -> BaselineResponse:
+            result, parsed, _answered, last_exc = await self._run_attempts(
+                session, base_prompt, batch_no=batch_no, total_batches=total_batches, n=1
+            )
+            if result is not None:
+                self._record_session(result)
+            return self._single_response(result, parsed[0] if parsed else "", rendered, last_exc)
+
+        # Barrier: all K in parallel; return only when every one has finished.
+        responses = await asyncio.gather(*(_one(s) for s in self._sessions))
+        answered = sum(1 for r in responses if (r.text or "").strip())
+        logger.info(
+            "pam_mcp answered %d/%d samples for question %d/%d sample=%s",
+            answered,
+            k,
+            batch_no,
+            total_batches,
+            self._current_sample_id,
+        )
+        return list(responses)
+
+    async def answer_batch(self, prompts_list: list[str]) -> list[BaselineResponse]:
+        if not prompts_list:
+            return []
+        assert self._scratch_dir is not None
+
+        n = len(prompts_list)
+        if self._raw_prompt:
+            # Raw mode: one question at a time, no numbered-batch answer
+            # scaffolding. `rendered` stays the bare question (for token counting
+            # and the responses.log record), but the prompt actually sent wraps it
+            # with a mandatory-retrieval directive — the soft MCP system prompt
+            # alone let the agent answer without ever calling the tool.
+            assert n == 1, "raw_prompt mode requires batch_size=1"
+            rendered = prompts_list[0]
+            base_prompt = prompts.raw_answer_prompt(prompts_list[0], tool_name=self.MCP_TOOL)
+        else:
+            rendered = render_batch_prompt(prompts_list)
+            base_prompt = prompts.answer_prompt(rendered, tool_name=self.MCP_TOOL)
+        self._batch_index += 1
+        batch_no = self._batch_index
+        total_batches = self._total_batches or batch_no
+
+        # Space out batches within a sample (no sleep before the first one).
+        if batch_no > 1 and self.INTER_BATCH_SLEEP_SEC > 0:
+            await asyncio.sleep(self.INTER_BATCH_SLEEP_SEC)
+
+        # prompt_tokens = tokens of the prompt we send (harness tokenizer),
+        # split evenly across the batch's questions.
+        prompt_share = distribute(count_tokens(self._harness_model, rendered), n)
+
+        logger.info(
+            "pam_mcp: asking batch %d/%d (%d questions) for sample=%s via MCP — waiting...",
+            batch_no,
+            total_batches,
+            n,
+            self._current_sample_id,
+        )
+
+        # Run the harness on the first pool session; retry on empty/no-retrieval.
+        result, parsed, answered, last_exc = await self._run_attempts(
+            self._sessions[0], base_prompt, batch_no=batch_no, total_batches=total_batches, n=n
+        )
 
         if result is None and last_exc is not None:
             raw = {"raw_prompt": rendered, "raw_response": f"<harness run failed: {last_exc!r}>"}
@@ -454,7 +600,7 @@ class PamMcpBaseline(BaselineBase):
     async def cleanup_sample(self) -> None:
         # Close the per-conversation session first (it holds the live claude
         # process + the temp MCP config that lives under the scratch dir).
-        await self._close_session()
+        await self._close_sessions()
         # Wipe the per-sample scratch dir (just held the temp MCP config).
         if self._scratch_dir is not None:
             await asyncio.to_thread(shutil.rmtree, self._scratch_dir.parent, True)
@@ -480,7 +626,7 @@ class PamMcpBaseline(BaselineBase):
             logger.warning("pam_mcp delete_account failed for user_id=%s: %r", uid, e)
 
     async def teardown(self) -> None:
-        await self._close_session()  # defensive: normally closed in cleanup_sample
+        await self._close_sessions()  # defensive: normally closed in cleanup_sample
         await self.harness.teardown()
 
     def extras(self) -> dict[str, Any]:

@@ -28,6 +28,9 @@ class FakeSession:
     async def send(self, prompt, *, log_label=None, timeout_sec=None) -> HarnessResult:
         return self._h._answer(prompt)
 
+    async def warmup(self) -> None:
+        self._h.warmups += 1
+
     async def aclose(self) -> None:
         self.closed = True
 
@@ -41,13 +44,23 @@ class FakeHarness:
 
     name = "fake"
 
-    def __init__(self, model: str | None = None, *, script: list[str] | None = None):
+    def __init__(
+        self,
+        model: str | None = None,
+        *,
+        script: list[str] | None = None,
+        turns: list[int] | None = None,
+    ):
         self.model = model
         self.calls: list[dict] = []  # one entry per open_session (the wiring)
         self.sessions: list[FakeSession] = []
         self.sent_prompts: list[str] = []  # verbatim prompt of every send
         self.send_count = 0
+        self.warmups = 0  # count of session warmups (avg@k pool pre-connect)
         self._script = script or []
+        # Optional per-send num_turns (num_turns<2 == answered without retrieving,
+        # which drives the force-retrieval retry). Falls back to the usage default.
+        self._turns = turns or []
         self._idx = 0
         self.usage = dict(
             input_tokens=400,
@@ -100,8 +113,11 @@ class FakeHarness:
             text = self._script[-1]
         else:
             text = "\n".join(f"A{i}: ans-{i}" for i in range(1, n + 1))
+        usage = dict(self.usage)
+        if self._idx < len(self._turns):
+            usage["num_turns"] = self._turns[self._idx]
         self._idx += 1
-        return HarnessResult(text=text, session_id=f"ans-{self._idx}", **self.usage)
+        return HarnessResult(text=text, session_id=f"ans-{self._idx}", **usage)
 
     @property
     def answer_calls(self) -> int:
@@ -112,6 +128,7 @@ class FakeHarness:
 def _no_pam_mcp_sleeps(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(PamMcpBaseline, "INTER_BATCH_SLEEP_SEC", 0.0)
     monkeypatch.setattr(PamMcpBaseline, "BATCH_RETRY_BASE_SLEEP_SEC", 0.0)
+    monkeypatch.setattr(PamMcpBaseline, "POOL_WARMUP_STAGGER_SEC", 0.0)
 
 
 @pytest.fixture
