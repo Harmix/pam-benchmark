@@ -112,6 +112,17 @@ def main(
             "delete-account) so its memory can be reused later via --pam-debug-user-id."
         ),
     ),
+    pam_exp_config: str = typer.Option(
+        None,
+        "--pam-exp-config",
+        help=(
+            "pam_mcp: experiment-registry preset for the memory build (e.g. "
+            "'introspective_v2'). Forwarded to the memory pipeline as --experiment; "
+            "unset ⇒ the pipeline's 'baseline'. Do NOT combine with "
+            "--pam-debug-user-id / --backup-memory — those reuse an account and "
+            "skip the build, so the preset never takes effect."
+        ),
+    ),
 ) -> None:
     """Run one (dataset, harness, baseline, seed) MCP-memory experiment end-to-end."""
     load_secrets()
@@ -162,6 +173,7 @@ def main(
         mcp_max_turns=mcp_max_turns,
         mcp_max_retries=mcp_max_retries,
         samples_per_question=samples_per_question,
+        pam_exp_config=pam_exp_config,
         raw_prompt=raw_prompt,
         pam_debug_user_id=pam_debug_user_id,
         backup_memory=backup_memory,

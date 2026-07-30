@@ -30,7 +30,7 @@ class _ScriptedClient:
         self.access_token = "user-401-token"
         return {"user": {"id": 401}, "tokens": {"access_token": self.access_token}}
 
-    def process_generic_files(self, files):
+    def process_generic_files(self, files, pam_exp_config=None):
         return ["run-401-0"]
 
     def wait_for_memory(self, run_ids, user_id=None):

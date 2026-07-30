@@ -91,6 +91,7 @@ class PamMcpBaseline(BaselineBase):
         samples_per_question: int = 1,
         debug_user_id: int | None = None,
         backup_memory: bool = False,
+        pam_exp_config: str | None = None,
         mcp_url: str | None = None,
         host: str | None = None,
         admin_email: str | None = None,
@@ -134,6 +135,9 @@ class PamMcpBaseline(BaselineBase):
         self._admin_password = admin_password or require("PAM_API_PASSWORD")
         self._debug_user_id = debug_user_id
         self._backup_memory = bool(backup_memory)
+        # Experiment-registry preset for the memory build. Sent to the memory
+        # pipeline as `--experiment` (its field name); None ⇒ pipeline "baseline".
+        self._pam_exp_config = pam_exp_config
 
         host_clean = (host or require("PAM_API_HOST")).rstrip("/")
         self._mcp_url = mcp_url or os.environ.get(_MCP_URL_ENV) or f"{host_clean}/v1/mcp/memory"
@@ -217,7 +221,9 @@ class PamMcpBaseline(BaselineBase):
         snapshot_uri = getattr(sample, "memory_snapshot", None)
         if snapshot_uri:
             sources = list(getattr(sample, "pipeline_sources", []) or [])
-            run_id = await asyncio.to_thread(self.client.process_snapshot, snapshot_uri, sources)
+            run_id = await asyncio.to_thread(
+                self.client.process_snapshot, snapshot_uri, sources, self._pam_exp_config
+            )
             run_ids = [run_id]
             logger.info(
                 "pam_mcp process_snapshot for sample=%s (user_id=%s) snapshot=%s "
@@ -230,7 +236,9 @@ class PamMcpBaseline(BaselineBase):
             )
         else:
             files = serialize_sample(sample)
-            run_ids = await asyncio.to_thread(self.client.process_generic_files, files)
+            run_ids = await asyncio.to_thread(
+                self.client.process_generic_files, files, pam_exp_config=self._pam_exp_config
+            )
             logger.info(
                 "pam_mcp process_generic_files for sample=%s (user_id=%s) -> run_ids=%s",
                 sample.sample_id,
@@ -310,11 +318,17 @@ class PamMcpBaseline(BaselineBase):
                 await session.aclose()
 
     def _mcp_servers(self) -> dict[str, Any]:
+        headers = {"Authorization": self._mcp_key or ""}
+        # Pin the retrieval experiment for this MCP session. The MCP tool has no
+        # `experiment` argument, so PAM reads it from this header at `initialize`
+        # and applies it to every retrieve. Omitted when unset ⇒ baseline.
+        if self._pam_exp_config:
+            headers["X-Pam-Experiment"] = self._pam_exp_config
         return {
             self.MCP_SERVER_NAME: {
                 "type": "http",
                 "url": self._mcp_url,
-                "headers": {"Authorization": self._mcp_key or ""},
+                "headers": headers,
             }
         }
 
@@ -641,6 +655,7 @@ class PamMcpBaseline(BaselineBase):
             "harness_session_ids": list(self._session_ids),
             "mcp_url": self._mcp_url,
             "mcp_key_prefix": self._mcp_key_prefix,
+            "pam_exp_config": self._pam_exp_config or "baseline",
         }
 
     def baseline_kwargs_extra(self) -> dict[str, Any]:

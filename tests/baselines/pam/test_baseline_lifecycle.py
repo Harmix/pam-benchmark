@@ -50,7 +50,9 @@ class StubPamClient:
         self.access_token = f"user-{self.user_id}-token"
         return {"user": {"id": self.user_id}, "tokens": {"access_token": self.access_token}}
 
-    def process_generic_files(self, files: list[tuple[str, bytes]]) -> list[str]:
+    def process_generic_files(
+        self, files: list[tuple[str, bytes]], pam_exp_config: str | None = None
+    ) -> list[str]:
         # Mirrors PamClient.process_generic_files: returns one run_id per batch
         # of up to MAX_FILES_PER_REQUEST files. For LoCoMo we always send 1
         # file → exactly 1 run_id.
@@ -371,7 +373,7 @@ def test_unused_payload_shape_holds_json(monkeypatch: pytest.MonkeyPatch) -> Non
     _set_env(monkeypatch)
 
     class CapturingStub(StubPamClient):
-        def process_generic_files(self, files):  # type: ignore[override]
+        def process_generic_files(self, files, pam_exp_config=None):  # type: ignore[override]
             self.last_payloads = [(name, body) for name, body in files]
             return super().process_generic_files(files)
 

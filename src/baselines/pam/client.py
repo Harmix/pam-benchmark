@@ -317,13 +317,20 @@ class PamClient:
         """
         return [("files", (fname, io.BytesIO(fbytes), "text/plain")) for fname, fbytes in batch]
 
-    def process_generic_files(self, file_tuples: list[tuple[str, bytes]]) -> list[str]:
+    def process_generic_files(
+        self, file_tuples: list[tuple[str, bytes]], pam_exp_config: str | None = None
+    ) -> list[str]:
         """Upload files and trigger memory creation in one shot per batch.
 
         Calls `POST /v1/memory/process-generic-files/{user_id}` once per batch
         of up to `MAX_FILES_PER_REQUEST` files. Each call returns a `run_id`
         for the kicked-off memory pipeline; we return the list of run_ids
         ready to be polled via `wait_for_memory`.
+
+        `pam_exp_config` (when set) rides as an extra multipart form field named
+        `experiment` — the memory pipeline's field name — relayed by agent-api to
+        the pipeline as `--experiment`. Omitted when None so the pipeline falls
+        back to its "baseline" preset (unchanged behavior).
         """
         if self.user_id is None:
             raise RuntimeError(
@@ -331,6 +338,8 @@ class PamClient:
             )
 
         url = f"{self.base_url}/memory/process-generic-files/{self.user_id}"
+        # Wire field is `experiment` — the memory-creation pipeline's own name.
+        form = {"experiment": pam_exp_config} if pam_exp_config else None
         run_ids: list[str] = []
         for batch_start in range(0, len(file_tuples), self.MAX_FILES_PER_REQUEST):
             batch = file_tuples[batch_start : batch_start + self.MAX_FILES_PER_REQUEST]
@@ -340,7 +349,11 @@ class PamClient:
             # the retry would transmit an empty file (which the server then zips
             # as a zero-byte `*_conversation.json`).
             resp = self.session.post(
-                url, headers=self._headers(), files=self._build_files_payload(batch), timeout=300
+                url,
+                headers=self._headers(),
+                files=self._build_files_payload(batch),
+                data=form,
+                timeout=300,
             )
             if resp.status_code == 401:
                 # Token may have expired during a long memory build — refresh
@@ -351,6 +364,7 @@ class PamClient:
                     url,
                     headers=self._headers(),
                     files=self._build_files_payload(batch),
+                    data=form,
                     timeout=300,
                 )
             self._raise_for_auth(resp, url)
@@ -368,7 +382,9 @@ class PamClient:
             run_ids.append(run_id)
         return run_ids
 
-    def process_snapshot(self, snapshot_uri: str, sources: list[str]) -> str:
+    def process_snapshot(
+        self, snapshot_uri: str, sources: list[str], pam_exp_config: str | None = None
+    ) -> str:
         """Stage a pre-built snapshot zip and kick off the memory pipeline.
 
         Calls `POST /v1/memory/process-snapshot/{user_id}` with the snapshot's
@@ -388,6 +404,10 @@ class PamClient:
             )
         url = f"{self.base_url}/memory/process-snapshot/{self.user_id}"
         body = {"snapshot_uri": snapshot_uri, "sources": list(sources)}
+        if pam_exp_config:
+            # Wire field `experiment` (the pipeline's own name); agent-api relays
+            # it as `--experiment`. Omitted when None ⇒ pipeline "baseline".
+            body["experiment"] = pam_exp_config
         headers = {**self._headers(), "Content-Type": "application/json"}
         resp = self.session.post(url, json=body, headers=headers, timeout=300)
         if resp.status_code == 401:

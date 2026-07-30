@@ -49,7 +49,9 @@ class StubPamClient:
         self.access_token = f"user-{self.user_id}-token"
         return {"user": {"id": self.user_id}, "tokens": {"access_token": self.access_token}}
 
-    def process_generic_files(self, files: list[tuple[str, bytes]]) -> list[str]:
+    def process_generic_files(
+        self, files: list[tuple[str, bytes]], pam_exp_config: str | None = None
+    ) -> list[str]:
         run_id = f"run-{self.user_id}-0"
         self._log(
             "process_generic_files",

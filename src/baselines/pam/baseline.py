@@ -78,6 +78,7 @@ class PamBaseline(BaselineBase):
         batch_size: int = 10,
         debug_user_id: int | None = None,
         backup_memory: bool = False,
+        pam_exp_config: str | None = None,
         api_key: str | None = None,
         **_ignored: Any,
     ) -> None:
@@ -93,6 +94,9 @@ class PamBaseline(BaselineBase):
         # When True, the account is preserved entirely (not deleted) so it can
         # be reused later via --pam-debug-user-id. See `cleanup_sample`.
         self._backup_memory = bool(backup_memory)
+        # Experiment-registry preset for the memory build. Sent to the memory
+        # pipeline as `--experiment` (its field name); None ⇒ pipeline "baseline".
+        self._pam_exp_config = pam_exp_config
 
         # Model id whose tokenizer counts Pam's output tokens — supplied via env
         # (secret), never hardcoded. Missing => output_tokens fall back to 0.
@@ -169,7 +173,9 @@ class PamBaseline(BaselineBase):
         # Returns the run_id(s) we then poll for completion.
         files = serialize_sample(sample)
         mem_start = time.time()
-        run_ids = await asyncio.to_thread(self.client.process_generic_files, files)
+        run_ids = await asyncio.to_thread(
+            self.client.process_generic_files, files, pam_exp_config=self._pam_exp_config
+        )
         self._last_memory_run_ids = list(run_ids)
         logger.info(
             "Pam process_generic_files for sample=%s (user_id=%s) -> run_ids=%s",
@@ -401,6 +407,7 @@ class PamBaseline(BaselineBase):
             "pam_user_id": self._pam_user_id,
             "pam_batch_size": self.batch_size,
             "pam_memory_run_ids": list(self._last_memory_run_ids),
+            "pam_exp_config": self._pam_exp_config or "baseline",
         }
 
     def baseline_kwargs_extra(self) -> dict[str, Any]:

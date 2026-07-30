@@ -90,6 +90,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
       {% if samples_per_question > 1 %}
       <span><b>Samples/question:</b> {{ samples_per_question }}</span>
       {% endif %}
+      <span><b>Exp config:</b> {{ pam_exp_configs|join(', ') }}</span>
       <span><b>Judge:</b> {{ judge_models|join(', ') }}</span>
       <span><b>Personas:</b> {{ sample_count }}</span>
     </div>
@@ -133,7 +134,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
     <h2>Per-persona results</h2>
     <table>
       <thead><tr>
-        <th>Baseline</th><th>Persona</th><th>Q</th><th>Judged</th><th>Judge</th>
+        <th>Baseline</th><th>Persona</th>{% if multi_arm %}<th>Exp config</th>{% endif %}<th>Q</th><th>Judged</th><th>Judge</th>
         <th>Avg. Context Tokens</th><th>p50 / p95 latency</th>
         <th>Memory Creation</th><th>Answer+Judge</th>{% if show_cost %}<th>Cost (USD)</th>{% endif %}
       </tr></thead>
@@ -142,6 +143,7 @@ details summary { cursor: pointer; padding: .5rem 0; font-weight: 600; color: va
         <tr>
           <td>{{ row.baseline }}</td>
           <td>{{ row.sample_id }}</td>
+          {% if multi_arm %}<td><code>{{ row.pam_exp_config }}</code></td>{% endif %}
           <td>{{ row.total_questions }}</td>
           <td>{{ row.judged }}{% if row.unjudged %} <span class="muted">(+{{ row.unjudged }} open)</span>{% endif %}</td>
           <td><span class="badge {{ row.judge_class }}">{{ '%.1f'|format(row.judge_accuracy*100) }}%</span>{% if row.samples_per_question > 1 %} <span class="muted">± {{ '%.1f'|format(row.judge_accuracy_std*100) }} · avg@{{ row.samples_per_question }}</span>{% endif %}</td>
